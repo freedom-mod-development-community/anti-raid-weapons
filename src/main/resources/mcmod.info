@@ -1,0 +1,16 @@
+[
+{
+  "modid": "anti-raid-weapons",
+  "name": "Anti Raid Weapons",
+  "description": "#(TODO)",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": [],
+  "credits": "#(TODO)",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]
