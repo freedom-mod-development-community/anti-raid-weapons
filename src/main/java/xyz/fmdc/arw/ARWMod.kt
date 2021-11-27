@@ -10,9 +10,8 @@ import cpw.mods.fml.relauncher.Side
 import net.minecraft.creativetab.CreativeTabs
 import xyz.fmdc.arw.ARWMod.Companion.DOMAIN
 import xyz.fmdc.arw.ARWMod.Companion.ModName
-import xyz.fmdc.arw.modcore.WorldEventListener
 import xyz.fmdc.arw.modcore.proxy.AWMProxy
-import xyz.fmdc.arw.registry.RegistryBlockAndTileEntity
+import xyz.fmdc.arw.registry.RegistryBlock
 
 @Mod(modid = DOMAIN, name = ModName)
 class ARWMod {
@@ -40,8 +39,9 @@ class ARWMod {
      * TileEntity類の登録
      */
     @Mod.EventHandler
+    @Suppress("UNUSED_PARAMETER")
     fun preInit(event: FMLPreInitializationEvent) {
-        RegistryBlockAndTileEntity.registerBlockAndTileEntity()
+        RegistryBlock.registerBlock()
     }
 
     /**
@@ -52,14 +52,13 @@ class ARWMod {
         if (FMLCommonHandler.instance().side == Side.CLIENT) {
             proxy.callRegisterRenderer()
         }
-
-        FMLCommonHandler.instance().bus().register(WorldEventListener)
     }
 
     /**
      * コマンド登録
      */
     @Mod.EventHandler
+    @Suppress("UNUSED_PARAMETER")
     fun serverLoad(event: FMLServerStartingEvent) {
     }
 }

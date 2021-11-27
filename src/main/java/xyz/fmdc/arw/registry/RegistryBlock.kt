@@ -6,8 +6,8 @@ import net.minecraft.tileentity.TileEntity
 import xyz.fmdc.arw.spg62.SPG62Block
 import xyz.fmdc.arw.spg62.SPG62Tile
 
-object RegistryBlockAndTileEntity {
-    fun registerBlockAndTileEntity() {
+object RegistryBlock {
+    fun registerBlock() {
         registerBlock(SPG62Block(), SPG62Tile::class.java)
     }
 
