@@ -19,3 +19,4 @@ class ARWCreativeTab : CreativeTabs(ARWMod.ModName) {
     }
 
 }
+
