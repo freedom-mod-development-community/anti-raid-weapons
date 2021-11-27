@@ -4,8 +4,8 @@ import cpw.mods.fml.common.network.simpleimpl.IMessage
 import cpw.mods.fml.common.network.simpleimpl.IMessageHandler
 import cpw.mods.fml.common.network.simpleimpl.MessageContext
 import io.netty.buffer.ByteBuf
-import xyz.fmdc.arw.modcore.PacketHandlerARW
-import xyz.fmdc.arw.modcore.baseclass.message.TileEntityMessage
+import xyz.fmdc.arw.network.PacketHandlerARW
+import xyz.fmdc.arw.network.TileEntityMessage
 
 class SyncAngleMessage(var yawDeg: Double, var pitchDeg: Double) : TileEntityMessage() {
 

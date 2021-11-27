@@ -1,4 +1,4 @@
-package xyz.fmdc.arw.modcore
+package xyz.fmdc.arw.network
 
 import cpw.mods.fml.common.network.NetworkRegistry
 import cpw.mods.fml.common.network.simpleimpl.IMessage

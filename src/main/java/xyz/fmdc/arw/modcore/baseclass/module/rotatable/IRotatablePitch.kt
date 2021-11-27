@@ -1,6 +1,6 @@
 package xyz.fmdc.arw.modcore.baseclass.module.rotatable
 
-import xyz.fmdc.arw.modcore.PacketHandlerARW
+import xyz.fmdc.arw.network.PacketHandlerARW
 
 interface IRotatablePitch {
     val moduleRotatablePitch: ModuleRotatablePitch

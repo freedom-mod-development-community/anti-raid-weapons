@@ -10,7 +10,6 @@ import cpw.mods.fml.relauncher.Side
 import net.minecraft.creativetab.CreativeTabs
 import xyz.fmdc.arw.ARWMod.Companion.DOMAIN
 import xyz.fmdc.arw.ARWMod.Companion.ModName
-import xyz.fmdc.arw.modcore.ARWCreativeTab
 import xyz.fmdc.arw.modcore.WorldEventListener
 import xyz.fmdc.arw.modcore.proxy.AWMProxy
 import xyz.fmdc.arw.registry.RegistryBlockAndTileEntity

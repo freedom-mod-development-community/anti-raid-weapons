@@ -1,10 +1,9 @@
-package xyz.fmdc.arw.modcore
+package xyz.fmdc.arw
 
 import cpw.mods.fml.relauncher.Side
 import cpw.mods.fml.relauncher.SideOnly
 import net.minecraft.creativetab.CreativeTabs
 import net.minecraft.item.Item
-import xyz.fmdc.arw.ARWMod
 
 class ARWCreativeTab : CreativeTabs(ARWMod.ModName) {
 
