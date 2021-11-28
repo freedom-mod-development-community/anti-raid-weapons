@@ -1,17 +1,16 @@
 package xyz.fmdc.arw.modcore.baseclass.module.direction
 
+import net.minecraft.util.EnumFacing
 import xyz.fmdc.arw.modcore.getFacingFromAngle
 import xyz.fmdc.arw.modcore.getHorizontalAngle
 
 interface IDirection {
-    val moduleDirection: ModuleDirection
-
     fun saveReversDirectionData(angDeg: Float) {
         saveReversDirectionData(angDeg.toDouble())
     }
 
     fun saveReversDirectionData(angDeg: Double) {
-        moduleDirection.facing = getFacingFromAngle(angDeg + 180)
+        facing = getFacingFromAngle(angDeg + 180)
     }
 
     fun saveDirectionData(angDeg: Float) {
@@ -19,10 +18,17 @@ interface IDirection {
     }
 
     fun saveDirectionData(angDeg: Double) {
-        moduleDirection.facing = getFacingFromAngle(angDeg)
+        facing = getFacingFromAngle(angDeg)
     }
 
     fun getDirectionAngle(): Double {
-        return moduleDirection.facing.getHorizontalAngle()
+        return facing.getHorizontalAngle()
     }
 }
+
+private var _facing: EnumFacing = EnumFacing.UP
+var IDirection.facing: EnumFacing
+    get() = _facing
+    set(value) {
+        _facing = value
+    }

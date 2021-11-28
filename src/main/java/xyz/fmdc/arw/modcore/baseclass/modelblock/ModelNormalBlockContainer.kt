@@ -13,6 +13,8 @@ import xyz.fmdc.arw.ARWMod
 import xyz.fmdc.arw.modcore.baseclass.module.direction.IDirection
 import xyz.fmdc.arw.modcore.baseclass.module.rotatable.IRotatablePitch
 import xyz.fmdc.arw.modcore.baseclass.module.rotatable.IRotatableYaw
+import xyz.fmdc.arw.modcore.baseclass.module.rotatable.pitchDeg
+import xyz.fmdc.arw.modcore.baseclass.module.rotatable.yawDeg
 
 open class ModelNormalBlockContainer(
     material: Material = Material.rock,

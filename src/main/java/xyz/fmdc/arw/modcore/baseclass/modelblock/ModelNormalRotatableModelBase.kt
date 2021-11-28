@@ -6,6 +6,8 @@ import org.lwjgl.opengl.GL11
 import xyz.fmdc.arw.modcore.baseclass.module.direction.IDirection
 import xyz.fmdc.arw.modcore.baseclass.module.rotatable.IRotatablePitch
 import xyz.fmdc.arw.modcore.baseclass.module.rotatable.IRotatableYaw
+import xyz.fmdc.arw.modcore.baseclass.module.rotatable.pitchDeg
+import xyz.fmdc.arw.modcore.baseclass.module.rotatable.yawDeg
 
 abstract class ModelNormalRotatableModelBase<T : TileEntity> : ModelNormalModelBase<T>() {
     override fun renderBase() {
