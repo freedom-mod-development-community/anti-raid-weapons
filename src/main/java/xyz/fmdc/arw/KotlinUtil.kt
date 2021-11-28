@@ -1,4 +1,4 @@
-package xyz.fmdc.arw.modcore
+package xyz.fmdc.arw
 
 import cpw.mods.fml.common.network.simpleimpl.MessageContext
 import cpw.mods.fml.relauncher.Side

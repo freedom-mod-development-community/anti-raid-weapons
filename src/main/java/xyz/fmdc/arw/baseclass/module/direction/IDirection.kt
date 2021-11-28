@@ -1,8 +1,8 @@
 package xyz.fmdc.arw.baseclass.module.direction
 
 import net.minecraft.util.EnumFacing
-import xyz.fmdc.arw.modcore.getFacingFromAngle
-import xyz.fmdc.arw.modcore.getHorizontalAngle
+import xyz.fmdc.arw.getFacingFromAngle
+import xyz.fmdc.arw.getHorizontalAngle
 
 interface IDirection {
     fun saveReversDirectionData(angDeg: Float) {
