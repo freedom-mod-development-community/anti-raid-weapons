@@ -4,9 +4,9 @@ import cpw.mods.fml.client.registry.ClientRegistry
 import cpw.mods.fml.relauncher.Side
 import cpw.mods.fml.relauncher.SideOnly
 import net.minecraft.tileentity.TileEntity
-import xyz.fmdc.arw.modcore.baseclass.IParallelModelLoad
-import xyz.fmdc.arw.modcore.baseclass.modelblock.ModelNormalModelBase
-import xyz.fmdc.arw.modcore.baseclass.modelblock.ModelNormalRenderer
+import xyz.fmdc.arw.baseclass.IParallelModelLoad
+import xyz.fmdc.arw.baseclass.modelblock.ModelNormalModelBase
+import xyz.fmdc.arw.baseclass.modelblock.ModelNormalRenderer
 import xyz.fmdc.arw.spg62.SPG62Model
 import xyz.fmdc.arw.spg62.SPG62Tile
 import java.util.concurrent.Executors

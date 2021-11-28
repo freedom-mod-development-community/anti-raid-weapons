@@ -1,9 +1,9 @@
-package xyz.fmdc.arw.modcore.baseclass.modelblock
+package xyz.fmdc.arw.baseclass.modelblock
 
 import net.minecraft.nbt.NBTTagCompound
-import xyz.fmdc.arw.modcore.baseclass.module.rotatable.IRotatableYawPitch
-import xyz.fmdc.arw.modcore.baseclass.module.rotatable.pitchDeg
-import xyz.fmdc.arw.modcore.baseclass.module.rotatable.yawDeg
+import xyz.fmdc.arw.baseclass.module.rotatable.IRotatableYawPitch
+import xyz.fmdc.arw.baseclass.module.rotatable.pitchDeg
+import xyz.fmdc.arw.baseclass.module.rotatable.yawDeg
 
 open class ModelNormalRotatableYawPitchTileEntity : ModelNormalTileEntity(), IRotatableYawPitch {
     private val strYawDeg = "yawDeg"

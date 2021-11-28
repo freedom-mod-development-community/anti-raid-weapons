@@ -10,8 +10,8 @@ import cpw.mods.fml.relauncher.Side
 import net.minecraft.creativetab.CreativeTabs
 import xyz.fmdc.arw.ARWMod.DOMAIN
 import xyz.fmdc.arw.ARWMod.ModName
-import xyz.fmdc.arw.modcore.proxy.AWMProxy
 import xyz.fmdc.arw.network.PacketHandlerARW
+import xyz.fmdc.arw.proxy.AWMProxy
 import xyz.fmdc.arw.registry.RegistryBlock
 
 @Mod(modid = DOMAIN, name = ModName)
@@ -23,8 +23,8 @@ object ARWMod {
     fun instance() = this
 
     @SidedProxy(
-        clientSide = "xyz.fmdc.arw.modcore.proxy.AWMClientProxy",
-        serverSide = "xyz.fmdc.arw.modcore.proxy.AWMCommonProxy",
+        clientSide = "xyz.fmdc.arw.proxy.AWMClientProxy",
+        serverSide = "xyz.fmdc.arw.proxy.AWMCommonProxy",
     )
     lateinit var proxy: AWMProxy
 

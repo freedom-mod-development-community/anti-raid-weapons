@@ -1,4 +1,4 @@
-package xyz.fmdc.arw.modcore.baseclass.modelblock
+package xyz.fmdc.arw.baseclass.modelblock
 
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer
 import net.minecraft.tileentity.TileEntity

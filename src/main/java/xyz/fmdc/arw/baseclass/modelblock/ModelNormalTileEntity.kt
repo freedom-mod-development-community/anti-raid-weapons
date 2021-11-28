@@ -1,8 +1,8 @@
-package xyz.fmdc.arw.modcore.baseclass.modelblock
+package xyz.fmdc.arw.baseclass.modelblock
 
 import net.minecraft.nbt.NBTTagCompound
-import xyz.fmdc.arw.modcore.baseclass.TileCustomBase
-import xyz.fmdc.arw.modcore.baseclass.module.direction.IDirection
+import xyz.fmdc.arw.baseclass.TileCustomBase
+import xyz.fmdc.arw.baseclass.module.direction.IDirection
 
 open class ModelNormalTileEntity : TileCustomBase(), IDirection {
     private val strDirectionAngDeg = "directionAngDeg"

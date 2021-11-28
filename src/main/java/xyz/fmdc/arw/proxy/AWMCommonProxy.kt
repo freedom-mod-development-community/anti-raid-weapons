@@ -1,4 +1,4 @@
-package xyz.fmdc.arw.modcore.proxy
+package xyz.fmdc.arw.proxy
 
 class AWMCommonProxy : AWMProxy() {
     override fun init() {

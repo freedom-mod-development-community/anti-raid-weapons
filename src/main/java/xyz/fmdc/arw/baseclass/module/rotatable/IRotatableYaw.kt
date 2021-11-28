@@ -1,4 +1,4 @@
-package xyz.fmdc.arw.modcore.baseclass.module.rotatable
+package xyz.fmdc.arw.baseclass.module.rotatable
 
 import xyz.fmdc.arw.network.PacketHandlerARW
 

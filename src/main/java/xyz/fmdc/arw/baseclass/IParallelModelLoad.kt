@@ -1,4 +1,4 @@
-package xyz.fmdc.arw.modcore.baseclass
+package xyz.fmdc.arw.baseclass
 
 interface IParallelModelLoad {
     fun loadModel()

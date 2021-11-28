@@ -1,4 +1,4 @@
-package xyz.fmdc.arw.modcore.baseclass.modelblock
+package xyz.fmdc.arw.baseclass.modelblock
 
 import cpw.mods.fml.client.FMLClientHandler
 import net.minecraft.client.model.ModelBase
@@ -7,7 +7,7 @@ import net.minecraft.util.ResourceLocation
 import net.minecraftforge.client.model.AdvancedModelLoader
 import net.minecraftforge.client.model.IModelCustom
 import org.lwjgl.opengl.GL11
-import xyz.fmdc.arw.modcore.baseclass.IParallelModelLoad
+import xyz.fmdc.arw.baseclass.IParallelModelLoad
 
 abstract class ModelNormalModelBase<T : TileEntity> : ModelBase(), IParallelModelLoad {
     abstract val modelName: ResourceLocation

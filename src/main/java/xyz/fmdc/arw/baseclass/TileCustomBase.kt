@@ -1,4 +1,4 @@
-package xyz.fmdc.arw.modcore.baseclass
+package xyz.fmdc.arw.baseclass
 
 import cpw.mods.fml.relauncher.Side
 import cpw.mods.fml.relauncher.SideOnly
@@ -8,7 +8,7 @@ import net.minecraft.network.Packet
 import net.minecraft.network.play.server.S35PacketUpdateTileEntity
 import net.minecraft.tileentity.TileEntity
 import net.minecraft.util.AxisAlignedBB
-import xyz.fmdc.arw.modcore.baseclass.modelblock.ModelNormalBlockContainer
+import xyz.fmdc.arw.baseclass.modelblock.ModelNormalBlockContainer
 
 open class TileCustomBase : TileEntity() {
     @SideOnly(Side.CLIENT)

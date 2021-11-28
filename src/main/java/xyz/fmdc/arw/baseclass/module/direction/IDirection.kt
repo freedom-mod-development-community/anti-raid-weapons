@@ -1,4 +1,4 @@
-package xyz.fmdc.arw.modcore.baseclass.module.direction
+package xyz.fmdc.arw.baseclass.module.direction
 
 import net.minecraft.util.EnumFacing
 import xyz.fmdc.arw.modcore.getFacingFromAngle

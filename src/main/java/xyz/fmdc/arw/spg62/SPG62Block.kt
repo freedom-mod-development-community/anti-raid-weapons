@@ -1,7 +1,7 @@
 package xyz.fmdc.arw.spg62
 
 import xyz.fmdc.arw.ARWMod
-import xyz.fmdc.arw.modcore.baseclass.modelblock.ModelNormalBlockContainer
+import xyz.fmdc.arw.baseclass.modelblock.ModelNormalBlockContainer
 
 class SPG62Block : ModelNormalBlockContainer(tileEntityClass = SPG62Tile::class.java) {
     init {

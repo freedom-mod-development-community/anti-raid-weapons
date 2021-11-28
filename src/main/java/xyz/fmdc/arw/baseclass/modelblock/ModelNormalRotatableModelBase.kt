@@ -1,13 +1,13 @@
-package xyz.fmdc.arw.modcore.baseclass.modelblock
+package xyz.fmdc.arw.baseclass.modelblock
 
 import cpw.mods.fml.client.FMLClientHandler
 import net.minecraft.tileentity.TileEntity
 import org.lwjgl.opengl.GL11
-import xyz.fmdc.arw.modcore.baseclass.module.direction.IDirection
-import xyz.fmdc.arw.modcore.baseclass.module.rotatable.IRotatablePitch
-import xyz.fmdc.arw.modcore.baseclass.module.rotatable.IRotatableYaw
-import xyz.fmdc.arw.modcore.baseclass.module.rotatable.pitchDeg
-import xyz.fmdc.arw.modcore.baseclass.module.rotatable.yawDeg
+import xyz.fmdc.arw.baseclass.module.direction.IDirection
+import xyz.fmdc.arw.baseclass.module.rotatable.IRotatablePitch
+import xyz.fmdc.arw.baseclass.module.rotatable.IRotatableYaw
+import xyz.fmdc.arw.baseclass.module.rotatable.pitchDeg
+import xyz.fmdc.arw.baseclass.module.rotatable.yawDeg
 
 abstract class ModelNormalRotatableModelBase<T : TileEntity> : ModelNormalModelBase<T>() {
     override fun renderBase() {
