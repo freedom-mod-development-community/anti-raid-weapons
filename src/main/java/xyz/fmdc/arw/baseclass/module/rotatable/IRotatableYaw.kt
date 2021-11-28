@@ -12,9 +12,9 @@ interface IRotatableYaw {
     }
 }
 
-private var _yawDeg: Double = 0.0
+private var backingYawDeg: Double = 0.0
 var IRotatableYaw.yawDeg: Double
-    get() = _yawDeg
+    get() = backingYawDeg
     set(value) {
-        _yawDeg = value
+        backingYawDeg = value
     }

@@ -12,10 +12,10 @@ interface IRotatablePitch {
     }
 }
 
-private var _pitchDeg: Double = 0.0
+private var backingPitchDeg: Double = 0.0
 var IRotatablePitch.pitchDeg: Double
-    get() = _pitchDeg
+    get() = backingPitchDeg
     set(value) {
-        _pitchDeg = value
+        backingPitchDeg = value
     }
 

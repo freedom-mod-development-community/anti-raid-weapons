@@ -26,9 +26,9 @@ interface IDirection {
     }
 }
 
-private var _facing: EnumFacing = EnumFacing.UP
+private var backingFacing: EnumFacing = EnumFacing.UP
 var IDirection.facing: EnumFacing
-    get() = _facing
+    get() = backingFacing
     set(value) {
-        _facing = value
+        backingFacing = value
     }
