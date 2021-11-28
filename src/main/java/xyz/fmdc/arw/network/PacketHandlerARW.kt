@@ -6,13 +6,15 @@ import cpw.mods.fml.common.network.simpleimpl.IMessageHandler
 import cpw.mods.fml.relauncher.Side
 import net.minecraft.entity.player.EntityPlayerMP
 import xyz.fmdc.arw.ARWMod
+import xyz.fmdc.arw.modcore.baseclass.module.rotatable.SyncAngleMessage
 
 object PacketHandlerARW {
     private val INSTANCE = NetworkRegistry.INSTANCE.newSimpleChannel(ARWMod.DOMAIN)
 
 
     fun init() {
-
+        registerMessage(SyncAngleMessage.Companion, SyncAngleMessage::class.java, 0, Side.SERVER)
+        registerMessage(SyncAngleMessage.Companion, SyncAngleMessage::class.java, 0, Side.CLIENT)
     }
 
     private fun <REQ : IMessage, REPLY : IMessage?> registerMessage(

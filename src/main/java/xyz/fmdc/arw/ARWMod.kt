@@ -11,6 +11,7 @@ import net.minecraft.creativetab.CreativeTabs
 import xyz.fmdc.arw.ARWMod.DOMAIN
 import xyz.fmdc.arw.ARWMod.ModName
 import xyz.fmdc.arw.modcore.proxy.AWMProxy
+import xyz.fmdc.arw.network.PacketHandlerARW
 import xyz.fmdc.arw.registry.RegistryBlock
 
 @Mod(modid = DOMAIN, name = ModName)
@@ -40,6 +41,7 @@ object ARWMod {
     @Suppress("UNUSED_PARAMETER")
     fun preInit(event: FMLPreInitializationEvent) {
         RegistryBlock.registerBlock()
+        PacketHandlerARW.init()
     }
 
     /**
