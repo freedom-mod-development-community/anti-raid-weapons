@@ -8,31 +8,29 @@ import cpw.mods.fml.common.event.FMLPreInitializationEvent
 import cpw.mods.fml.common.event.FMLServerStartingEvent
 import cpw.mods.fml.relauncher.Side
 import net.minecraft.creativetab.CreativeTabs
-import xyz.fmdc.arw.ARWMod.Companion.DOMAIN
-import xyz.fmdc.arw.ARWMod.Companion.ModName
+import xyz.fmdc.arw.ARWMod.DOMAIN
+import xyz.fmdc.arw.ARWMod.ModName
 import xyz.fmdc.arw.modcore.proxy.AWMProxy
 import xyz.fmdc.arw.registry.RegistryBlock
 
 @Mod(modid = DOMAIN, name = ModName)
-class ARWMod {
-    companion object {
-        const val DOMAIN = "arw"
-        const val ModName = "AntiRaidWeaponMod"
+object ARWMod {
+    const val DOMAIN = "arw"
+    const val ModName = "AntiRaidWeaponMod"
 
-        @Mod.Instance(ModName)
-        lateinit var instance: ARWMod
+    @Mod.InstanceFactory
+    fun instance() = this
 
-        @SidedProxy(
-            clientSide = "xyz.fmdc.arw.modcore.proxy.AWMClientProxy",
-            serverSide = "xyz.fmdc.arw.modcore.proxy.AWMCommonProxy",
-        )
-        lateinit var proxy: AWMProxy
+    @SidedProxy(
+        clientSide = "xyz.fmdc.arw.modcore.proxy.AWMClientProxy",
+        serverSide = "xyz.fmdc.arw.modcore.proxy.AWMCommonProxy",
+    )
+    lateinit var proxy: AWMProxy
 
-        /**
-         * クリエイティブタブ
-         * */
-        val arwTabs: CreativeTabs = ARWCreativeTab()
-    }
+    /**
+     * クリエイティブタブ
+     * */
+    val arwTabs: CreativeTabs = ARWCreativeTab()
 
     /**
      * ブロック類の登録     *
