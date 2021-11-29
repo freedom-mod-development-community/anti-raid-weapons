@@ -9,7 +9,7 @@ interface IYawRotatable {
         return directionAngDeg
     }
 
-    fun syncAngleSerToCli() {
+    fun syncAngleToClient() {
         PacketHandlerARW.sendPacketAll(SyncAngleMessage(yawDeg, 0.0))
     }
 }

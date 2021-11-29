@@ -9,7 +9,7 @@ interface IPitchRotatable {
         return 0.0
     }
 
-    fun syncAngleSerToCli() {
+    fun syncAngleToClient() {
         PacketHandlerARW.sendPacketAll(SyncAngleMessage(0.0, pitchDeg))
     }
 }
