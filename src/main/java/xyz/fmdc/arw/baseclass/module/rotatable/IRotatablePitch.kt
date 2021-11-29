@@ -3,6 +3,8 @@ package xyz.fmdc.arw.baseclass.module.rotatable
 import xyz.fmdc.arw.network.PacketHandlerARW
 
 interface IRotatablePitch {
+    val moduleRotatablePitch: ModuleRotatablePitch
+
     fun getDefaultPitchDeg(): Double {
         return 0.0
     }
@@ -12,10 +14,4 @@ interface IRotatablePitch {
     }
 }
 
-private var backingPitchDeg: Double = 0.0
-var IRotatablePitch.pitchDeg: Double
-    get() = backingPitchDeg
-    set(value) {
-        backingPitchDeg = value
-    }
 

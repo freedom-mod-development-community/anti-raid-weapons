@@ -3,6 +3,8 @@ package xyz.fmdc.arw.baseclass.module.rotatable
 import xyz.fmdc.arw.network.PacketHandlerARW
 
 interface IRotatableYaw {
+    val moduleRotatableYaw: ModuleRotatableYaw
+
     fun getDefaultYaw(directionAngDeg: Double): Double {
         return directionAngDeg
     }
@@ -11,10 +13,3 @@ interface IRotatableYaw {
         PacketHandlerARW.sendPacketAll(SyncAngleMessage(yawDeg, 0.0))
     }
 }
-
-private var backingYawDeg: Double = 0.0
-var IRotatableYaw.yawDeg: Double
-    get() = backingYawDeg
-    set(value) {
-        backingYawDeg = value
-    }
