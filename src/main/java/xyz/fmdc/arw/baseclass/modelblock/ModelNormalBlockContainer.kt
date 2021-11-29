@@ -18,7 +18,7 @@ import xyz.fmdc.arw.baseclass.module.rotatable.yawDeg
 
 open class ModelNormalBlockContainer(
     material: Material = Material.rock,
-    private val tileEntityClass: Class<out TileEntity>,
+    private val tileEntityClass: Class<out ModelNormalTileEntity>,
 ) : BlockContainer(material) {
     init {
         setCreativeTab(ARWMod.arwTabs)
