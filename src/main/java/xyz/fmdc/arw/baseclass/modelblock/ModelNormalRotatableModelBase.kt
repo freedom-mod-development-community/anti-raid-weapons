@@ -4,8 +4,8 @@ import cpw.mods.fml.client.FMLClientHandler
 import net.minecraft.tileentity.TileEntity
 import org.lwjgl.opengl.GL11
 import xyz.fmdc.arw.baseclass.module.direction.IDirection
-import xyz.fmdc.arw.baseclass.module.rotatable.IRotatablePitch
-import xyz.fmdc.arw.baseclass.module.rotatable.IRotatableYaw
+import xyz.fmdc.arw.baseclass.module.rotatable.IPitchRotatable
+import xyz.fmdc.arw.baseclass.module.rotatable.IYawRotatable
 import xyz.fmdc.arw.baseclass.module.rotatable.pitchDeg
 import xyz.fmdc.arw.baseclass.module.rotatable.yawDeg
 
@@ -44,7 +44,7 @@ abstract class ModelNormalRotatableModelBase<T : TileEntity> : ModelNormalModelB
 
         offsetYaw()
 
-        if (tile is IRotatableYaw) {
+        if (tile is IYawRotatable) {
             val yawDeg = tile.yawDeg
             GL11.glRotated(-yawDeg, 0.0, 1.0, 0.0)
             renderYaw()
@@ -52,7 +52,7 @@ abstract class ModelNormalRotatableModelBase<T : TileEntity> : ModelNormalModelB
 
         offsetPitch()
 
-        if (tile is IRotatablePitch) {
+        if (tile is IPitchRotatable) {
             val pitchDeg = tile.pitchDeg
             GL11.glRotated(-pitchDeg, 1.0, 0.0, 0.0)
             renderPitch()

@@ -1,5 +1,5 @@
 package xyz.fmdc.arw.baseclass.module.rotatable
 
-class ModuleRotatableYaw {
+class ModuleYawRotatable {
     var yawDeg: Double = 0.0
 }

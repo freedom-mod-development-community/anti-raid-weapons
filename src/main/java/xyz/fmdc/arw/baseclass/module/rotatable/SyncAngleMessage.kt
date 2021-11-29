@@ -22,7 +22,7 @@ class SyncAngleMessage(var yawDeg: Double, var pitchDeg: Double) : TileEntityMes
     companion object : IMessageHandler<SyncAngleMessage, IMessage?> {
         override fun onMessage(message: SyncAngleMessage, ctx: MessageContext): IMessage? {
             val tile = message.getTileEntity(ctx)
-            if (tile is IRotatableYaw) {
+            if (tile is IYawRotatable) {
                 tile.yawDeg = message.yawDeg
             }
             if (tile is IRotatableYawPitch) {

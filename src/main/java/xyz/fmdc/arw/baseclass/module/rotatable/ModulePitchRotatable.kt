@@ -1,5 +1,5 @@
 package xyz.fmdc.arw.baseclass.module.rotatable
 
-class ModuleRotatablePitch {
+class ModulePitchRotatable {
     var pitchDeg: Double = 0.0
 }

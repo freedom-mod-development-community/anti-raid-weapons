@@ -11,8 +11,8 @@ import net.minecraft.util.AxisAlignedBB
 import net.minecraft.world.World
 import xyz.fmdc.arw.ARWMod
 import xyz.fmdc.arw.baseclass.module.direction.IDirection
-import xyz.fmdc.arw.baseclass.module.rotatable.IRotatablePitch
-import xyz.fmdc.arw.baseclass.module.rotatable.IRotatableYaw
+import xyz.fmdc.arw.baseclass.module.rotatable.IPitchRotatable
+import xyz.fmdc.arw.baseclass.module.rotatable.IYawRotatable
 import xyz.fmdc.arw.baseclass.module.rotatable.pitchDeg
 import xyz.fmdc.arw.baseclass.module.rotatable.yawDeg
 
@@ -37,12 +37,12 @@ open class ModelNormalBlockContainer(
         val tile = world.getTileEntity(x, y, z)
         if (tile is IDirection) {
             tile.saveReversDirectionData(entity.rotationYaw)
-            if (tile is IRotatableYaw) {
+            if (tile is IYawRotatable) {
                 tile.yawDeg = tile.getDefaultYaw(tile.getDirectionAngle())
                 tile.markDirty()
             }
         }
-        if (tile is IRotatablePitch) {
+        if (tile is IPitchRotatable) {
             tile.pitchDeg = tile.getDefaultPitchDeg()
         }
     }

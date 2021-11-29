@@ -4,8 +4,8 @@ import net.minecraft.nbt.NBTTagCompound
 import xyz.fmdc.arw.baseclass.module.rotatable.*
 
 open class ModelNormalRotatableYawPitchTileEntity : ModelNormalTileEntity(), IRotatableYawPitch {
-    override val moduleRotatableYaw = ModuleRotatableYaw()
-    override val moduleRotatablePitch = ModuleRotatablePitch()
+    override val moduleYawRotatable = ModuleYawRotatable()
+    override val modulePitchRotatable = ModulePitchRotatable()
 
     private val strYawDeg = "yawDeg"
     private val strPitchDeg = "pitchDeg"
