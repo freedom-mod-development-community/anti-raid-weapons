@@ -14,4 +14,16 @@ interface IRotatablePitch {
     }
 }
 
+var IRotatablePitch.pitchDeg: Double
+    get() = moduleRotatablePitch.pitchDeg
+    set(value) {
+        moduleRotatablePitch.pitchDeg = value
+    }
+
+var IRotatablePitch.pitchRad: Double
+    get() = Math.toRadians(moduleRotatablePitch.pitchDeg)
+    set(value) {
+        moduleRotatablePitch.pitchDeg = Math.toDegrees(value)
+    }
+
 
