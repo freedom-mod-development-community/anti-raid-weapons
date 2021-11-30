@@ -9,8 +9,8 @@ import net.minecraft.network.play.server.S35PacketUpdateTileEntity
 import net.minecraft.tileentity.TileEntity
 import net.minecraft.util.AxisAlignedBB
 import xyz.fmdc.arw.baseclass.module.direction.IDirection
-import xyz.fmdc.arw.getDataSyncPacket
-import xyz.fmdc.arw.onDataSyncPacket
+import xyz.fmdc.arw.loadTo
+import xyz.fmdc.arw.newPacketUpdateTileEntity
 
 open class ModelNormalTileEntity : TileEntity(), IDirection {
     private val strDirectionAngDeg = "directionAngDeg"
@@ -40,11 +40,11 @@ open class ModelNormalTileEntity : TileEntity(), IDirection {
     }
 
     override fun getDescriptionPacket(): Packet {
-        return this.getDataSyncPacket()
+        return this.newPacketUpdateTileEntity()
     }
 
     override fun onDataPacket(net: NetworkManager, pkt: S35PacketUpdateTileEntity) {
-        this.onDataSyncPacket(pkt)
+        pkt.loadTo(this)
     }
 
     @SideOnly(Side.CLIENT)

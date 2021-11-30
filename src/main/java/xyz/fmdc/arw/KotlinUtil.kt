@@ -4,7 +4,6 @@ import cpw.mods.fml.common.network.simpleimpl.MessageContext
 import cpw.mods.fml.relauncher.Side
 import net.minecraft.client.Minecraft
 import net.minecraft.nbt.NBTTagCompound
-import net.minecraft.network.Packet
 import net.minecraft.network.play.server.S35PacketUpdateTileEntity
 import net.minecraft.tileentity.TileEntity
 import net.minecraft.util.EnumFacing
@@ -41,12 +40,12 @@ fun EnumFacing.getHorizontalAngle(): Double {
     return HORIZONTALS.indexOf(this) * 90.0
 }
 
-fun TileEntity.getDataSyncPacket(): Packet {
+fun TileEntity.newPacketUpdateTileEntity(): S35PacketUpdateTileEntity {
     val nbtTagCompound = NBTTagCompound()
     writeToNBT(nbtTagCompound)
     return S35PacketUpdateTileEntity(xCoord, yCoord, zCoord, 1, nbtTagCompound)
 }
 
-fun TileEntity.onDataSyncPacket(pkt: S35PacketUpdateTileEntity) {
-    readFromNBT(pkt.func_148857_g())
+fun S35PacketUpdateTileEntity.loadTo(tileEntity: TileEntity) {
+    tileEntity.readFromNBT(func_148857_g())
 }
