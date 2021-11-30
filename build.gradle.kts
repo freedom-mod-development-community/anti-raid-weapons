@@ -46,7 +46,7 @@ tasks.processResources {
         // Replace version and mcversion.
         expand(
             mapOf(
-                "version" to project.version, 
+                "version" to project.version,
                 "mcversion" to project.minecraft.version
             )
         )
@@ -124,7 +124,7 @@ val sourcesJar by tasks.creating(Jar::class) {
 }
 
 // This task creates a .jar file containing a deobfuscated version of this mod, for other developers to use in a development environment.
-val devJar by tasks.creating(Jar::class)  {
+val devJar by tasks.creating(Jar::class) {
     archiveClassifier.set("dev")
     from(sourceSets.main.get().output)
 }
@@ -140,7 +140,7 @@ publishing {
     publications {
         @Suppress("UNUSED_VARIABLE")
         val mavenJava by creating(MavenPublication::class) {
-        // Add any other artifacts here that you would like to publish!
+            // Add any other artifacts here that you would like to publish!
             artifact(tasks.jar) {
                 builtBy(tasks.build)
             }
