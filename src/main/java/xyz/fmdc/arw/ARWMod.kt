@@ -20,6 +20,7 @@ object ARWMod {
     const val ModName = "AntiRaidWeaponMod"
 
     @Mod.InstanceFactory
+    @JvmStatic
     fun instance() = this
 
     @SidedProxy(
