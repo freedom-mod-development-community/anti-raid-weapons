@@ -9,8 +9,11 @@ import xyz.fmdc.arw.baseclass.modelblock.ModelNormalModelBase
 import xyz.fmdc.arw.baseclass.modelblock.ModelNormalRenderer
 import xyz.fmdc.arw.cicelectric.CICElectricModel
 import xyz.fmdc.arw.cicelectric.CICElectricTile
+import xyz.fmdc.arw.nora1c.NORA1CModel
+import xyz.fmdc.arw.nora1c.NORA1CTile
 import xyz.fmdc.arw.spg62.SPG62Model
 import xyz.fmdc.arw.spg62.SPG62Tile
+import java.util.*
 import java.util.concurrent.Executors
 
 @SideOnly(Side.CLIENT)
@@ -21,6 +24,7 @@ object RegistryRenderer {
         //register
         registerNormalRenderer(SPG62Tile::class.java, SPG62Model())
         registerNormalRenderer(CICElectricTile::class.java, CICElectricModel())
+        registerNormalRenderer(NORA1CTile::class.java, NORA1CModel())
 
         //Model Loading
         val exec = Executors.newWorkStealingPool()
