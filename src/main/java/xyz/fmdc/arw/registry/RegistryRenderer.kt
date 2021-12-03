@@ -13,6 +13,8 @@ import xyz.fmdc.arw.nora1c.NORA1CModel
 import xyz.fmdc.arw.nora1c.NORA1CTile
 import xyz.fmdc.arw.norq1.NORQ1Model
 import xyz.fmdc.arw.norq1.NORQ1Tile
+import xyz.fmdc.arw.ops39.OPS39Model
+import xyz.fmdc.arw.ops39.OPS39Tile
 import xyz.fmdc.arw.spg62.SPG62Model
 import xyz.fmdc.arw.spg62.SPG62Tile
 import java.util.*
@@ -29,6 +31,7 @@ object RegistryRenderer {
         registerNormalRenderer(SPG62Tile::class.java, SPG62Model())
         registerNormalRenderer(CICElectricTile::class.java, CICElectricModel())
         registerNormalRenderer(NORA1CTile::class.java, NORA1CModel())
+        registerNormalRenderer(OPS39Tile::class.java, OPS39Model())
 
         //Model Loading
         val exec = Executors.newWorkStealingPool()
