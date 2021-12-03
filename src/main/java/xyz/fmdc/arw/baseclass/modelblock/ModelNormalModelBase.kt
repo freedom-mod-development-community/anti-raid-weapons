@@ -8,6 +8,7 @@ import net.minecraftforge.client.model.AdvancedModelLoader
 import net.minecraftforge.client.model.IModelCustom
 import org.lwjgl.opengl.GL11
 import xyz.fmdc.arw.baseclass.IParallelModelLoad
+import xyz.fmdc.arw.baseclass.module.direction.IDirection
 
 abstract class ModelNormalModelBase<T : TileEntity> : ModelBase(), IParallelModelLoad {
     abstract val modelName: ResourceLocation
@@ -29,7 +30,16 @@ abstract class ModelNormalModelBase<T : TileEntity> : ModelBase(), IParallelMode
         GL11.glTranslated(x + 0.5, y, z + 0.5)
 
         FMLClientHandler.instance().client.renderEngine.bindTexture(texture)
-        renderBase()
+
+        if (tile is IDirection) {
+            val directionYaw = tile.getDirectionAngle()
+            GL11.glRotated(-directionYaw, 0.0, 1.0, 0.0)
+            renderBase()
+            GL11.glRotated(+directionYaw, 0.0, 1.0, 0.0)
+        } else {
+            renderBase()
+        }
+
 
         GL11.glPopMatrix()
     }

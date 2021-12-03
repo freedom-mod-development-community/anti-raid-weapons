@@ -25,7 +25,7 @@ class SyncAngleMessage(var yawDeg: Double, var pitchDeg: Double) : TileEntityMes
             if (tile is IYawRotatable) {
                 tile.yawDeg = message.yawDeg
             }
-            if (tile is IRotatableYawPitch) {
+            if (tile is IYawPitchRotatable) {
                 tile.pitchDeg = message.pitchDeg
             }
             if (ctx.side.isServer) {
