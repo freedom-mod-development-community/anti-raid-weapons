@@ -11,6 +11,8 @@ import xyz.fmdc.arw.cicelectric.CICElectricModel
 import xyz.fmdc.arw.cicelectric.CICElectricTile
 import xyz.fmdc.arw.nora1c.NORA1CModel
 import xyz.fmdc.arw.nora1c.NORA1CTile
+import xyz.fmdc.arw.norq1.NORQ1Model
+import xyz.fmdc.arw.norq1.NORQ1Tile
 import xyz.fmdc.arw.spg62.SPG62Model
 import xyz.fmdc.arw.spg62.SPG62Tile
 import java.util.*
@@ -22,6 +24,8 @@ object RegistryRenderer {
 
     fun registerRenderer() {
         //register
+        registerNormalRenderer(NORA1CTile::class.java, NORA1CModel())
+        registerNormalRenderer(NORQ1Tile::class.java, NORQ1Model())
         registerNormalRenderer(SPG62Tile::class.java, SPG62Model())
         registerNormalRenderer(CICElectricTile::class.java, CICElectricModel())
         registerNormalRenderer(NORA1CTile::class.java, NORA1CModel())
