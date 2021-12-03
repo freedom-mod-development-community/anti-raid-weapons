@@ -21,6 +21,8 @@ import xyz.fmdc.arw.spg62.SPG62Model
 import xyz.fmdc.arw.spg62.SPG62Tile
 import xyz.fmdc.arw.spq9b.SPQ9BModel
 import xyz.fmdc.arw.spq9b.SPQ9BTile
+import xyz.fmdc.arw.usc42.USC42Model
+import xyz.fmdc.arw.usc42.USC42Tile
 import java.util.*
 import java.util.concurrent.Executors
 
@@ -38,6 +40,7 @@ object RegistryRenderer {
         registerNormalRenderer(ORN6ETile::class.java, ORN6EModel())
         registerNormalRenderer(SPG62Tile::class.java, SPG62Model())
         registerNormalRenderer(SPQ9BTile::class.java, SPQ9BModel())
+        registerNormalRenderer(USC42Tile::class.java, USC42Model())
 
         //Model Loading
         val exec = Executors.newWorkStealingPool()

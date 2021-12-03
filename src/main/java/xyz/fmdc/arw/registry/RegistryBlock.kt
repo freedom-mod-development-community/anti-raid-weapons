@@ -17,6 +17,8 @@ import xyz.fmdc.arw.spg62.SPG62Block
 import xyz.fmdc.arw.spg62.SPG62Tile
 import xyz.fmdc.arw.spq9b.SPQ9BBlock
 import xyz.fmdc.arw.spq9b.SPQ9BTile
+import xyz.fmdc.arw.usc42.USC42Block
+import xyz.fmdc.arw.usc42.USC42Tile
 
 object RegistryBlock {
     fun registerBlock() {
@@ -27,6 +29,7 @@ object RegistryBlock {
         registerBlock(ORN6EBlock(), ORN6ETile::class.java)
         registerBlock(SPG62Block(), SPG62Tile::class.java)
         registerBlock(SPQ9BBlock(), SPQ9BTile::class.java)
+        registerBlock(USC42Block(), USC42Tile::class.java)
     }
 
     private fun registerBlock(block: Block, tileEntityClass: Class<out TileEntity>) {
