@@ -7,7 +7,7 @@ class NORQ1Block : ModelNormalBlockContainer(tileEntityClass = NORQ1Tile::class.
     init {
         setBlockName("norq_1")
         setBlockTextureName(ARWMod.DOMAIN + ":norq_1")
-        setBlockBoundsSize(1.75f, 2.5f)
-        setSelectedBoundSize(1.75, 2.5)
+        setBlockBoundsSize(1.5f, 1.75f)
+        setSelectedBoundSize(1.5, 1.75)
     }
 }
