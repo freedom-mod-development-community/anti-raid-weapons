@@ -19,6 +19,8 @@ import xyz.fmdc.arw.orn6e.ORN6EModel
 import xyz.fmdc.arw.orn6e.ORN6ETile
 import xyz.fmdc.arw.spg62.SPG62Model
 import xyz.fmdc.arw.spg62.SPG62Tile
+import xyz.fmdc.arw.spq9b.SPQ9BModel
+import xyz.fmdc.arw.spq9b.SPQ9BTile
 import java.util.*
 import java.util.concurrent.Executors
 
@@ -30,11 +32,12 @@ object RegistryRenderer {
         //register
         registerNormalRenderer(NORA1CTile::class.java, NORA1CModel())
         registerNormalRenderer(NORQ1Tile::class.java, NORQ1Model())
-        registerNormalRenderer(SPG62Tile::class.java, SPG62Model())
         registerNormalRenderer(CICElectricTile::class.java, CICElectricModel())
         registerNormalRenderer(NORA1CTile::class.java, NORA1CModel())
         registerNormalRenderer(OPS39Tile::class.java, OPS39Model())
         registerNormalRenderer(ORN6ETile::class.java, ORN6EModel())
+        registerNormalRenderer(SPG62Tile::class.java, SPG62Model())
+        registerNormalRenderer(SPQ9BTile::class.java, SPQ9BModel())
 
         //Model Loading
         val exec = Executors.newWorkStealingPool()
