@@ -29,7 +29,6 @@ abstract class ModelNormalRotatableModelBase<T : TileEntity> : ModelNormalModelB
     override fun render(tile: T, x: Double, y: Double, z: Double) {
         GL11.glPushMatrix()
         GL11.glTranslated(x + 0.5, y, z + 0.5)
-        //GL11.glScaled(100.0, 100.0, 100.0)
 
         FMLClientHandler.instance().client.renderEngine.bindTexture(texture)
 

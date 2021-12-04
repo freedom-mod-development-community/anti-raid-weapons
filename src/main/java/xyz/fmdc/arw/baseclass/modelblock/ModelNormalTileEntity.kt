@@ -9,10 +9,13 @@ import net.minecraft.network.play.server.S35PacketUpdateTileEntity
 import net.minecraft.tileentity.TileEntity
 import net.minecraft.util.AxisAlignedBB
 import xyz.fmdc.arw.baseclass.module.direction.IDirection
+import xyz.fmdc.arw.baseclass.module.direction.ModuleDirection
 import xyz.fmdc.arw.loadTo
 import xyz.fmdc.arw.newPacketUpdateTileEntity
 
 open class ModelNormalTileEntity : TileEntity(), IDirection {
+    override val moduleDirection = ModuleDirection()
+
     private val strDirectionAngDeg = "directionAngDeg"
 
     override fun readFromNBT(nbt: NBTTagCompound) {
@@ -27,6 +30,9 @@ open class ModelNormalTileEntity : TileEntity(), IDirection {
 
     @SideOnly(Side.CLIENT)
     override fun getRenderBoundingBox(): AxisAlignedBB {
+        if (this.blockType == null) {
+            return super.getRenderBoundingBox()
+        }
         val blockType = this.blockType as ModelNormalBlockContainer
         val selectBoundsHalfWide = blockType.selectBoundsHalfWide + 1
         val selectBoundsHeight = blockType.selectBoundsHeight + 1

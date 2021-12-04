@@ -5,6 +5,8 @@ import xyz.fmdc.arw.getFacingFromAngle
 import xyz.fmdc.arw.getHorizontalAngle
 
 interface IDirection {
+    val moduleDirection: ModuleDirection
+
     fun saveReversDirectionData(angDeg: Float) {
         saveReversDirectionData(angDeg.toDouble())
     }
@@ -26,9 +28,8 @@ interface IDirection {
     }
 }
 
-private var backingFacing: EnumFacing = EnumFacing.UP
 var IDirection.facing: EnumFacing
-    get() = backingFacing
+    get() = moduleDirection.facing
     set(value) {
-        backingFacing = value
+        moduleDirection.facing = value
     }

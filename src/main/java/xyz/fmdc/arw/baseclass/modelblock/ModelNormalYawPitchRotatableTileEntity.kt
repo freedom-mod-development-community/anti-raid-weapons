@@ -3,7 +3,7 @@ package xyz.fmdc.arw.baseclass.modelblock
 import net.minecraft.nbt.NBTTagCompound
 import xyz.fmdc.arw.baseclass.module.rotatable.*
 
-open class ModelNormalRotatableYawPitchTileEntity : ModelNormalTileEntity(), IRotatableYawPitch {
+open class ModelNormalYawPitchRotatableTileEntity : ModelNormalTileEntity(), IYawPitchRotatable {
     override val moduleYawRotatable = ModuleYawRotatable()
     override val modulePitchRotatable = ModulePitchRotatable()
 
