@@ -25,19 +25,22 @@ import java.util.regex.Pattern
  * Wavefront Object importer
  * Based heavily off of the specifications found at http://en.wikipedia.org/wiki/Wavefront_.obj_file
  */
+//TODO: Split parser and parsed object for small memory
 class WavefrontObject : IModelCustom {
-    private val vertexPattern =
-        Pattern.compile("(v( (\\-){0,1}\\d+(\\.\\d+)?){3,4} *\\n)|(v( (\\-){0,1}\\d+(\\.\\d+)?){3,4} *$)")
-    private val vertexNormalPattern =
-        Pattern.compile("(vn( (\\-){0,1}\\d+(\\.\\d+)?){3,4} *\\n)|(vn( (\\-){0,1}\\d+(\\.\\d+)?){3,4} *$)")
-    private val textureCoordinatePattern =
-        Pattern.compile("(vt( (\\-){0,1}\\d+\\.\\d+){2,3} *\\n)|(vt( (\\-){0,1}\\d+(\\.\\d+)?){2,3} *$)")
-    private val face_V_VT_VN_Pattern =
-        Pattern.compile("(f( \\d+/\\d+/\\d+){3,4} *\\n)|(f( \\d+/\\d+/\\d+){3,4} *$)")
-    private val face_V_VT_Pattern = Pattern.compile("(f( \\d+/\\d+){3,4} *\\n)|(f( \\d+/\\d+){3,4} *$)")
-    private val face_V_VN_Pattern = Pattern.compile("(f( \\d+//\\d+){3,4} *\\n)|(f( \\d+//\\d+){3,4} *$)")
-    private val face_V_Pattern = Pattern.compile("(f( \\d+){3,4} *\\n)|(f( \\d+){3,4} *$)")
-    private val groupObjectPattern = Pattern.compile("([go]( [\\w\\d\\.]+) *\\n)|([go]( [\\w\\d\\.]+) *$)")
+    companion object {
+        private val vertexPattern =
+            Pattern.compile("(v( (\\-){0,1}\\d+(\\.\\d+)?){3,4} *\\n)|(v( (\\-){0,1}\\d+(\\.\\d+)?){3,4} *$)")
+        private val vertexNormalPattern =
+            Pattern.compile("(vn( (\\-){0,1}\\d+(\\.\\d+)?){3,4} *\\n)|(vn( (\\-){0,1}\\d+(\\.\\d+)?){3,4} *$)")
+        private val textureCoordinatePattern =
+            Pattern.compile("(vt( (\\-){0,1}\\d+\\.\\d+){2,3} *\\n)|(vt( (\\-){0,1}\\d+(\\.\\d+)?){2,3} *$)")
+        private val face_V_VT_VN_Pattern =
+            Pattern.compile("(f( \\d+/\\d+/\\d+){3,4} *\\n)|(f( \\d+/\\d+/\\d+){3,4} *$)")
+        private val face_V_VT_Pattern = Pattern.compile("(f( \\d+/\\d+){3,4} *\\n)|(f( \\d+/\\d+){3,4} *$)")
+        private val face_V_VN_Pattern = Pattern.compile("(f( \\d+//\\d+){3,4} *\\n)|(f( \\d+//\\d+){3,4} *$)")
+        private val face_V_Pattern = Pattern.compile("(f( \\d+){3,4} *\\n)|(f( \\d+){3,4} *$)")
+        private val groupObjectPattern = Pattern.compile("([go]( [\\w\\d\\.]+) *\\n)|([go]( [\\w\\d\\.]+) *$)")
+    }
 
     private var vertexMatcher: Matcher? = null
     private var vertexNormalMatcher: Matcher? = null
@@ -51,7 +54,7 @@ class WavefrontObject : IModelCustom {
     var vertices = ArrayList<Vertex>()
     var vertexNormals = ArrayList<Vertex>()
     var textureCoordinates = ArrayList<TextureCoordinate>()
-    var groupObjects = ArrayList<GroupObject?>()
+    var groupObjects = ArrayList<GroupObject>()
     private var currentGroupObject: GroupObject? = null
     private var fileName: String
 
@@ -73,49 +76,45 @@ class WavefrontObject : IModelCustom {
     @Throws(ModelFormatException::class)
     private fun loadObjModel(inputStream: InputStream) {
         var reader: BufferedReader? = null
-        var currentLine: String? = null
         var lineCount = 0
         try {
             reader = BufferedReader(InputStreamReader(inputStream))
-            while (reader.readLine().also { currentLine = it } != null) {
+            for (currentLine in reader.lineSequence()) {
                 lineCount++
-                currentLine = currentLine!!.replace("\\s+".toRegex(), " ").trim { it <= ' ' }
-                if (currentLine!!.startsWith("#") || currentLine!!.length == 0) {
+                if (currentLine.startsWith("#") || currentLine.isEmpty()) {
                     continue
-                } else if (currentLine!!.startsWith("v ")) {
-                    val vertex = parseVertex(currentLine!!, lineCount)
+                } else if (currentLine.startsWith("v ")) {
+                    val vertex = parseVertex(currentLine, lineCount)
                     if (vertex != null) {
                         vertices.add(vertex)
                     }
-                } else if (currentLine!!.startsWith("vn ")) {
-                    val vertex = parseVertexNormal(currentLine!!, lineCount)
+                } else if (currentLine.startsWith("vn ")) {
+                    val vertex = parseVertexNormal(currentLine, lineCount)
                     if (vertex != null) {
                         vertexNormals.add(vertex)
                     }
-                } else if (currentLine!!.startsWith("vt ")) {
-                    val textureCoordinate = parseTextureCoordinate(currentLine!!, lineCount)
+                } else if (currentLine.startsWith("vt ")) {
+                    val textureCoordinate = parseTextureCoordinate(currentLine, lineCount)
                     if (textureCoordinate != null) {
                         textureCoordinates.add(textureCoordinate)
                     }
-                } else if (currentLine!!.startsWith("f ")) {
+                } else if (currentLine.startsWith("f ")) {
                     if (currentGroupObject == null) {
                         currentGroupObject = GroupObject("Default")
                     }
-                    val face = parseFace(currentLine!!, lineCount)
-                    if (face != null) {
-                        currentGroupObject!!.faces.add(face)
-                    }
-                } else if (currentLine!!.startsWith("g ") or currentLine!!.startsWith("o ")) {
-                    val group = parseGroupObject(currentLine!!, lineCount)
+                    val face = parseFace(currentLine, lineCount)
+                    currentGroupObject!!.faces.add(face)
+                } else if (currentLine.startsWith("g ") or currentLine.startsWith("o ")) {
+                    val group = parseGroupObject(currentLine, lineCount)
                     if (group != null) {
                         if (currentGroupObject != null) {
-                            groupObjects.add(currentGroupObject)
+                            groupObjects.add(currentGroupObject!!)
                         }
                     }
                     currentGroupObject = group
                 }
             }
-            groupObjects.add(currentGroupObject)
+            groupObjects.add(currentGroupObject!!)
         } catch (e: IOException) {
             throw ModelFormatException("IO Exception reading model format", e)
         } finally {
@@ -147,7 +146,7 @@ class WavefrontObject : IModelCustom {
     @SideOnly(Side.CLIENT)
     fun tessellateAll(tessellator: Tessellator?) {
         for (groupObject in groupObjects) {
-            groupObject!!.render(tessellator)
+            groupObject.render(tessellator)
         }
     }
 
@@ -155,7 +154,7 @@ class WavefrontObject : IModelCustom {
     override fun renderOnly(vararg groupNames: String) {
         for (groupObject in groupObjects) {
             for (groupName in groupNames) {
-                if (groupName.equals(groupObject!!.name, ignoreCase = true)) {
+                if (groupName.equals(groupObject.name, ignoreCase = true)) {
                     groupObject.render()
                 }
             }
@@ -166,7 +165,7 @@ class WavefrontObject : IModelCustom {
     fun tessellateOnly(tessellator: Tessellator?, vararg groupNames: String) {
         for (groupObject in groupObjects) {
             for (groupName in groupNames) {
-                if (groupName.equals(groupObject!!.name, ignoreCase = true)) {
+                if (groupName.equals(groupObject.name, ignoreCase = true)) {
                     groupObject.render(tessellator)
                 }
             }
@@ -176,7 +175,7 @@ class WavefrontObject : IModelCustom {
     @SideOnly(Side.CLIENT)
     override fun renderPart(partName: String) {
         for (groupObject in groupObjects) {
-            if (partName.equals(groupObject!!.name, ignoreCase = true)) {
+            if (partName.equals(groupObject.name, ignoreCase = true)) {
                 groupObject.render()
             }
         }
@@ -185,7 +184,7 @@ class WavefrontObject : IModelCustom {
     @SideOnly(Side.CLIENT)
     fun tessellatePart(tessellator: Tessellator?, partName: String) {
         for (groupObject in groupObjects) {
-            if (partName.equals(groupObject!!.name, ignoreCase = true)) {
+            if (partName.equals(groupObject.name, ignoreCase = true)) {
                 groupObject.render(tessellator)
             }
         }
@@ -196,12 +195,12 @@ class WavefrontObject : IModelCustom {
         for (groupObject in groupObjects) {
             var skipPart = false
             for (excludedGroupName in excludedGroupNames) {
-                if (excludedGroupName.equals(groupObject!!.name, ignoreCase = true)) {
+                if (excludedGroupName.equals(groupObject.name, ignoreCase = true)) {
                     skipPart = true
                 }
             }
             if (!skipPart) {
-                groupObject!!.render()
+                groupObject.render()
             }
         }
     }
@@ -212,12 +211,12 @@ class WavefrontObject : IModelCustom {
         for (groupObject in groupObjects) {
             exclude = false
             for (excludedGroupName in excludedGroupNames) {
-                if (excludedGroupName.equals(groupObject!!.name, ignoreCase = true)) {
+                if (excludedGroupName.equals(groupObject.name, ignoreCase = true)) {
                     exclude = true
                 }
             }
             if (!exclude) {
-                groupObject!!.render(tessellator)
+                groupObject.render(tessellator)
             }
         }
     }
@@ -354,7 +353,7 @@ class WavefrontObject : IModelCustom {
         var group: GroupObject? = null
         if (isValidGroupObjectLine(line)) {
             val trimmedLine = line.substring(line.indexOf(" ") + 1)
-            if (trimmedLine.length > 0) {
+            if (trimmedLine.isNotEmpty()) {
                 group = GroupObject(trimmedLine)
             }
         } else {
