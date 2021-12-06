@@ -1,5 +1,11 @@
 package xyz.fmdc.arw.modelloder
 
+/**
+ * This file is originally a part of MinecraftForge.
+ * This file is available under and governed by the GNU LESSER GENERAL PUBLIC LICENSE Version 3.
+ * However, the original source was available under Forge Public License (https://github.com/MinecraftForge/MinecraftForge/blob/9274e4fe435cb415099a8216c1b42235f185443e/MinecraftForge-License.txt)
+ */
+
 import cpw.mods.fml.relauncher.Side
 import cpw.mods.fml.relauncher.SideOnly
 import net.minecraft.client.Minecraft
