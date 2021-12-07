@@ -62,7 +62,9 @@ tasks.jar {
     shade.forEach { dep ->
         from(project.zipTree(dep)) {
             exclude("META-INF", "META-INF/**")
-            exclude("LICENSE.txt")
+            exclude("COPYING")
+            exclude("COPYING.LESSER")
+            exclude("NOTICE")
         }
     }
 }
