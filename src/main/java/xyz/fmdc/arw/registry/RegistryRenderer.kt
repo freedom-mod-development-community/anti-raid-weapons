@@ -13,7 +13,7 @@ import java.util.concurrent.Executors
 
 @SideOnly(Side.CLIENT)
 object RegistryRenderer {
-    private var rendererList: ArrayList<IParallelModelLoad> = ArrayList()
+    private var modelLoadList: ArrayList<IParallelModelLoad> = ArrayList()
 
     fun registerRenderer() {
         //register
@@ -21,13 +21,13 @@ object RegistryRenderer {
 
         //Model Loading
         val exec = Executors.newCachedThreadPool()
-        rendererList.forEach {
+        modelLoadList.forEach {
             exec.submit { it.loadModel() }
         }
     }
 
     private fun registerNormalRenderer(tileClass: Class<out TileEntity>, model: ModelNormalModelBase<*>) {
-        rendererList.add(model)
+        modelLoadList.add(model)
         ClientRegistry.bindTileEntitySpecialRenderer(tileClass, ModelNormalRenderer(model))
     }
 }

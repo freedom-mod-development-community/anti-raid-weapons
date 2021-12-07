@@ -4,11 +4,11 @@ import cpw.mods.fml.client.FMLClientHandler
 import net.minecraft.client.model.ModelBase
 import net.minecraft.tileentity.TileEntity
 import net.minecraft.util.ResourceLocation
-import net.minecraftforge.client.model.AdvancedModelLoader
 import net.minecraftforge.client.model.IModelCustom
 import org.lwjgl.opengl.GL11
 import xyz.fmdc.arw.baseclass.IParallelModelLoad
 import xyz.fmdc.arw.baseclass.module.direction.IDirection
+import xyz.fmdc.arw.modelloder.WavefrontObject
 
 abstract class ModelNormalModelBase<T : TileEntity> : ModelBase(), IParallelModelLoad {
     abstract val modelName: ResourceLocation
@@ -20,9 +20,8 @@ abstract class ModelNormalModelBase<T : TileEntity> : ModelBase(), IParallelMode
 
     protected var model: IModelCustom? = null
 
-    @Synchronized
     override fun loadModel() {
-        model = AdvancedModelLoader.loadModel(modelName)
+        model = WavefrontObject(modelName)
     }
 
     open fun render(tile: T, x: Double, y: Double, z: Double) {
@@ -39,7 +38,6 @@ abstract class ModelNormalModelBase<T : TileEntity> : ModelBase(), IParallelMode
         } else {
             renderBase()
         }
-
 
         GL11.glPopMatrix()
     }
