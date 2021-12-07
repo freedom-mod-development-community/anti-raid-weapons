@@ -64,6 +64,7 @@ tasks.jar {
             exclude("META-INF", "META-INF/**")
             exclude("COPYING")
             exclude("COPYING.LESSER")
+            exclude("NOTICE")
         }
     }
 }
