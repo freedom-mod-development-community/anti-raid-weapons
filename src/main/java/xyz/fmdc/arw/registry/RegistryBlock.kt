@@ -5,6 +5,8 @@ import net.minecraft.block.Block
 import net.minecraft.tileentity.TileEntity
 import xyz.fmdc.arw.ansps49.ANSPS49Block
 import xyz.fmdc.arw.ansps49.ANSPS49Tile
+import xyz.fmdc.arw.anuyh3.ANUYH3Block
+import xyz.fmdc.arw.anuyh3.ANUYH3Tile
 import xyz.fmdc.arw.cicelectric.CICElectricBlock
 import xyz.fmdc.arw.cicelectric.CICElectricTile
 import xyz.fmdc.arw.nora1c.NORA1CBlock
@@ -25,6 +27,7 @@ import xyz.fmdc.arw.usc42.USC42Tile
 object RegistryBlock {
     fun registerBlock() {
         registerBlock(ANSPS49Block(), ANSPS49Tile::class.java)
+        registerBlock(ANUYH3Block(), ANUYH3Tile::class.java)
         registerBlock(CICElectricBlock(), CICElectricTile::class.java)
         registerBlock(NORA1CBlock(), NORA1CTile::class.java)
         registerBlock(NORQ1Block(), NORQ1Tile::class.java)
