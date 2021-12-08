@@ -17,9 +17,13 @@ abstract class ModelNormalModelBase<T : TileEntity> : ModelBase(), IParallelMode
         model?.renderAll()
     }
 
-    open fun renderBase(tile: IGlowingModel) {
+    /**
+     * @param light light value (0~240)
+     * @see IGlowingModel.getLight()
+     */
+    open fun renderBaseWithGlowing(light: Int) {
         model?.renderPart("base")
-        model?.renderPart("baselight", tile.getLight())
+        model?.renderPart("baselight", light)
     }
 
     protected open var model: WavefrontObject? = null
@@ -42,7 +46,7 @@ abstract class ModelNormalModelBase<T : TileEntity> : ModelBase(), IParallelMode
             val directionYaw = tile.getDirectionAngle()
             GL11.glRotated(-directionYaw, 0.0, 1.0, 0.0)
             if (tile is IGlowingModel) {
-                renderBase(tile)
+                renderBaseWithGlowing(tile.getLight())
             } else {
                 renderBase()
             }
