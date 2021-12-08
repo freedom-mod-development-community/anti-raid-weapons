@@ -23,9 +23,13 @@ object RegistryRenderer {
         registerNormalRenderer(CICElectricTile::class.java, CICElectricModel())
 
         //Model Loading
-        val exec = Executors.newCachedThreadPool()
-        modelLoadList.forEach {
-            exec.submit { it.loadModel() }
+        val exec = Executors.newWorkStealingPool()
+        try {
+            modelLoadList.forEach {
+                exec.submit { it.loadModel() }
+            }
+        } finally {
+            exec.shutdown()
         }
     }
 
