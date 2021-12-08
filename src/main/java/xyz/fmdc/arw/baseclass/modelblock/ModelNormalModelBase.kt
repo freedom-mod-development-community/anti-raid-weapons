@@ -32,15 +32,15 @@ abstract class ModelNormalModelBase<T : TileEntity> : ModelBase(), IParallelMode
         model = WavefrontObject(modelName)
     }
 
-    open fun bindTexture(tile: T) {
-        FMLClientHandler.instance().client.renderEngine.bindTexture(texture)
+    open fun getTexture(tile: T): ResourceLocation {
+        return texture
     }
 
     open fun render(tile: T, x: Double, y: Double, z: Double) {
         GL11.glPushMatrix()
         GL11.glTranslated(x + 0.5, y, z + 0.5)
 
-        bindTexture(tile)
+        FMLClientHandler.instance().client.renderEngine.bindTexture(getTexture(tile))
 
         if (tile is IDirection) {
             val directionYaw = tile.getDirectionAngle()
