@@ -4,6 +4,8 @@ import cpw.mods.fml.client.registry.ClientRegistry
 import cpw.mods.fml.relauncher.Side
 import cpw.mods.fml.relauncher.SideOnly
 import net.minecraft.tileentity.TileEntity
+import xyz.fmdc.arw.ansps49.ANSPS49Model
+import xyz.fmdc.arw.ansps49.ANSPS49Tile
 import xyz.fmdc.arw.baseclass.IParallelModelLoad
 import xyz.fmdc.arw.baseclass.modelblock.ModelNormalModelBase
 import xyz.fmdc.arw.baseclass.modelblock.ModelNormalRenderer
@@ -32,9 +34,10 @@ object RegistryRenderer {
 
     fun registerRenderer() {
         //register
+        registerNormalRenderer(ANSPS49Tile::class.java, ANSPS49Model())
+        registerNormalRenderer(CICElectricTile::class.java, CICElectricModel())
         registerNormalRenderer(NORA1CTile::class.java, NORA1CModel())
         registerNormalRenderer(NORQ1Tile::class.java, NORQ1Model())
-        registerNormalRenderer(CICElectricTile::class.java, CICElectricModel())
         registerNormalRenderer(NORA1CTile::class.java, NORA1CModel())
         registerNormalRenderer(OPS39Tile::class.java, OPS39Model())
         registerNormalRenderer(ORN6ETile::class.java, ORN6EModel())
