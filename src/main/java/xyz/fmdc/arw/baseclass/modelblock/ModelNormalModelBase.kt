@@ -9,9 +9,9 @@ import xyz.fmdc.arw.baseclass.IParallelModelLoad
 import xyz.fmdc.arw.baseclass.module.direction.IDirection
 import xyz.fmdc.arw.modelloder.WavefrontObject
 
+
 abstract class ModelNormalModelBase<T : TileEntity> : ModelBase(), IParallelModelLoad {
     abstract val modelName: ResourceLocation
-    abstract val texture: ResourceLocation
 
     open fun renderBase() {
         model?.renderAll()
@@ -32,9 +32,7 @@ abstract class ModelNormalModelBase<T : TileEntity> : ModelBase(), IParallelMode
         model = WavefrontObject(modelName)
     }
 
-    open fun getTexture(tile: T): ResourceLocation {
-        return texture
-    }
+    abstract fun getTexture(tile: T): ResourceLocation
 
     open fun render(tile: T, x: Double, y: Double, z: Double) {
         GL11.glPushMatrix()
