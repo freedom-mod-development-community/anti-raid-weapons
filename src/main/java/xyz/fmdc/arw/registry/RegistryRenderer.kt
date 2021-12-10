@@ -7,6 +7,8 @@ import net.minecraft.tileentity.TileEntity
 import xyz.fmdc.arw.baseclass.IParallelModelLoad
 import xyz.fmdc.arw.baseclass.modelblock.ModelNormalModelBase
 import xyz.fmdc.arw.baseclass.modelblock.ModelNormalRenderer
+import xyz.fmdc.arw.cicelectric.CICElectricModel
+import xyz.fmdc.arw.cicelectric.CICElectricTile
 import xyz.fmdc.arw.spg62.SPG62Model
 import xyz.fmdc.arw.spg62.SPG62Tile
 import java.util.concurrent.Executors
@@ -18,11 +20,16 @@ object RegistryRenderer {
     fun registerRenderer() {
         //register
         registerNormalRenderer(SPG62Tile::class.java, SPG62Model())
+        registerNormalRenderer(CICElectricTile::class.java, CICElectricModel())
 
         //Model Loading
-        val exec = Executors.newCachedThreadPool()
-        modelLoadList.forEach {
-            exec.submit { it.loadModel() }
+        val exec = Executors.newWorkStealingPool()
+        try {
+            modelLoadList.forEach {
+                exec.submit { it.loadModel() }
+            }
+        } finally {
+            exec.shutdown()
         }
     }
 

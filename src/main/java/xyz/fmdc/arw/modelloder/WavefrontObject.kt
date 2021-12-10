@@ -188,6 +188,15 @@ class WavefrontObject : IModelCustom {
     }
 
     @SideOnly(Side.CLIENT)
+    fun renderPart(partName: String, light: Int) {
+        for (groupObject in groupObjects) {
+            if (partName.equals(groupObject.name, ignoreCase = true)) {
+                groupObject.render(light)
+            }
+        }
+    }
+
+    @SideOnly(Side.CLIENT)
     fun tessellatePart(tessellator: Tessellator?, partName: String) {
         for (groupObject in groupObjects) {
             if (partName.equals(groupObject.name, ignoreCase = true)) {
@@ -485,5 +494,16 @@ class WavefrontObject : IModelCustom {
         }
         groupObjectMatcher = groupObjectPattern.matcher(line)
         return groupObjectMatcher!!.matches()
+    }
+}
+
+@SideOnly(Side.CLIENT)
+fun GroupObject.render(light: Int) {
+    if (faces.size > 0) {
+        val tessellator = Tessellator.instance
+        tessellator.startDrawing(glDrawingMode)
+        tessellator.setBrightness(light)
+        render(tessellator)
+        tessellator.draw()
     }
 }

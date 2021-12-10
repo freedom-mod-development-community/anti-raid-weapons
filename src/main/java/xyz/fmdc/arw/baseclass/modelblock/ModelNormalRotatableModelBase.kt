@@ -30,7 +30,7 @@ abstract class ModelNormalRotatableModelBase<T : TileEntity> : ModelNormalModelB
         GL11.glPushMatrix()
         GL11.glTranslated(x + 0.5, y, z + 0.5)
 
-        FMLClientHandler.instance().client.renderEngine.bindTexture(texture)
+        FMLClientHandler.instance().client.renderEngine.bindTexture(getTexture(tile))
 
         if (tile is IDirection) {
             val directionYaw = tile.getDirectionAngle()
