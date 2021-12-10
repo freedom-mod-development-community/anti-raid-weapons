@@ -7,7 +7,7 @@ class OPS39Block : ModelNormalBlockContainer(tileEntityClass = OPS39Tile::class.
     init {
         setBlockName("ops_39")
         setBlockTextureName(ARWMod.DOMAIN + ":ops_39")
-        //setBlockBoundsSize(1.75f, 2.5f)
-        //setSelectedBoundSize(1.75, 2.5)
+        setBlockBoundsSize(1.5f, 2.5f)
+        setSelectedBoundSize(1.5, 2.5)
     }
 }
