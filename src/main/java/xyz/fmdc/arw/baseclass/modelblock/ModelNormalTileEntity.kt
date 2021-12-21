@@ -1,13 +1,11 @@
 package xyz.fmdc.arw.baseclass.modelblock
 
-import cpw.mods.fml.relauncher.Side
-import cpw.mods.fml.relauncher.SideOnly
 import net.minecraft.nbt.NBTTagCompound
 import net.minecraft.network.NetworkManager
-import net.minecraft.network.Packet
-import net.minecraft.network.play.server.S35PacketUpdateTileEntity
+import net.minecraft.network.play.server.SPacketUpdateTileEntity
 import net.minecraft.tileentity.TileEntity
-import net.minecraft.util.AxisAlignedBB
+import net.minecraftforge.fml.relauncher.Side
+import net.minecraftforge.fml.relauncher.SideOnly
 import xyz.fmdc.arw.baseclass.module.direction.IDirection
 import xyz.fmdc.arw.baseclass.module.direction.ModuleDirection
 import xyz.fmdc.arw.loadTo
@@ -23,11 +21,13 @@ open class ModelNormalTileEntity : TileEntity(), IDirection {
         this.saveDirectionData(nbt.getDouble(strDirectionAngDeg))
     }
 
-    override fun writeToNBT(nbt: NBTTagCompound) {
+    override fun writeToNBT(nbt: NBTTagCompound): NBTTagCompound = nbt.also {
         super.writeToNBT(nbt)
         nbt.setDouble(strDirectionAngDeg, this.getDirectionAngle())
     }
 
+    /*
+    //TODO migrate or remove
     @SideOnly(Side.CLIENT)
     override fun getRenderBoundingBox(): AxisAlignedBB {
         if (this.blockType == null) {
@@ -44,12 +44,13 @@ open class ModelNormalTileEntity : TileEntity(), IDirection {
             this.yCoord.toDouble() + selectBoundsHeight,
             this.zCoord.toDouble() + selectBoundsHalfWide + 0.5)
     }
+     */
 
-    override fun getDescriptionPacket(): Packet {
+    override fun getUpdatePacket(): SPacketUpdateTileEntity {
         return this.newPacketUpdateTileEntity()
     }
 
-    override fun onDataPacket(net: NetworkManager, pkt: S35PacketUpdateTileEntity) {
+    override fun onDataPacket(net: NetworkManager, pkt: SPacketUpdateTileEntity) {
         pkt.loadTo(this)
     }
 

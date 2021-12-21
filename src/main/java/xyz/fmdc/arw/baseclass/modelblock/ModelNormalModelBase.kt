@@ -1,9 +1,9 @@
 package xyz.fmdc.arw.baseclass.modelblock
 
-import cpw.mods.fml.client.FMLClientHandler
 import net.minecraft.client.model.ModelBase
 import net.minecraft.tileentity.TileEntity
 import net.minecraft.util.ResourceLocation
+import net.minecraftforge.fml.client.FMLClientHandler
 import org.lwjgl.opengl.GL11
 import xyz.fmdc.arw.baseclass.IParallelModelLoad
 import xyz.fmdc.arw.baseclass.module.direction.IDirection

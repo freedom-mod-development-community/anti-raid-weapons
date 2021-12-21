@@ -1,13 +1,12 @@
 package xyz.fmdc.arw.spg62
 
-import xyz.fmdc.arw.ARWMod
+import net.minecraft.util.ResourceLocation
+import xyz.fmdc.arw.ARWMod.DOMAIN
 import xyz.fmdc.arw.baseclass.modelblock.ModelNormalBlockContainer
 
 class SPG62Block : ModelNormalBlockContainer(tileEntityClass = SPG62Tile::class.java) {
     init {
-        setBlockName("spg_62")
-        setBlockTextureName(ARWMod.DOMAIN + ":spg_62")
+        registryName = ResourceLocation(DOMAIN, "spg_62")
         setBlockBoundsSize(2f, 3f)
-        setSelectedBoundSize(2.0, 3.0)
     }
 }

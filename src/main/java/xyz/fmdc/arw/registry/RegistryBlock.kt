@@ -1,8 +1,10 @@
 package xyz.fmdc.arw.registry
 
-import cpw.mods.fml.common.registry.GameRegistry
 import net.minecraft.block.Block
 import net.minecraft.tileentity.TileEntity
+import net.minecraftforge.event.RegistryEvent
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent
+import net.minecraftforge.fml.common.registry.GameRegistry
 import xyz.fmdc.arw.ansps49.ANSPS49Block
 import xyz.fmdc.arw.ansps49.ANSPS49Tile
 import xyz.fmdc.arw.anuyh3.ANUYH3Block
@@ -25,21 +27,23 @@ import xyz.fmdc.arw.usc42.USC42Block
 import xyz.fmdc.arw.usc42.USC42Tile
 
 object RegistryBlock {
-    fun registerBlock() {
-        registerBlock(ANSPS49Block(), ANSPS49Tile::class.java)
-        registerBlock(ANUYH3Block(), ANUYH3Tile::class.java)
-        registerBlock(CICElectricBlock(), CICElectricTile::class.java)
-        registerBlock(NORA1CBlock(), NORA1CTile::class.java)
-        registerBlock(NORQ1Block(), NORQ1Tile::class.java)
-        registerBlock(OPS39Block(), OPS39Tile::class.java)
-        registerBlock(ORN6EBlock(), ORN6ETile::class.java)
-        registerBlock(SPG62Block(), SPG62Tile::class.java)
-        registerBlock(SPQ9BBlock(), SPQ9BTile::class.java)
-        registerBlock(USC42Block(), USC42Tile::class.java)
+    @Suppress("unused")
+    @SubscribeEvent
+    fun onRegister(e: RegistryEvent.Register<Block>) {
+        e.registerBlock(ANSPS49Block(), ANSPS49Tile::class.java)
+        e.registerBlock(ANUYH3Block(), ANUYH3Tile::class.java)
+        e.registerBlock(CICElectricBlock(), CICElectricTile::class.java)
+        e.registerBlock(NORA1CBlock(), NORA1CTile::class.java)
+        e.registerBlock(NORQ1Block(), NORQ1Tile::class.java)
+        e.registerBlock(OPS39Block(), OPS39Tile::class.java)
+        e.registerBlock(ORN6EBlock(), ORN6ETile::class.java)
+        e.registerBlock(SPG62Block(), SPG62Tile::class.java)
+        e.registerBlock(SPQ9BBlock(), SPQ9BTile::class.java)
+        e.registerBlock(USC42Block(), USC42Tile::class.java)
     }
 
-    private fun registerBlock(block: Block, tileEntityClass: Class<out TileEntity>) {
-        GameRegistry.registerBlock(block, block.unlocalizedName)
-        GameRegistry.registerTileEntity(tileEntityClass, block.unlocalizedName)
+    private fun RegistryEvent.Register<Block>.registerBlock(block: Block, tileEntityClass: Class<out TileEntity>) {
+        registry.register(block)
+        GameRegistry.registerTileEntity(tileEntityClass, block.registryName)
     }
 }

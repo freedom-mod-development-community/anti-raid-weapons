@@ -1,6 +1,7 @@
 package xyz.fmdc.arw
 
 import net.minecraft.creativetab.CreativeTabs
+import net.minecraftforge.common.MinecraftForge
 import net.minecraftforge.fml.common.FMLCommonHandler
 import net.minecraftforge.fml.common.Mod
 import net.minecraftforge.fml.common.SidedProxy
@@ -41,7 +42,7 @@ object ARWMod {
     @Mod.EventHandler
     @Suppress("UNUSED_PARAMETER")
     fun preInit(event: FMLPreInitializationEvent) {
-        RegistryBlock.registerBlock()
+        MinecraftForge.EVENT_BUS.register(RegistryBlock)
         PacketHandlerARW.init()
     }
 

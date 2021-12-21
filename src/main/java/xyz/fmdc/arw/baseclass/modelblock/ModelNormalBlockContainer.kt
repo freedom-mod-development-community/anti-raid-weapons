@@ -1,13 +1,14 @@
 package xyz.fmdc.arw.baseclass.modelblock
 
-import cpw.mods.fml.relauncher.Side
-import cpw.mods.fml.relauncher.SideOnly
 import net.minecraft.block.BlockContainer
 import net.minecraft.block.material.Material
+import net.minecraft.block.state.IBlockState
 import net.minecraft.entity.EntityLivingBase
 import net.minecraft.item.ItemStack
 import net.minecraft.tileentity.TileEntity
-import net.minecraft.util.AxisAlignedBB
+import net.minecraft.util.math.AxisAlignedBB
+import net.minecraft.util.math.BlockPos
+import net.minecraft.world.IBlockAccess
 import net.minecraft.world.World
 import xyz.fmdc.arw.ARWMod
 import xyz.fmdc.arw.baseclass.module.direction.IDirection
@@ -17,26 +18,25 @@ import xyz.fmdc.arw.baseclass.module.rotatable.pitchDeg
 import xyz.fmdc.arw.baseclass.module.rotatable.yawDeg
 
 open class ModelNormalBlockContainer(
-    material: Material = Material.rock,
+    material: Material = Material.ROCK,
     private val tileEntityClass: Class<out ModelNormalTileEntity>,
 ) : BlockContainer(material) {
     init {
-        setCreativeTab(ARWMod.arwTabs)
+        creativeTab = ARWMod.arwTabs
     }
 
 
     override fun onBlockPlacedBy(
-        world: World,
-        x: Int,
-        y: Int,
-        z: Int,
-        entity: EntityLivingBase,
-        itemStack: ItemStack?,
+        worldIn: World,
+        pos: BlockPos,
+        state: IBlockState,
+        placer: EntityLivingBase,
+        stack: ItemStack,
     ) {
-        super.onBlockPlacedBy(world, x, y, z, entity, itemStack)
-        val tile = world.getTileEntity(x, y, z)
+        super.onBlockPlacedBy(worldIn, pos, state, placer, stack)
+        val tile = worldIn.getTileEntity(pos)
         if (tile is IDirection) {
-            tile.saveReversDirectionData(entity.rotationYaw)
+            tile.saveReversDirectionData(placer.rotationYaw)
             if (tile is IYawRotatable) {
                 tile.yawDeg = tile.getDefaultYaw(tile.getDirectionAngle())
                 tile.markDirty()
@@ -47,47 +47,23 @@ open class ModelNormalBlockContainer(
         }
     }
 
+    private lateinit var boundingBox: AxisAlignedBB
     fun setBlockBoundsSize(wide: Float, height: Float) {
         val halfWide = wide / 2
-        setBlockBounds(-halfWide + 0.5f, 0f, -halfWide + 0.5f, halfWide + 0.5f, height, halfWide + 0.5f)
+        boundingBox = AxisAlignedBB(
+            -halfWide + 0.5, 0.0, -halfWide + 0.5,
+            +halfWide + 0.5, +height.toDouble(), +halfWide + 0.5)
     }
 
-    var selectBoundsHalfWide: Double = 1.0
-    var selectBoundsHeight: Double = 1.0
-    fun setSelectedBoundSize(wide: Double, height: Double) {
-        selectBoundsHalfWide = wide / 2
-        selectBoundsHeight = height
-    }
-
-    @SideOnly(Side.CLIENT)
-    override fun getSelectedBoundingBoxFromPool(
-        world: World?,
-        x: Int,
-        y: Int,
-        z: Int,
-    ): AxisAlignedBB {
-        return AxisAlignedBB.getBoundingBox(
-            x.toDouble() - selectBoundsHalfWide + 0.5,
-            y.toDouble(),
-            z.toDouble() - selectBoundsHalfWide + 0.5,
-            x.toDouble() + selectBoundsHalfWide + 0.5,
-            y.toDouble() + selectBoundsHeight,
-            z.toDouble() + selectBoundsHalfWide + 0.5)
+    override fun getBoundingBox(state: IBlockState, source: IBlockAccess, pos: BlockPos): AxisAlignedBB {
+        return boundingBox
     }
 
     override fun createNewTileEntity(p_149915_1_: World?, p_149915_2_: Int): TileEntity {
         return tileEntityClass.newInstance()
     }
 
-    override fun renderAsNormalBlock(): Boolean {
-        return false
-    }
-
-    override fun getRenderType(): Int {
-        return -1
-    }
-
-    override fun isOpaqueCube(): Boolean {
+    override fun isOpaqueCube(state: IBlockState): Boolean {
         return false
     }
 }
