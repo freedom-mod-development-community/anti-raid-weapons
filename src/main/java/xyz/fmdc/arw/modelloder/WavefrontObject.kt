@@ -6,17 +6,11 @@
 
 package xyz.fmdc.arw.modelloder
 
-import cpw.mods.fml.relauncher.Side
-import cpw.mods.fml.relauncher.SideOnly
 import net.minecraft.client.Minecraft
 import net.minecraft.client.renderer.Tessellator
 import net.minecraft.util.ResourceLocation
-import net.minecraftforge.client.model.IModelCustom
-import net.minecraftforge.client.model.ModelFormatException
-import net.minecraftforge.client.model.obj.Face
-import net.minecraftforge.client.model.obj.GroupObject
-import net.minecraftforge.client.model.obj.TextureCoordinate
-import net.minecraftforge.client.model.obj.Vertex
+import net.minecraftforge.fml.relauncher.Side
+import net.minecraftforge.fml.relauncher.SideOnly
 import org.lwjgl.opengl.GL11
 import java.io.BufferedReader
 import java.io.IOException
@@ -27,12 +21,14 @@ import java.util.regex.Matcher
 import java.util.regex.Pattern
 
 
+// Currently this is set of empty methods
+// TODO: migration
 /**
  * Wavefront Object importer
  * Based heavily off of the specifications found at http://en.wikipedia.org/wiki/Wavefront_.obj_file
  */
 //TODO: Split parser and parsed object for small memory
-class WavefrontObject : IModelCustom {
+class WavefrontObject /*: IModelCustom*/ {
     companion object {
         private val vertexPattern =
             Pattern.compile("(v( (\\-){0,1}\\d+(\\.\\d+)?){3,4} *\\n)|(v( (\\-){0,1}\\d+(\\.\\d+)?){3,4} *$)")
@@ -56,15 +52,17 @@ class WavefrontObject : IModelCustom {
     private var face_V_VN_Matcher: Matcher? = null
     private var face_V_Matcher: Matcher? = null
     private var groupObjectMatcher: Matcher? = null
-
+/*
     var vertices = ArrayList<Vertex>()
     var vertexNormals = ArrayList<Vertex>()
     var textureCoordinates = ArrayList<TextureCoordinate>()
     var groupObjects = ArrayList<GroupObject>()
     private var currentGroupObject: GroupObject? = null
     private var fileName: String
+ */
 
     constructor(resource: ResourceLocation) {
+        /*
         fileName = resource.toString()
         try {
             val res = Minecraft.getMinecraft().resourceManager.getResource(resource)
@@ -72,15 +70,18 @@ class WavefrontObject : IModelCustom {
         } catch (e: IOException) {
             throw ModelFormatException("IO Exception reading model format", e)
         }
+         */
     }
 
     constructor(filename: String, inputStream: InputStream) {
+        /*
         fileName = filename
         loadObjModel(inputStream)
+        */
     }
 
-    @Throws(ModelFormatException::class)
-    private fun loadObjModel(inputStream: InputStream) {
+    /*@Throws(ModelFormatException::class)*/
+    private fun loadObjModel(inputStream: InputStream) {/*
         var reader: BufferedReader? = null
         var lineCount = 0
         try {
@@ -134,11 +135,11 @@ class WavefrontObject : IModelCustom {
             } catch (e: IOException) {
                 // hush
             }
-        }
+        }*/
     }
 
     @SideOnly(Side.CLIENT)
-    override fun renderAll() {
+    /*override*/ fun renderAll() {/*
         val tessellator = Tessellator.instance
         if (currentGroupObject != null) {
             tessellator.startDrawing(currentGroupObject!!.glDrawingMode)
@@ -146,68 +147,68 @@ class WavefrontObject : IModelCustom {
             tessellator.startDrawing(GL11.GL_TRIANGLES)
         }
         tessellateAll(tessellator)
-        tessellator.draw()
+        tessellator.draw()*/
     }
 
     @SideOnly(Side.CLIENT)
-    fun tessellateAll(tessellator: Tessellator?) {
+    fun tessellateAll(tessellator: Tessellator?) {/*
         for (groupObject in groupObjects) {
             groupObject.render(tessellator)
-        }
+        }*/
     }
 
     @SideOnly(Side.CLIENT)
-    override fun renderOnly(vararg groupNames: String) {
+    /*override*/ fun renderOnly(vararg groupNames: String) {/*
         for (groupObject in groupObjects) {
             for (groupName in groupNames) {
                 if (groupName.equals(groupObject.name, ignoreCase = true)) {
                     groupObject.render()
                 }
             }
-        }
+        }*/
     }
 
     @SideOnly(Side.CLIENT)
     fun tessellateOnly(tessellator: Tessellator?, vararg groupNames: String) {
-        for (groupObject in groupObjects) {
+        /*for (groupObject in groupObjects) {
             for (groupName in groupNames) {
                 if (groupName.equals(groupObject.name, ignoreCase = true)) {
                     groupObject.render(tessellator)
                 }
             }
-        }
+        }*/
     }
 
     @SideOnly(Side.CLIENT)
-    override fun renderPart(partName: String) {
-        for (groupObject in groupObjects) {
+    /*override*/ fun renderPart(partName: String) {
+        /*for (groupObject in groupObjects) {
             if (partName.equals(groupObject.name, ignoreCase = true)) {
                 groupObject.render()
             }
-        }
+        }*/
     }
 
     @SideOnly(Side.CLIENT)
     fun renderPart(partName: String, light: Int) {
-        for (groupObject in groupObjects) {
+        /*for (groupObject in groupObjects) {
             if (partName.equals(groupObject.name, ignoreCase = true)) {
                 groupObject.render(light)
             }
-        }
+        }*/
     }
 
     @SideOnly(Side.CLIENT)
     fun tessellatePart(tessellator: Tessellator?, partName: String) {
-        for (groupObject in groupObjects) {
+        /*for (groupObject in groupObjects) {
             if (partName.equals(groupObject.name, ignoreCase = true)) {
                 groupObject.render(tessellator)
             }
-        }
+        }*/
     }
 
     @SideOnly(Side.CLIENT)
-    override fun renderAllExcept(vararg excludedGroupNames: String) {
-        for (groupObject in groupObjects) {
+    /*override*/ fun renderAllExcept(vararg excludedGroupNames: String) {
+        /*for (groupObject in groupObjects) {
             var skipPart = false
             for (excludedGroupName in excludedGroupNames) {
                 if (excludedGroupName.equals(groupObject.name, ignoreCase = true)) {
@@ -217,12 +218,12 @@ class WavefrontObject : IModelCustom {
             if (!skipPart) {
                 groupObject.render()
             }
-        }
+        }*/
     }
 
     @SideOnly(Side.CLIENT)
     fun tessellateAllExcept(tessellator: Tessellator?, vararg excludedGroupNames: String) {
-        var exclude: Boolean
+        /*var exclude: Boolean
         for (groupObject in groupObjects) {
             exclude = false
             for (excludedGroupName in excludedGroupNames) {
@@ -233,9 +234,9 @@ class WavefrontObject : IModelCustom {
             if (!exclude) {
                 groupObject.render(tessellator)
             }
-        }
+        }*/
     }
-
+/*
     @Throws(ModelFormatException::class)
     private fun parseVertex(line: String, lineCount: Int): Vertex? {
         var line = line
@@ -495,7 +496,9 @@ class WavefrontObject : IModelCustom {
         groupObjectMatcher = groupObjectPattern.matcher(line)
         return groupObjectMatcher!!.matches()
     }
+*/
 }
+/*
 
 @SideOnly(Side.CLIENT)
 fun GroupObject.render(light: Int) {
@@ -507,3 +510,4 @@ fun GroupObject.render(light: Int) {
         tessellator.draw()
     }
 }
+*/
