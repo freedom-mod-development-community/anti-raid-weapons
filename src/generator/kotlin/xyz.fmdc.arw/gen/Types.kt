@@ -6,9 +6,6 @@ import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.asTypeName
 import java.io.Serializable
 
-val vec3D = ClassName("xyz.fmdc.arw.vector", "Vec3D")
-val vec3I = ClassName("xyz.fmdc.arw.vector", "Vec3I")
-
 val vec2D = ClassName("xyz.fmdc.arw.vector", "Vec2D")
 
 val serializable = Serializable::class.asClassName()
