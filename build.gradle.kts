@@ -67,6 +67,25 @@ tasks.jar {
     }
 }
 
+fun net.minecraftforge.gradle.common.util.RunConfig.commonConfigure() {
+    workingDirectory(project.file("run"))
+    args("--noCoreSearch")
+
+    property("forge.logging.markers", "SCAN,REGISTRIES,REGISTRYDUMP")
+    property("forge.logging.console.level", "debug")
+    //property("fml.coreMods.load", debugCoreMods.joinToString(","))
+    //property("legacy.debugClassLoading", "true")
+    //property("legacy.debugClassLoadingSave", "true")
+}
+
+val runClient = minecraft.runs.create("client") {
+    commonConfigure()
+}
+
+val runServer = minecraft.runs.create("server") {
+    commonConfigure()
+}
+
 val shadowModJar by tasks.creating(com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar::class) {
     dependsOn("reobfJar")
 
