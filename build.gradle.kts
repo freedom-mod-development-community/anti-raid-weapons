@@ -184,3 +184,13 @@ val compileTestKotlin: KotlinCompile by tasks
 compileTestKotlin.kotlinOptions {
     jvmTarget = "1.8"
 }
+
+// workaround for userdev bug
+val copyResourceToClasses by tasks.creating(Copy::class) {
+    tasks.classes.get().dependsOn(this)
+    dependsOn(tasks.processResources)
+    onlyIf { gradle.taskGraph.hasTask(tasks["prepareRuns"]) }
+
+    into("$buildDir/classes/kotlin/main")
+    from(tasks.processResources.get().destinationDir)
+}
