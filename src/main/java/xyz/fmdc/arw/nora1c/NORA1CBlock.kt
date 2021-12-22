@@ -4,7 +4,7 @@ import net.minecraft.util.ResourceLocation
 import xyz.fmdc.arw.ARWMod.DOMAIN
 import xyz.fmdc.arw.baseclass.modelblock.ModelNormalBlockContainer
 
-class NORA1CBlock : ModelNormalBlockContainer(tileEntityClass = NORA1CTile::class.java) {
+object NORA1CBlock : ModelNormalBlockContainer(tileEntityClass = NORA1CTile::class.java) {
     init {
         registryName = ResourceLocation(DOMAIN, "nora_1c")
         setBlockBoundsSize(1.75f, 2.5f)

@@ -4,7 +4,7 @@ import net.minecraft.util.ResourceLocation
 import xyz.fmdc.arw.ARWMod.DOMAIN
 import xyz.fmdc.arw.baseclass.modelblock.ModelNormalBlockContainer
 
-class ANSPS49Block : ModelNormalBlockContainer(tileEntityClass = ANSPS49Tile::class.java) {
+object ANSPS49Block : ModelNormalBlockContainer(tileEntityClass = ANSPS49Tile::class.java) {
     init {
         registryName = ResourceLocation(DOMAIN, "an_sps_49")
         setBlockBoundsSize(3.0f, 5.0f)

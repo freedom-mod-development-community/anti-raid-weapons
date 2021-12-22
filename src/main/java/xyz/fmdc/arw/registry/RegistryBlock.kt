@@ -30,16 +30,16 @@ object RegistryBlock {
     @Suppress("unused")
     @SubscribeEvent
     fun onRegister(e: RegistryEvent.Register<Block>) {
-        e.registerBlock(ANSPS49Block(), ANSPS49Tile::class.java)
-        e.registerBlock(ANUYH3Block(), ANUYH3Tile::class.java)
-        e.registerBlock(CICElectricBlock(), CICElectricTile::class.java)
-        e.registerBlock(NORA1CBlock(), NORA1CTile::class.java)
-        e.registerBlock(NORQ1Block(), NORQ1Tile::class.java)
-        e.registerBlock(OPS39Block(), OPS39Tile::class.java)
-        e.registerBlock(ORN6EBlock(), ORN6ETile::class.java)
-        e.registerBlock(SPG62Block(), SPG62Tile::class.java)
-        e.registerBlock(SPQ9BBlock(), SPQ9BTile::class.java)
-        e.registerBlock(USC42Block(), USC42Tile::class.java)
+        e.registerBlock(ANSPS49Block, ANSPS49Tile::class.java)
+        e.registerBlock(ANUYH3Block, ANUYH3Tile::class.java)
+        e.registerBlock(CICElectricBlock, CICElectricTile::class.java)
+        e.registerBlock(NORA1CBlock, NORA1CTile::class.java)
+        e.registerBlock(NORQ1Block, NORQ1Tile::class.java)
+        e.registerBlock(OPS39Block, OPS39Tile::class.java)
+        e.registerBlock(ORN6EBlock, ORN6ETile::class.java)
+        e.registerBlock(SPG62Block, SPG62Tile::class.java)
+        e.registerBlock(SPQ9BBlock, SPQ9BTile::class.java)
+        e.registerBlock(USC42Block, USC42Tile::class.java)
     }
 
     private fun RegistryEvent.Register<Block>.registerBlock(block: Block, tileEntityClass: Class<out TileEntity>) {
