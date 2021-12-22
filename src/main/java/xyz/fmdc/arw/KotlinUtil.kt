@@ -14,7 +14,6 @@ val MessageContext.currentWorld: World
     get() = when (side!!) {
         Side.SERVER -> serverHandler.player.world
         Side.CLIENT -> Minecraft.getMinecraft().world
-        else -> error("unknown side: $side")
     }
 
 private val HORIZONTALS: Array<EnumFacing> by lazy {
