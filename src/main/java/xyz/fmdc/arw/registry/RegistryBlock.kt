@@ -1,10 +1,17 @@
 package xyz.fmdc.arw.registry
 
 import net.minecraft.block.Block
+import net.minecraft.client.renderer.block.model.ModelResourceLocation
+import net.minecraft.item.Item
+import net.minecraft.item.ItemBlock
 import net.minecraft.tileentity.TileEntity
+import net.minecraftforge.client.event.ModelRegistryEvent
+import net.minecraftforge.client.model.ModelLoader
 import net.minecraftforge.event.RegistryEvent
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent
 import net.minecraftforge.fml.common.registry.GameRegistry
+import net.minecraftforge.fml.relauncher.Side
+import net.minecraftforge.fml.relauncher.SideOnly
 import xyz.fmdc.arw.ansps49.ANSPS49Block
 import xyz.fmdc.arw.ansps49.ANSPS49Tile
 import xyz.fmdc.arw.anuyh3.ANUYH3Block
@@ -42,8 +49,50 @@ object RegistryBlock {
         e.registerBlock(USC42Block, USC42Tile::class.java)
     }
 
+    @Suppress("unused")
+    @SubscribeEvent
+    fun onRegisterItems(e: RegistryEvent.Register<Item>) {
+        e.registerItemBlock(ItemBlock(ANSPS49Block))
+        e.registerItemBlock(ItemBlock(ANUYH3Block))
+        e.registerItemBlock(ItemBlock(CICElectricBlock))
+        e.registerItemBlock(ItemBlock(NORA1CBlock))
+        e.registerItemBlock(ItemBlock(NORQ1Block))
+        e.registerItemBlock(ItemBlock(OPS39Block))
+        e.registerItemBlock(ItemBlock(ORN6EBlock))
+        e.registerItemBlock(ItemBlock(SPG62Block))
+        e.registerItemBlock(ItemBlock(SPQ9BBlock))
+        e.registerItemBlock(ItemBlock(USC42Block))
+    }
+
+    @Suppress("unused")
+    @SideOnly(Side.CLIENT)
+    @SubscribeEvent
+    fun onModelRegistry(e: ModelRegistryEvent) {
+        setCustomModelResourceLocation(ANSPS49Block)
+        setCustomModelResourceLocation(ANUYH3Block)
+        setCustomModelResourceLocation(CICElectricBlock)
+        setCustomModelResourceLocation(NORA1CBlock)
+        setCustomModelResourceLocation(NORQ1Block)
+        setCustomModelResourceLocation(OPS39Block)
+        setCustomModelResourceLocation(ORN6EBlock)
+        setCustomModelResourceLocation(SPG62Block)
+        setCustomModelResourceLocation(SPQ9BBlock)
+        setCustomModelResourceLocation(USC42Block)
+    }
+
     private fun RegistryEvent.Register<Block>.registerBlock(block: Block, tileEntityClass: Class<out TileEntity>) {
         registry.register(block)
         GameRegistry.registerTileEntity(tileEntityClass, block.registryName)
+    }
+
+    private fun RegistryEvent.Register<in ItemBlock>.registerItemBlock(itemblock: ItemBlock) {
+        itemblock.registryName = itemblock.block.registryName
+        registry.register(itemblock)
+    }
+
+    @SideOnly(Side.CLIENT)
+    private fun setCustomModelResourceLocation(block: Block) {
+        ModelLoader.setCustomModelResourceLocation(Item.getItemFromBlock(block), 0,
+            ModelResourceLocation(block.registryName ?: error("no block registry name for $block"), "inventory"))
     }
 }
