@@ -14,6 +14,7 @@ val MessageContext.currentWorld: World
     get() = when (side!!) {
         Side.SERVER -> serverHandler.player.world
         Side.CLIENT -> Minecraft.getMinecraft().world
+        else -> throw AssertionError("Workaround for ForgeGradle or user-dev bug.")
     }
 
 private val HORIZONTALS: Array<EnumFacing> by lazy {
