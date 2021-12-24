@@ -561,7 +561,8 @@ class Face constructor() {
                 offsetV = -offsetV
             }
             buffer.tex(textureCoordinates[i].u + offsetU, textureCoordinates[i].v + offsetV)
-            buffer.normal(faceNormal.x, faceNormal.y, faceNormal.z)
+            val normal = vertexNormals?.get(i) ?: faceNormal
+            buffer.normal(normal.x, normal.y, normal.z)
             buffer.endVertex()
         }
     }
