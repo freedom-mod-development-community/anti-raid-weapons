@@ -7,6 +7,7 @@ import xyz.fmdc.arw.baseclass.modelblock.ModelNormalBlockContainer
 object NORQ1Block : ModelNormalBlockContainer(tileEntityClass = NORQ1Tile::class.java) {
     init {
         registryName = ResourceLocation(DOMAIN, "norq_1")
+        translationKey = "norq_1"
         setBlockBoundsSize(1.5f, 1.75f)
     }
 }

@@ -7,6 +7,7 @@ import xyz.fmdc.arw.baseclass.modelblock.ModelNormalBlockContainer
 object SPG62Block : ModelNormalBlockContainer(tileEntityClass = SPG62Tile::class.java) {
     init {
         registryName = ResourceLocation(DOMAIN, "spg_62")
+        translationKey = "spg_62"
         setBlockBoundsSize(2f, 3f)
     }
 }
