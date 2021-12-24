@@ -6,6 +6,7 @@ import net.minecraft.network.play.server.SPacketUpdateTileEntity
 import net.minecraft.tileentity.TileEntity
 import net.minecraft.util.EnumFacing
 import net.minecraft.util.math.MathHelper
+import net.minecraft.util.math.Vec3d
 import net.minecraft.world.World
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext
 import net.minecraftforge.fml.relauncher.Side
@@ -46,3 +47,6 @@ fun TileEntity.newPacketUpdateTileEntity(): SPacketUpdateTileEntity {
 fun SPacketUpdateTileEntity.loadTo(tileEntity: TileEntity) {
     tileEntity.readFromNBT(getNbtCompound())
 }
+
+operator fun Vec3d.plus(vec: Vec3d): Vec3d = add(vec)
+operator fun Vec3d.minus(vec: Vec3d): Vec3d = subtract(vec)
