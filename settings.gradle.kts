@@ -9,9 +9,8 @@ buildscript {
         }
     }
     dependencies {
-        classpath("com.anatawa12.forge:ForgeGradle:1.2-1.0.+") {
-            isChanging = true
-        }
+        // use latest version by dependabot. dependabot supports dependencies in settings.gradle.kts
+        classpath("net.minecraftforge.gradle:ForgeGradle:5.1.26")
     }
 }
 

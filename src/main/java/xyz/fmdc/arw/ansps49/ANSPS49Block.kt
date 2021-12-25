@@ -1,13 +1,13 @@
 package xyz.fmdc.arw.ansps49
 
-import xyz.fmdc.arw.ARWMod
+import net.minecraft.util.ResourceLocation
+import xyz.fmdc.arw.ARWMod.DOMAIN
 import xyz.fmdc.arw.baseclass.modelblock.ModelNormalBlockContainer
 
-class ANSPS49Block : ModelNormalBlockContainer(tileEntityClass = ANSPS49Tile::class.java) {
+object ANSPS49Block : ModelNormalBlockContainer(tileEntityClass = ANSPS49Tile::class.java) {
     init {
-        setBlockName("an_sps_49")
-        setBlockTextureName(ARWMod.DOMAIN + ":an_sps_49")
+        registryName = ResourceLocation(DOMAIN, "an_sps_49")
+        translationKey = "an_sps_49"
         setBlockBoundsSize(3.0f, 5.0f)
-        setSelectedBoundSize(3.0, 5.0)
     }
 }

@@ -1,19 +1,21 @@
 package xyz.fmdc.arw
 
-import cpw.mods.fml.common.network.simpleimpl.MessageContext
-import cpw.mods.fml.relauncher.Side
 import net.minecraft.client.Minecraft
 import net.minecraft.nbt.NBTTagCompound
-import net.minecraft.network.play.server.S35PacketUpdateTileEntity
+import net.minecraft.network.play.server.SPacketUpdateTileEntity
 import net.minecraft.tileentity.TileEntity
 import net.minecraft.util.EnumFacing
-import net.minecraft.util.MathHelper
+import net.minecraft.util.math.MathHelper
+import net.minecraft.util.math.Vec3d
 import net.minecraft.world.World
+import net.minecraftforge.fml.common.network.simpleimpl.MessageContext
+import net.minecraftforge.fml.relauncher.Side
 
 val MessageContext.currentWorld: World
     get() = when (side!!) {
-        Side.SERVER -> serverHandler.playerEntity.worldObj
-        Side.CLIENT -> Minecraft.getMinecraft().theWorld
+        Side.SERVER -> serverHandler.player.world
+        Side.CLIENT -> Minecraft.getMinecraft().world
+        else -> throw AssertionError("Workaround for ForgeGradle or user-dev bug.")
     }
 
 private val HORIZONTALS: Array<EnumFacing> by lazy {
@@ -33,19 +35,18 @@ fun getFacingFromAngle(angle: Float): EnumFacing {
 }
 
 fun getFacingFromAngle(angle: Double): EnumFacing {
-    return getHorizontal(MathHelper.floor_double(angle / 90.0 + 0.5) and 3)
+    return getHorizontal(MathHelper.floor(angle / 90.0 + 0.5) and 3)
 }
 
-fun EnumFacing.getHorizontalAngle(): Double {
-    return HORIZONTALS.indexOf(this) * 90.0
-}
-
-fun TileEntity.newPacketUpdateTileEntity(): S35PacketUpdateTileEntity {
+fun TileEntity.newPacketUpdateTileEntity(): SPacketUpdateTileEntity {
     val nbtTagCompound = NBTTagCompound()
     writeToNBT(nbtTagCompound)
-    return S35PacketUpdateTileEntity(xCoord, yCoord, zCoord, 1, nbtTagCompound)
+    return SPacketUpdateTileEntity(pos, 1, nbtTagCompound)
 }
 
-fun S35PacketUpdateTileEntity.loadTo(tileEntity: TileEntity) {
-    tileEntity.readFromNBT(func_148857_g())
+fun SPacketUpdateTileEntity.loadTo(tileEntity: TileEntity) {
+    tileEntity.readFromNBT(getNbtCompound())
 }
+
+operator fun Vec3d.plus(vec: Vec3d): Vec3d = add(vec)
+operator fun Vec3d.minus(vec: Vec3d): Vec3d = subtract(vec)

@@ -1,9 +1,9 @@
 package xyz.fmdc.arw.registry
 
-import cpw.mods.fml.client.registry.ClientRegistry
-import cpw.mods.fml.relauncher.Side
-import cpw.mods.fml.relauncher.SideOnly
 import net.minecraft.tileentity.TileEntity
+import net.minecraftforge.fml.client.registry.ClientRegistry
+import net.minecraftforge.fml.relauncher.Side
+import net.minecraftforge.fml.relauncher.SideOnly
 import xyz.fmdc.arw.ansps49.ANSPS49Model
 import xyz.fmdc.arw.ansps49.ANSPS49Tile
 import xyz.fmdc.arw.anuyh3.ANUYH3Model
@@ -59,7 +59,7 @@ object RegistryRenderer {
         }
     }
 
-    private fun registerNormalRenderer(tileClass: Class<out TileEntity>, model: ModelNormalModelBase<*>) {
+    private fun <T : TileEntity> registerNormalRenderer(tileClass: Class<T>, model: ModelNormalModelBase<T>) {
         modelLoadList.add(model)
         ClientRegistry.bindTileEntitySpecialRenderer(tileClass, ModelNormalRenderer(model))
     }

@@ -1,13 +1,13 @@
 package xyz.fmdc.arw.orn6e
 
-import xyz.fmdc.arw.ARWMod
+import net.minecraft.util.ResourceLocation
+import xyz.fmdc.arw.ARWMod.DOMAIN
 import xyz.fmdc.arw.baseclass.modelblock.ModelNormalBlockContainer
 
-class ORN6EBlock : ModelNormalBlockContainer(tileEntityClass = ORN6ETile::class.java) {
+object ORN6EBlock : ModelNormalBlockContainer(tileEntityClass = ORN6ETile::class.java) {
     init {
-        setBlockName("orn_6e")
-        setBlockTextureName(ARWMod.DOMAIN + ":orn_6e")
+        registryName = ResourceLocation(DOMAIN, "orn_6e")
+        translationKey = "orn_6e"
         setBlockBoundsSize(1.5f, 2.0f)
-        setSelectedBoundSize(1.5, 2.0)
     }
 }

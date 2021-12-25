@@ -1,13 +1,13 @@
 package xyz.fmdc.arw.usc42
 
+import net.minecraft.util.ResourceLocation
 import xyz.fmdc.arw.ARWMod
 import xyz.fmdc.arw.baseclass.modelblock.ModelNormalBlockContainer
 
-class USC42Block : ModelNormalBlockContainer(tileEntityClass = USC42Tile::class.java) {
+object USC42Block : ModelNormalBlockContainer(tileEntityClass = USC42Tile::class.java) {
     init {
-        setBlockName("usc_42")
-        setBlockTextureName(ARWMod.DOMAIN + ":usc_42")
+        registryName = ResourceLocation(ARWMod.DOMAIN, "usc_42")
+        translationKey = "usc_42"
         setBlockBoundsSize(1.75f, 2.5f)
-        setSelectedBoundSize(1.75, 2.5)
     }
 }

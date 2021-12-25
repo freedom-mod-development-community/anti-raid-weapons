@@ -16,7 +16,7 @@ open class ModelNormalYawPitchRotatableTileEntity : ModelNormalTileEntity(), IYa
         this.pitchDeg = nbt.getDouble(strPitchDeg)
     }
 
-    override fun writeToNBT(nbt: NBTTagCompound) {
+    override fun writeToNBT(nbt: NBTTagCompound): NBTTagCompound = nbt.also {
         super.writeToNBT(nbt)
         nbt.setDouble(strYawDeg, this.yawDeg)
         nbt.setDouble(strPitchDeg, this.pitchDeg)

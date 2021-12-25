@@ -6,18 +6,16 @@
 
 package xyz.fmdc.arw.modelloder
 
-import cpw.mods.fml.relauncher.Side
-import cpw.mods.fml.relauncher.SideOnly
 import net.minecraft.client.Minecraft
+import net.minecraft.client.renderer.BufferBuilder
 import net.minecraft.client.renderer.Tessellator
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats
 import net.minecraft.util.ResourceLocation
-import net.minecraftforge.client.model.IModelCustom
-import net.minecraftforge.client.model.ModelFormatException
-import net.minecraftforge.client.model.obj.Face
-import net.minecraftforge.client.model.obj.GroupObject
-import net.minecraftforge.client.model.obj.TextureCoordinate
-import net.minecraftforge.client.model.obj.Vertex
+import net.minecraft.util.math.Vec3d
+import net.minecraftforge.fml.relauncher.Side
+import net.minecraftforge.fml.relauncher.SideOnly
 import org.lwjgl.opengl.GL11
+import xyz.fmdc.arw.minus
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStream
@@ -32,7 +30,7 @@ import java.util.regex.Pattern
  * Based heavily off of the specifications found at http://en.wikipedia.org/wiki/Wavefront_.obj_file
  */
 //TODO: Split parser and parsed object for small memory
-class WavefrontObject : IModelCustom {
+class WavefrontObject {
     companion object {
         private val vertexPattern =
             Pattern.compile("(v( (\\-){0,1}\\d+(\\.\\d+)?){3,4} *\\n)|(v( (\\-){0,1}\\d+(\\.\\d+)?){3,4} *$)")
@@ -56,7 +54,6 @@ class WavefrontObject : IModelCustom {
     private var face_V_VN_Matcher: Matcher? = null
     private var face_V_Matcher: Matcher? = null
     private var groupObjectMatcher: Matcher? = null
-
     var vertices = ArrayList<Vertex>()
     var vertexNormals = ArrayList<Vertex>()
     var textureCoordinates = ArrayList<TextureCoordinate>()
@@ -138,26 +135,27 @@ class WavefrontObject : IModelCustom {
     }
 
     @SideOnly(Side.CLIENT)
-    override fun renderAll() {
-        val tessellator = Tessellator.instance
+    fun renderAll() {
+        val tessellator = Tessellator.getInstance()
+        val buffer = tessellator.buffer
         if (currentGroupObject != null) {
-            tessellator.startDrawing(currentGroupObject!!.glDrawingMode)
+            buffer.begin(currentGroupObject!!.glDrawingMode, Face.VERTEX_FORMAT)
         } else {
-            tessellator.startDrawing(GL11.GL_TRIANGLES)
+            buffer.begin(GL11.GL_TRIANGLES, Face.VERTEX_FORMAT)
         }
-        tessellateAll(tessellator)
+        tessellateAll(buffer)
         tessellator.draw()
     }
 
     @SideOnly(Side.CLIENT)
-    fun tessellateAll(tessellator: Tessellator?) {
+    fun tessellateAll(buffer: BufferBuilder) {
         for (groupObject in groupObjects) {
-            groupObject.render(tessellator)
+            groupObject.render(buffer)
         }
     }
 
     @SideOnly(Side.CLIENT)
-    override fun renderOnly(vararg groupNames: String) {
+    fun renderOnly(vararg groupNames: String) {
         for (groupObject in groupObjects) {
             for (groupName in groupNames) {
                 if (groupName.equals(groupObject.name, ignoreCase = true)) {
@@ -168,18 +166,18 @@ class WavefrontObject : IModelCustom {
     }
 
     @SideOnly(Side.CLIENT)
-    fun tessellateOnly(tessellator: Tessellator?, vararg groupNames: String) {
+    fun tessellateOnly(buffer: BufferBuilder, vararg groupNames: String) {
         for (groupObject in groupObjects) {
             for (groupName in groupNames) {
                 if (groupName.equals(groupObject.name, ignoreCase = true)) {
-                    groupObject.render(tessellator)
+                    groupObject.render(buffer)
                 }
             }
         }
     }
 
     @SideOnly(Side.CLIENT)
-    override fun renderPart(partName: String) {
+    fun renderPart(partName: String) {
         for (groupObject in groupObjects) {
             if (partName.equals(groupObject.name, ignoreCase = true)) {
                 groupObject.render()
@@ -197,16 +195,16 @@ class WavefrontObject : IModelCustom {
     }
 
     @SideOnly(Side.CLIENT)
-    fun tessellatePart(tessellator: Tessellator?, partName: String) {
+    fun tessellatePart(buffer: BufferBuilder, partName: String) {
         for (groupObject in groupObjects) {
             if (partName.equals(groupObject.name, ignoreCase = true)) {
-                groupObject.render(tessellator)
+                groupObject.render(buffer)
             }
         }
     }
 
     @SideOnly(Side.CLIENT)
-    override fun renderAllExcept(vararg excludedGroupNames: String) {
+    fun renderAllExcept(vararg excludedGroupNames: String) {
         for (groupObject in groupObjects) {
             var skipPart = false
             for (excludedGroupName in excludedGroupNames) {
@@ -221,7 +219,7 @@ class WavefrontObject : IModelCustom {
     }
 
     @SideOnly(Side.CLIENT)
-    fun tessellateAllExcept(tessellator: Tessellator?, vararg excludedGroupNames: String) {
+    fun tessellateAllExcept(buffer: BufferBuilder, vararg excludedGroupNames: String) {
         var exclude: Boolean
         for (groupObject in groupObjects) {
             exclude = false
@@ -231,7 +229,7 @@ class WavefrontObject : IModelCustom {
                 }
             }
             if (!exclude) {
-                groupObject.render(tessellator)
+                groupObject.render(buffer)
             }
         }
     }
@@ -303,7 +301,6 @@ class WavefrontObject : IModelCustom {
             face = Face()
             val trimmedLine = line.substring(line.indexOf(" ") + 1)
             val tokens = trimmedLine.split(" ").toTypedArray()
-            var subTokens: Array<String>? = null
             if (tokens.size == 3) {
                 if (currentGroupObject!!.glDrawingMode == -1) {
                     currentGroupObject!!.glDrawingMode = GL11.GL_TRIANGLES
@@ -318,45 +315,25 @@ class WavefrontObject : IModelCustom {
                 }
             }
 
+            val subTokens = tokens.map { it.split("/") }
             // f v1/vt1/vn1 v2/vt2/vn2 v3/vt3/vn3 ...
             if (isValidFace_V_VT_VN_Line(line)) {
-                face.vertices = arrayOfNulls(tokens.size)
-                face.textureCoordinates = arrayOfNulls(tokens.size)
-                face.vertexNormals = arrayOfNulls(tokens.size)
-                for (i in tokens.indices) {
-                    subTokens = tokens[i].split("/").toTypedArray()
-                    face.vertices[i] = vertices[subTokens[0].toInt() - 1]
-                    face.textureCoordinates[i] = textureCoordinates[subTokens[1].toInt() - 1]
-                    face.vertexNormals[i] = vertexNormals[subTokens[2].toInt() - 1]
-                }
-                face.faceNormal = face.calculateFaceNormal()
+                face.vertices = Array(tokens.size) { vertices[subTokens[it][0].toInt() - 1] }
+                face.textureCoordinates = Array(tokens.size) { textureCoordinates[subTokens[it][1].toInt() - 1] }
+                face.vertexNormals = Array(tokens.size) { vertexNormals[subTokens[it][2].toInt() - 1] }
             } else if (isValidFace_V_VT_Line(line)) {
-                face.vertices = arrayOfNulls(tokens.size)
-                face.textureCoordinates = arrayOfNulls(tokens.size)
-                for (i in tokens.indices) {
-                    subTokens = tokens[i].split("/").toTypedArray()
-                    face.vertices[i] = vertices[subTokens[0].toInt() - 1]
-                    face.textureCoordinates[i] = textureCoordinates[subTokens[1].toInt() - 1]
-                }
-                face.faceNormal = face.calculateFaceNormal()
+                face.vertices = Array(tokens.size) { vertices[subTokens[it][0].toInt() - 1] }
+                face.textureCoordinates = Array(tokens.size) { textureCoordinates[subTokens[it][1].toInt() - 1] }
             } else if (isValidFace_V_VN_Line(line)) {
-                face.vertices = arrayOfNulls(tokens.size)
-                face.vertexNormals = arrayOfNulls(tokens.size)
-                for (i in tokens.indices) {
-                    subTokens = tokens[i].split("//").toTypedArray()
-                    face.vertices[i] = vertices[subTokens[0].toInt() - 1]
-                    face.vertexNormals[i] = vertexNormals[subTokens[1].toInt() - 1]
-                }
-                face.faceNormal = face.calculateFaceNormal()
+                face.vertices = Array(tokens.size) { vertices[subTokens[it][0].toInt() - 1] }
+                face.vertexNormals = Array(tokens.size) { vertexNormals[subTokens[it][1].toInt() - 1] }
             } else if (isValidFace_V_Line(line)) {
-                face.vertices = arrayOfNulls(tokens.size)
-                for (i in tokens.indices) {
-                    face.vertices[i] = vertices[tokens[i].toInt() - 1]
-                }
-                face.faceNormal = face.calculateFaceNormal()
+                face.vertices = Array(tokens.size) { vertices[tokens[it].toInt() - 1] }
             } else {
                 throw ModelFormatException("Error parsing entry ('$line', line $lineCount) in file '$fileName' - Incorrect format")
             }
+            // force calc normal
+            face.faceNormal
         } else {
             throw ModelFormatException("Error parsing entry ('$line', line $lineCount) in file '$fileName' - Incorrect format")
         }
@@ -377,7 +354,7 @@ class WavefrontObject : IModelCustom {
         return group
     }
 
-    override fun getType(): String {
+    fun getType(): String {
         return "obj"
     }
 
@@ -500,10 +477,102 @@ class WavefrontObject : IModelCustom {
 @SideOnly(Side.CLIENT)
 fun GroupObject.render(light: Int) {
     if (faces.size > 0) {
-        val tessellator = Tessellator.instance
-        tessellator.startDrawing(glDrawingMode)
-        tessellator.setBrightness(light)
-        render(tessellator)
+        val tessellator = Tessellator.getInstance()
+        val buffer = tessellator.buffer
+        buffer.begin(glDrawingMode, Face.VERTEX_FORMAT)
+        // TODO: brightness
+        //tessellator.setBrightness(light)
+        render(buffer)
         tessellator.draw()
     }
+}
+
+data class Vertex(val x: Float, val y: Float, val z: Float) {
+    constructor(x: Float, y: Float) : this(x, y, 0f)
+    fun toVec3d() = Vec3d(x.toDouble(), y.toDouble(), z.toDouble())
+}
+data class TextureCoordinate(val u: Float, val v: Float) {
+    constructor(u: Float, v: Float, w: Float) : this(u, v)
+}
+
+class GroupObject constructor(val name: String) {
+    val faces = mutableListOf<Face>()
+    var glDrawingMode = -1
+
+    fun render() {
+        if (faces.isNotEmpty()) {
+            val tessellator: Tessellator = Tessellator.getInstance()
+            val buffer = tessellator.buffer
+            buffer.begin(glDrawingMode, Face.VERTEX_FORMAT)
+            render(tessellator.buffer)
+            tessellator.draw()
+        }
+    }
+
+    fun render(buffer: BufferBuilder) {
+        if (faces.isNotEmpty()) {
+            for (face in faces) {
+                face.addFaceForRender(buffer)
+            }
+        }
+    }
+}
+
+class Face constructor() {
+    lateinit var vertices: Array<Vertex>
+    lateinit var textureCoordinates: Array<TextureCoordinate>
+    val faceNormal: Vertex by lazy(LazyThreadSafetyMode.NONE) { calculateFaceNormal() }
+    var vertexNormals: Array<Vertex>? = null
+
+    fun calculateFaceNormal(): Vertex {
+        val v1 = vertices[1].toVec3d() - vertices[0].toVec3d()
+        val v2 = vertices[2].toVec3d() - vertices[0].toVec3d()
+        val normalVector = v1.crossProduct(v2).normalize()
+
+        return Vertex(normalVector.x.toFloat(), normalVector.y.toFloat(), normalVector.z.toFloat())
+    }
+
+    @SideOnly(Side.CLIENT)
+    fun addFaceForRender(buffer: BufferBuilder) {
+        addFaceForRender(buffer, 0.0005)
+    }
+
+    @SideOnly(Side.CLIENT)
+    fun addFaceForRender(buffer: BufferBuilder, textureOffset: Double) {
+        var averageU = 0f
+        var averageV = 0f
+        val textureCoordinates = textureCoordinates
+
+        for (i in textureCoordinates.indices) {
+            averageU += textureCoordinates[i].u
+            averageV += textureCoordinates[i].v
+        }
+        averageU /= textureCoordinates.size
+        averageV /= textureCoordinates.size
+
+        for (i in vertices.indices) {
+            buffer.pos(vertices[i].x.toDouble(), vertices[i].y.toDouble(), vertices[i].z.toDouble())
+            var offsetU = textureOffset
+            var offsetV = textureOffset
+            if (textureCoordinates[i].u > averageU) {
+                offsetU = -offsetU
+            }
+            if (textureCoordinates[i].v > averageV) {
+                offsetV = -offsetV
+            }
+            buffer.tex(textureCoordinates[i].u + offsetU, textureCoordinates[i].v + offsetV)
+            val normal = vertexNormals?.get(i) ?: faceNormal
+            buffer.normal(normal.x, normal.y, normal.z)
+            buffer.endVertex()
+        }
+    }
+
+    companion object {
+        val VERTEX_FORMAT = DefaultVertexFormats.POSITION_TEX_NORMAL
+    }
+}
+
+class ModelFormatException : Exception {
+    constructor(message: String) : super(message)
+    constructor(message: String, cause: Throwable) : super(message, cause)
 }

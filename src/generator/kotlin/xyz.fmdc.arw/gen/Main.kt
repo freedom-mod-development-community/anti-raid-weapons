@@ -6,7 +6,6 @@ object Main {
     @JvmStatic
     fun main(args: Array<String>) {
         val base = File(args[0])
-        Vec3XGen.generates(base)
         Vec2XGen.generates(base)
     }
 }

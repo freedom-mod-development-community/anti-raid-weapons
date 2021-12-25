@@ -2,7 +2,6 @@ package xyz.fmdc.arw.baseclass.module.direction
 
 import net.minecraft.util.EnumFacing
 import xyz.fmdc.arw.getFacingFromAngle
-import xyz.fmdc.arw.getHorizontalAngle
 
 interface IDirection {
     val moduleDirection: ModuleDirection
@@ -24,7 +23,7 @@ interface IDirection {
     }
 
     fun getDirectionAngle(): Double {
-        return facing.getHorizontalAngle()
+        return facing.horizontalAngle.toDouble()
     }
 }
 

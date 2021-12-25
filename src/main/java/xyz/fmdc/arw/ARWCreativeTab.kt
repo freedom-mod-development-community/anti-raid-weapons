@@ -1,22 +1,16 @@
 package xyz.fmdc.arw
 
-import cpw.mods.fml.relauncher.Side
-import cpw.mods.fml.relauncher.SideOnly
 import net.minecraft.creativetab.CreativeTabs
-import net.minecraft.item.Item
+import net.minecraft.item.ItemStack
+import net.minecraftforge.fml.relauncher.Side
+import net.minecraftforge.fml.relauncher.SideOnly
 
 class ARWCreativeTab : CreativeTabs(ARWMod.ModName) {
 
     @SideOnly(Side.CLIENT)
-    override fun getTabIconItem(): Item {
+    override fun createIcon(): ItemStack {
         //TODO
-        return Item()
+        return ItemStack.EMPTY
     }
-
-    @SideOnly(Side.CLIENT)
-    override fun getTranslatedTabLabel(): String {
-        return ARWMod.ModName
-    }
-
 }
 

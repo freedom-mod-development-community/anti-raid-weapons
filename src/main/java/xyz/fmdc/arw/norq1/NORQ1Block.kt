@@ -1,13 +1,13 @@
 package xyz.fmdc.arw.norq1
 
-import xyz.fmdc.arw.ARWMod
+import net.minecraft.util.ResourceLocation
+import xyz.fmdc.arw.ARWMod.DOMAIN
 import xyz.fmdc.arw.baseclass.modelblock.ModelNormalBlockContainer
 
-class NORQ1Block : ModelNormalBlockContainer(tileEntityClass = NORQ1Tile::class.java) {
+object NORQ1Block : ModelNormalBlockContainer(tileEntityClass = NORQ1Tile::class.java) {
     init {
-        setBlockName("norq_1")
-        setBlockTextureName(ARWMod.DOMAIN + ":norq_1")
+        registryName = ResourceLocation(DOMAIN, "norq_1")
+        translationKey = "norq_1"
         setBlockBoundsSize(1.5f, 1.75f)
-        setSelectedBoundSize(1.5, 1.75)
     }
 }

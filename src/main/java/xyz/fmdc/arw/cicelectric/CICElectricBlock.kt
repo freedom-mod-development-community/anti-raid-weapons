@@ -1,13 +1,13 @@
 package xyz.fmdc.arw.cicelectric
 
-import xyz.fmdc.arw.ARWMod
+import net.minecraft.util.ResourceLocation
+import xyz.fmdc.arw.ARWMod.DOMAIN
 import xyz.fmdc.arw.baseclass.modelblock.ModelNormalBlockContainer
 
-class CICElectricBlock : ModelNormalBlockContainer(tileEntityClass = CICElectricTile::class.java) {
+object CICElectricBlock : ModelNormalBlockContainer(tileEntityClass = CICElectricTile::class.java) {
     init {
-        setBlockName("cic_electric")
-        setBlockTextureName(ARWMod.DOMAIN + ":cic_electric")
+        registryName = ResourceLocation(DOMAIN, "cic_electric")
+        translationKey = "cic_electric"
         setBlockBoundsSize(1f, 1.5f)
-        setSelectedBoundSize(1.0, 1.5)
     }
 }
