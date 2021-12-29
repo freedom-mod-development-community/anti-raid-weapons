@@ -3,7 +3,7 @@ package xyz.fmdc.arw.orn6e
 import xyz.fmdc.arw.ARWMod
 import xyz.fmdc.arw.baseclass.modelblock.ModelNormalBlockContainer
 
-class ORN6EBlock : ModelNormalBlockContainer(tileEntityClass = ORN6ETile::class.java) {
+object ORN6EBlock : ModelNormalBlockContainer(tileEntityClass = ORN6ETile::class.java) {
     init {
         setBlockName("orn_6e")
         setBlockTextureName(ARWMod.DOMAIN + ":orn_6e")

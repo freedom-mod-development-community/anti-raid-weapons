@@ -3,7 +3,7 @@ package xyz.fmdc.arw.spg62
 import xyz.fmdc.arw.ARWMod
 import xyz.fmdc.arw.baseclass.modelblock.ModelNormalBlockContainer
 
-class SPG62Block : ModelNormalBlockContainer(tileEntityClass = SPG62Tile::class.java) {
+object SPG62Block : ModelNormalBlockContainer(tileEntityClass = SPG62Tile::class.java) {
     init {
         setBlockName("spg_62")
         setBlockTextureName(ARWMod.DOMAIN + ":spg_62")

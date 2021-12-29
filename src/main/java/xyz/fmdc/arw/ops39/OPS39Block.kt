@@ -3,7 +3,7 @@ package xyz.fmdc.arw.ops39
 import xyz.fmdc.arw.ARWMod
 import xyz.fmdc.arw.baseclass.modelblock.ModelNormalBlockContainer
 
-class OPS39Block : ModelNormalBlockContainer(tileEntityClass = OPS39Tile::class.java) {
+object OPS39Block : ModelNormalBlockContainer(tileEntityClass = OPS39Tile::class.java) {
     init {
         setBlockName("ops_39")
         setBlockTextureName(ARWMod.DOMAIN + ":ops_39")

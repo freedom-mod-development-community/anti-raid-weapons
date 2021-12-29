@@ -27,7 +27,6 @@ import xyz.fmdc.arw.spq9b.SPQ9BModel
 import xyz.fmdc.arw.spq9b.SPQ9BTile
 import xyz.fmdc.arw.usc42.USC42Model
 import xyz.fmdc.arw.usc42.USC42Tile
-import java.util.*
 import java.util.concurrent.Executors
 
 @SideOnly(Side.CLIENT)
@@ -59,7 +58,7 @@ object RegistryRenderer {
         }
     }
 
-    private fun registerNormalRenderer(tileClass: Class<out TileEntity>, model: ModelNormalModelBase<*>) {
+    private fun <T: TileEntity>registerNormalRenderer(tileClass: Class<T>, model: ModelNormalModelBase<T>) {
         modelLoadList.add(model)
         ClientRegistry.bindTileEntitySpecialRenderer(tileClass, ModelNormalRenderer(model))
     }
