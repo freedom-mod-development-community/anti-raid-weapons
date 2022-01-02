@@ -3,7 +3,7 @@ package xyz.fmdc.arw.ansps49
 import xyz.fmdc.arw.ARWMod
 import xyz.fmdc.arw.baseclass.modelblock.ModelNormalBlockContainer
 
-class ANSPS49Block : ModelNormalBlockContainer(tileEntityClass = ANSPS49Tile::class.java) {
+object ANSPS49Block : ModelNormalBlockContainer(tileEntityClass = ANSPS49Tile::class.java) {
     init {
         setBlockName("an_sps_49")
         setBlockTextureName(ARWMod.DOMAIN + ":an_sps_49")

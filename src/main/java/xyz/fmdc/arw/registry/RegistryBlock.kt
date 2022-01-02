@@ -26,16 +26,16 @@ import xyz.fmdc.arw.usc42.USC42Tile
 
 object RegistryBlock {
     fun registerBlock() {
-        registerBlock(ANSPS49Block(), ANSPS49Tile::class.java)
-        registerBlock(ANUYH3Block(), ANUYH3Tile::class.java)
-        registerBlock(CICElectricBlock(), CICElectricTile::class.java)
-        registerBlock(NORA1CBlock(), NORA1CTile::class.java)
-        registerBlock(NORQ1Block(), NORQ1Tile::class.java)
-        registerBlock(OPS39Block(), OPS39Tile::class.java)
-        registerBlock(ORN6EBlock(), ORN6ETile::class.java)
-        registerBlock(SPG62Block(), SPG62Tile::class.java)
-        registerBlock(SPQ9BBlock(), SPQ9BTile::class.java)
-        registerBlock(USC42Block(), USC42Tile::class.java)
+        registerBlock(ANSPS49Block, ANSPS49Tile::class.java)
+        registerBlock(ANUYH3Block, ANUYH3Tile::class.java)
+        registerBlock(CICElectricBlock, CICElectricTile::class.java)
+        registerBlock(NORA1CBlock, NORA1CTile::class.java)
+        registerBlock(NORQ1Block, NORQ1Tile::class.java)
+        registerBlock(OPS39Block, OPS39Tile::class.java)
+        registerBlock(ORN6EBlock, ORN6ETile::class.java)
+        registerBlock(SPG62Block, SPG62Tile::class.java)
+        registerBlock(SPQ9BBlock, SPQ9BTile::class.java)
+        registerBlock(USC42Block, USC42Tile::class.java)
     }
 
     private fun registerBlock(block: Block, tileEntityClass: Class<out TileEntity>) {
