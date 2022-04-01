@@ -33,7 +33,7 @@ configurations.implementation.get().extendsFrom(shade)
 
 dependencies {
     shade(kotlin("stdlib-jdk8"))
-    generator.implementationConfigurationName("com.squareup:kotlinpoet:1.10.2")
+    generator.implementationConfigurationName("com.squareup:kotlinpoet:1.11.0")
 }
 
 tasks.processResources {
