@@ -4,7 +4,7 @@ plugins {
     id("java-library")
     id("maven-publish")
     id("forge")
-    kotlin("jvm") version "1.7.0"
+    kotlin("jvm") version "1.7.21"
     id("com.github.johnrengelman.shadow") version "7.1.2"
 }
 
