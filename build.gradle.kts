@@ -5,7 +5,7 @@ plugins {
     id("maven-publish")
     id("forge")
     kotlin("jvm") version "1.7.0"
-    id("com.github.johnrengelman.shadow") version "7.1.2"
+    id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
 // These settings allow you to choose what version of Java you want to be compatible with. Forge 1.7.10 runs on Java 6 to 8.
