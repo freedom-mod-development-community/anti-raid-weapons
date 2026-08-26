@@ -1,40 +1,60 @@
 package xyz.fmdc.arw.network
 
-import cpw.mods.fml.common.network.simpleimpl.IMessage
-import cpw.mods.fml.common.network.simpleimpl.MessageContext
-import io.netty.buffer.ByteBuf
-import net.minecraft.tileentity.TileEntity
-import xyz.fmdc.arw.currentWorld
-import xyz.fmdc.arw.vector.Vec3I
+import net.minecraft.client.Minecraft
+import net.minecraft.core.BlockPos
+import net.minecraft.nbt.CompoundTag
+import net.minecraft.network.FriendlyByteBuf
+import net.minecraft.world.level.block.entity.BlockEntity
+import net.minecraftforge.network.NetworkEvent
+import xyz.fmdc.arw.baseclass.modelblock.ModelNormalTileEntity
+import java.util.function.Supplier
 
+class TileEntityMessage(
+    val pos: BlockPos,
+    val tag: CompoundTag
+) {
 
-abstract class TileEntityMessage : IMessage {
-    protected constructor()
-    protected constructor(tile: TileEntity) {
-        pos = Vec3I(tile.xCoord, tile.yCoord, tile.zCoord)
-        this.tile = tile
+    /**
+     * BlockEntity の現在状態（またはカスタムタグ）からパケットを生成するセカンダリコンストラクタ
+     */
+    constructor(tile: BlockEntity, tag: CompoundTag = tile.saveWithoutMetadata()) : this(
+        pos = tile.blockPos,
+        tag = tag
+    )
+
+    /**
+     * デコード（ByteBuf -> Message）
+     */
+    constructor(buf: FriendlyByteBuf) : this(
+        pos = buf.readBlockPos(),
+        tag = buf.readNbt() ?: CompoundTag()
+    )
+
+    /**
+     * エンコード（Message -> ByteBuf）
+     */
+    fun encode(buf: FriendlyByteBuf) {
+        buf.writeBlockPos(pos)
+        buf.writeNbt(tag)
     }
 
-    private lateinit var tile: TileEntity
-    private lateinit var pos: Vec3I
+    /**
+     * クライアント側受信ハンドラ
+     */
+    fun handle(ctxSupplier: Supplier<NetworkEvent.Context>) {
+        val ctx = ctxSupplier.get()
+        ctx.enqueueWork {
+            val level = Minecraft.getInstance().level ?: return@enqueueWork
+            val blockEntity = level.getBlockEntity(pos) ?: return@enqueueWork
 
-    override fun toBytes(buf: ByteBuf) {
-        buf.writeInt(tile.xCoord)
-        buf.writeInt(tile.yCoord)
-        buf.writeInt(tile.zCoord)
-        write(buf)
-    }
+            // NBT データを BlockEntity に反映
+            blockEntity.load(tag)
 
-    abstract fun write(buf: ByteBuf)
-
-    override fun fromBytes(buf: ByteBuf) {
-        pos = Vec3I(buf.readInt(), buf.readInt(), buf.readInt())
-        read(buf)
-    }
-
-    abstract fun read(buf: ByteBuf)
-
-    protected fun getTileEntity(ctx: MessageContext): TileEntity? {
-        return ctx.currentWorld.getTileEntity(pos.x, pos.y, pos.z)
+            // ModelNormalTileEntity の場合は再描画等のフックを実行
+            if (blockEntity is ModelNormalTileEntity) {
+                blockEntity.setChanged()
+            }
+        }
+        ctx.packetHandled = true
     }
 }

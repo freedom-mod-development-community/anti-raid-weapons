@@ -1,62 +1,103 @@
 package xyz.fmdc.arw.baseclass.modelblock
 
-import cpw.mods.fml.client.FMLClientHandler
-import net.minecraft.tileentity.TileEntity
-import org.lwjgl.opengl.GL11
+import com.mojang.blaze3d.vertex.PoseStack
+import com.mojang.blaze3d.vertex.VertexConsumer
+import com.mojang.math.Axis
+import net.minecraft.client.renderer.MultiBufferSource
+import net.minecraft.client.renderer.RenderType
+import net.minecraft.resources.ResourceLocation
 import xyz.fmdc.arw.baseclass.module.direction.IDirection
-import xyz.fmdc.arw.baseclass.module.rotatable.IPitchRotatable
-import xyz.fmdc.arw.baseclass.module.rotatable.IYawRotatable
-import xyz.fmdc.arw.baseclass.module.rotatable.pitchDeg
-import xyz.fmdc.arw.baseclass.module.rotatable.yawDeg
+import xyz.fmdc.arw.modelloder.WavefrontObject
 
-abstract class ModelNormalRotatableModelBase<T : TileEntity> : ModelNormalModelBase<T>() {
-    override fun renderBase() {
-        model?.renderPart("base")
+abstract class ModelNormalRotatableModelBase<T : ModelNormalTileEntity> : ModelNormalModelBase() {
+
+    abstract val modelName: ResourceLocation
+
+    // 初回描画時に遅延ロード
+    protected val model: WavefrontObject by lazy {
+        WavefrontObject(modelName)
     }
 
-    open fun renderYaw() {
-        model?.renderPart("yaw")
+    /**
+     * 動的にテクスチャを取得する場合の抽象プロパティ/メソッド
+     */
+    abstract fun getTexture(tile: T): ResourceLocation
+
+    @Suppress("UNCHECKED_CAST")
+    override fun render(
+        tile: ModelNormalTileEntity,
+        poseStack: PoseStack,
+        bufferSource: MultiBufferSource,
+        packedLight: Int,
+        packedOverlay: Int,
+        partialTicks: Float
+    ) {
+        val typedTile = tile as T
+        val textureLocation = getTexture(typedTile)
+        val vertexConsumer = bufferSource.getBuffer(RenderType.entityCutout(textureLocation))
+
+        poseStack.pushPose()
+
+        // 1. ブロック設置方向 (FACING) に応じたベース回転
+        if (typedTile is IDirection) {
+            val facingAngle = typedTile.getDirectionAngle()
+            poseStack.mulPose(Axis.YP.rotationDegrees(-facingAngle.toFloat()))
+        }
+
+        // 2. 台座・固定部分の描画
+        renderBaseParts(typedTile, poseStack, vertexConsumer, packedLight, packedOverlay)
+
+        // 3. 水平旋回 (Yaw回転) の描画
+        poseStack.pushPose()
+        val yaw = typedTile.getYawAngle(partialTicks)
+        poseStack.mulPose(Axis.YP.rotationDegrees(yaw))
+        renderYawParts(typedTile, poseStack, vertexConsumer, packedLight, packedOverlay)
+
+        // 4. 俯仰 (Pitch回転) の描画
+        poseStack.pushPose()
+        val pitch = typedTile.getPitchAngle(partialTicks)
+        poseStack.mulPose(Axis.XP.rotationDegrees(pitch))
+        renderPitchParts(typedTile, poseStack, vertexConsumer, packedLight, packedOverlay)
+
+        // スタック復元
+        poseStack.popPose() // Pitch pop
+        poseStack.popPose() // Yaw pop
+        poseStack.popPose() // Base pop
     }
 
-    open fun renderPitch() {
-        model?.renderPart("pitch")
+    /**
+     * 台座・固定部分の描画
+     */
+    protected open fun renderBaseParts(
+        tile: T,
+        poseStack: PoseStack,
+        consumer: VertexConsumer,
+        packedLight: Int,
+        packedOverlay: Int
+    ) {
     }
 
-    open fun offsetYaw() {}
+    /**
+     * 水平旋回（Yaw）部分の描画
+     */
+    protected open fun renderYawParts(
+        tile: T,
+        poseStack: PoseStack,
+        consumer: VertexConsumer,
+        packedLight: Int,
+        packedOverlay: Int
+    ) {
+    }
 
-    open fun offsetPitch() {}
-
-    override fun render(tile: T, x: Double, y: Double, z: Double) {
-        GL11.glPushMatrix()
-        GL11.glTranslated(x + 0.5, y, z + 0.5)
-
-        FMLClientHandler.instance().client.renderEngine.bindTexture(getTexture(tile))
-
-        if (tile is IDirection) {
-            val directionYaw = tile.getDirectionAngle()
-            GL11.glRotated(-directionYaw, 0.0, 1.0, 0.0)
-            renderBase()
-            GL11.glRotated(+directionYaw, 0.0, 1.0, 0.0)
-        } else {
-            renderBase()
-        }
-
-        offsetYaw()
-
-        if (tile is IYawRotatable) {
-            val yawDeg = tile.yawDeg
-            GL11.glRotated(-yawDeg, 0.0, 1.0, 0.0)
-            renderYaw()
-        }
-
-        offsetPitch()
-
-        if (tile is IPitchRotatable) {
-            val pitchDeg = tile.pitchDeg
-            GL11.glRotated(-pitchDeg, 1.0, 0.0, 0.0)
-            renderPitch()
-        }
-
-        GL11.glPopMatrix()
+    /**
+     * 俯仰（Pitch）部分の描画
+     */
+    protected open fun renderPitchParts(
+        tile: T,
+        poseStack: PoseStack,
+        consumer: VertexConsumer,
+        packedLight: Int,
+        packedOverlay: Int
+    ) {
     }
 }

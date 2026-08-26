@@ -1,37 +1,57 @@
-package xyz.fmdc.arw.baseclass.module.rotatable
+package xyz.fmdc.arw.network
 
-import cpw.mods.fml.common.network.simpleimpl.IMessage
-import cpw.mods.fml.common.network.simpleimpl.IMessageHandler
-import cpw.mods.fml.common.network.simpleimpl.MessageContext
-import io.netty.buffer.ByteBuf
-import xyz.fmdc.arw.network.PacketHandlerARW
-import xyz.fmdc.arw.network.TileEntityMessage
+import net.minecraft.client.Minecraft
+import net.minecraft.core.BlockPos
+import net.minecraft.network.FriendlyByteBuf
+import net.minecraftforge.network.NetworkEvent
+import xyz.fmdc.arw.baseclass.modelblock.ModelNormalYawPitchRotatableTileEntity
+import xyz.fmdc.arw.baseclass.modelblock.ModelNormalYawRotatableTileEntity
+import java.util.function.Supplier
 
-class SyncAngleMessage(var yawDeg: Double, var pitchDeg: Double) : TileEntityMessage() {
+class SyncAngleMessage(
+    val pos: BlockPos,
+    val yaw: Float,
+    val pitch: Float
+) {
 
-    override fun write(buf: ByteBuf) {
-        buf.writeDouble(yawDeg)
-        buf.writeDouble(pitchDeg)
+    /**
+     * デコード（バイト列からメッセージオブジェクトを生成）
+     */
+    constructor(buf: FriendlyByteBuf) : this(
+        pos = buf.readBlockPos(),
+        yaw = buf.readFloat(),
+        pitch = buf.readFloat()
+    )
+
+    /**
+     * エンコード（メッセージオブジェクトをバイト列へ書き込み）
+     */
+    fun encode(buf: FriendlyByteBuf) {
+        buf.writeBlockPos(pos)
+        buf.writeFloat(yaw)
+        buf.writeFloat(pitch)
     }
 
-    override fun read(buf: ByteBuf) {
-        yawDeg = buf.readDouble()
-        pitchDeg = buf.readDouble()
-    }
+    /**
+     * 受信時のハンドラ処理（クライアント側で実行）
+     */
+    fun handle(ctxSupplier: Supplier<NetworkEvent.Context>) {
+        val ctx = ctxSupplier.get()
+        ctx.enqueueWork {
+            // クライアントのワールドから対象の BlockEntity を取得して角度を同期
+            val level = Minecraft.getInstance().level ?: return@enqueueWork
+            val blockEntity = level.getBlockEntity(pos)
 
-    companion object : IMessageHandler<SyncAngleMessage, IMessage?> {
-        override fun onMessage(message: SyncAngleMessage, ctx: MessageContext): IMessage? {
-            val tile = message.getTileEntity(ctx)
-            if (tile is IYawRotatable) {
-                tile.yawDeg = message.yawDeg
+            when (blockEntity) {
+                is ModelNormalYawPitchRotatableTileEntity -> {
+                    blockEntity.currentYaw = yaw
+                    blockEntity.currentPitch = pitch
+                }
+                is ModelNormalYawRotatableTileEntity -> {
+                    blockEntity.currentYaw = yaw
+                }
             }
-            if (tile is IYawPitchRotatable) {
-                tile.pitchDeg = message.pitchDeg
-            }
-            if (ctx.side.isServer) {
-                PacketHandlerARW.sendPacketAll(message)
-            }
-            return null
         }
+        ctx.packetHandled = true
     }
 }

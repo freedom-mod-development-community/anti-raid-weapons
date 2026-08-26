@@ -1,65 +1,38 @@
 package xyz.fmdc.arw
 
-import net.minecraftforge.fml.common.FMLCommonHandler
 import net.minecraftforge.fml.common.Mod
-import net.minecraftforge.fml.common.SidedProxy
-import net.minecraftforge.fml.common.event.FMLInitializationEvent
-import net.minecraftforge.fml.common.event.FMLPreInitializationEvent
-import net.minecraftforge.fml.common.event.FMLServerStartingEvent
-import net.minecraftforge.fml.relauncher.Side
-import net.minecraft.creativetab.CreativeTabs
-import xyz.fmdc.arw.ARWMod.DOMAIN
-import xyz.fmdc.arw.ARWMod.ModName
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent
+import thedarkcolour.kotlinforforge.forge.MOD_BUS
 import xyz.fmdc.arw.network.PacketHandlerARW
-import xyz.fmdc.arw.proxy.AWMProxy
 import xyz.fmdc.arw.registry.RegistryBlock
 
-@Mod(modid = DOMAIN, name = ModName)
+@Mod(ARWMod.DOMAIN)
 object ARWMod {
     const val DOMAIN = "arw"
     const val ModName = "AntiRaidWeaponMod"
 
-    @Mod.InstanceFactory
-    @JvmStatic
-    fun instance() = this
+    init {
+        // 1. 各ブロック・アイテム・TileEntity を DeferredRegister にキューイング
 
-    @SidedProxy(
-        clientSide = "xyz.fmdc.arw.proxy.AWMClientProxy",
-        serverSide = "xyz.fmdc.arw.proxy.AWMCommonProxy",
-    )
-    lateinit var proxy: AWMProxy
+        // 2. レジストリ群を Mod イベントバスへ紐づけ
+        RegistryBlock.BLOCKS.register(MOD_BUS)
+        RegistryBlock.ITEMS.register(MOD_BUS)
+        RegistryBlock.BLOCK_ENTITIES.register(MOD_BUS)
+        ARWCreativeTab.CREATIVE_MODE_TABS.register(MOD_BUS)
 
-    /**
-     * クリエイティブタブ
-     * */
-    val arwTabs: CreativeTabs = ARWCreativeTab()
-
-    /**
-     * ブロック類の登録     *
-     * TileEntity類の登録
-     */
-    @Mod.EventHandler
-    @Suppress("UNUSED_PARAMETER")
-    fun preInit(event: FMLPreInitializationEvent) {
-        RegistryBlock.registerBlock()
-        PacketHandlerARW.init()
+        // ライフサイクルイベントリスナー
+        MOD_BUS.addListener(::onCommonSetup)
+        MOD_BUS.addListener(::onClientSetup)
     }
 
-    /**
-     */
-    @Mod.EventHandler
-    @Suppress("UNUSED_PARAMETER")
-    fun init(event: FMLInitializationEvent) {
-        if (FMLCommonHandler.instance().side == Side.CLIENT) {
-            proxy.callRegisterRenderer()
+    private fun onCommonSetup(event: FMLCommonSetupEvent) {
+        event.enqueueWork {
+            PacketHandlerARW.register()
         }
     }
 
-    /**
-     * コマンド登録
-     */
-    @Mod.EventHandler
-    @Suppress("UNUSED_PARAMETER")
-    fun serverLoad(event: FMLServerStartingEvent) {
+    private fun onClientSetup(event: FMLClientSetupEvent) {
+        // クライアント側の初期化
     }
 }

@@ -1,0 +1,40 @@
+# 必須: Modローダーの指定 (Kotlin for Forge の場合は kotlinforforge)
+modLoader="kotlinforforge"
+
+# 必須: ローダーのバージョン範囲
+loaderVersion="[4,)"
+
+# 必須: ライセンス
+license="LGPL-3.0"
+
+# (任意) 発行元情報など
+# issueTrackerURL="..."
+
+[[mods]]
+modId="arw"
+version="${file.jarVersion}"
+displayName="Anti Raid Weapons"
+description='''
+Aegis combat system and naval defense weapons mod.
+'''
+
+[[dependencies.arw]]
+modId="forge"
+mandatory=true
+versionRange="[47,)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.arw]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1,1.21)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.arw]]
+modId="kotlinforforge"
+mandatory=true
+versionRange="[4.11.0,)"
+ordering="NONE"
+side="BOTH"

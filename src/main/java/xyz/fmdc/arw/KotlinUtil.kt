@@ -1,51 +1,48 @@
 package xyz.fmdc.arw
 
-import cpw.mods.fml.common.network.simpleimpl.MessageContext
-import cpw.mods.fml.relauncher.Side
-import net.minecraft.client.Minecraft
-import net.minecraft.nbt.NBTTagCompound
-import net.minecraft.network.play.server.S35PacketUpdateTileEntity
-import net.minecraft.tileentity.TileEntity
-import net.minecraft.util.EnumFacing
-import net.minecraft.util.MathHelper
-import net.minecraft.world.World
+import net.minecraft.core.BlockPos
+import net.minecraft.nbt.CompoundTag
+import net.minecraft.network.protocol.Packet
+import net.minecraft.network.protocol.game.ClientGamePacketListener
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket
+import net.minecraft.world.level.Level
+import net.minecraft.world.level.block.Block
+import net.minecraft.world.level.block.entity.BlockEntity
 
-val MessageContext.currentWorld: World
-    get() = when (side!!) {
-        Side.SERVER -> serverHandler.playerEntity.worldObj
-        Side.CLIENT -> Minecraft.getMinecraft().theWorld
-    }
-
-private val HORIZONTALS: Array<EnumFacing> by lazy {
-    arrayOf(EnumFacing.SOUTH, EnumFacing.WEST, EnumFacing.NORTH, EnumFacing.EAST)
-}
-
-private fun getHorizontal(horizontalIndexIn: Int): EnumFacing {
-    return HORIZONTALS[MathHelper.abs((horizontalIndexIn % HORIZONTALS.size).toFloat())
-        .toInt()]
+/**
+ * BlockEntity (TileEntity) から更新パケットを生成する拡張関数 (旧 newPacketUpdateTileEntity)
+ */
+fun BlockEntity.newPacketUpdateBlockEntity(): Packet<ClientGamePacketListener>? {
+    return ClientboundBlockEntityDataPacket.create(this)
 }
 
 /**
- * Get the Facing corresponding to the given angle (0-360). An angle of 0 is SOUTH, an angle of 90 would be WEST.
+ * 受信したパケットの NBT データを BlockEntity にロードする拡張関数 (旧 pkt.loadTo(this))
  */
-fun getFacingFromAngle(angle: Float): EnumFacing {
-    return getFacingFromAngle(angle.toDouble())
+fun ClientboundBlockEntityDataPacket.loadTo(blockEntity: BlockEntity) {
+    val compoundTag = this.tag
+    compoundTag?.let { blockEntity.load(it) }
 }
 
-fun getFacingFromAngle(angle: Double): EnumFacing {
-    return getHorizontal(MathHelper.floor_double(angle / 90.0 + 0.5) and 3)
+/**
+ * サーバー側で BlockEntity の変更をマークし、周囲のクライアントへ同期・再描画を通知するヘルパー
+ */
+fun BlockEntity.syncToClient() {
+    val lvl = this.level ?: return
+    if (!lvl.isClientSide) {
+        this.setChanged()
+        // worldPosition ではなく blockPos を使用
+        lvl.sendBlockUpdated(this.blockPos, this.blockState, this.blockState, Block.UPDATE_ALL)
+    }
 }
 
-fun EnumFacing.getHorizontalAngle(): Double {
-    return HORIZONTALS.indexOf(this) * 90.0
+/**
+ * CompoundTag への安全な double / float 取得用拡張関数
+ */
+fun CompoundTag.getDoubleOrDefault(key: String, default: Double = 0.0): Double {
+    return if (this.contains(key)) this.getDouble(key) else default
 }
 
-fun TileEntity.newPacketUpdateTileEntity(): S35PacketUpdateTileEntity {
-    val nbtTagCompound = NBTTagCompound()
-    writeToNBT(nbtTagCompound)
-    return S35PacketUpdateTileEntity(xCoord, yCoord, zCoord, 1, nbtTagCompound)
-}
-
-fun S35PacketUpdateTileEntity.loadTo(tileEntity: TileEntity) {
-    tileEntity.readFromNBT(func_148857_g())
+fun CompoundTag.getFloatOrDefault(key: String, default: Float = 0.0f): Float {
+    return if (this.contains(key)) this.getFloat(key) else default
 }
