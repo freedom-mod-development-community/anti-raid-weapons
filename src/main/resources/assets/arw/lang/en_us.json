@@ -1,0 +1,13 @@
+{
+  "itemGroup.arw": "Anti-Raid Weapons",
+  "block.arw.an_sps_49": "AN/SPS-49 Air Search Radar",
+  "block.arw.an_uyh_3": "AN/UYH-3 Magnetic Tape Unit",
+  "block.arw.cic_electric": "CIC Power Distribution Console",
+  "block.arw.nora_1c": "NORA-1C Super High Frequency Antenna",
+  "block.arw.norq_1": "NORQ-1 Global Positioning System Receiver",
+  "block.arw.ops_39": "OPS-39 Surface Search Radar",
+  "block.arw.orn_6e": "ORN-6E TACAN Antenna",
+  "block.arw.spg_62": "AN/SPG-62 Fire Control Radar",
+  "block.arw.spq_9b": "AN/SPQ-9B Anti-Ship Missile Defense Radar",
+  "block.arw.usc_42": "OE-82/WSC-1(V) (USC-42) UHF SATCOM Antenna"
+}

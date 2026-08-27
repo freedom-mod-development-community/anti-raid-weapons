@@ -1,35 +1,30 @@
 package xyz.fmdc.arw.baseclass.module.direction
 
-import net.minecraft.util.EnumFacing
-import xyz.fmdc.arw.getFacingFromAngle
-import xyz.fmdc.arw.getHorizontalAngle
+import net.minecraft.core.Direction
 
 interface IDirection {
+
     val moduleDirection: ModuleDirection
 
-    fun saveReversDirectionData(angDeg: Float) {
-        saveReversDirectionData(angDeg.toDouble())
-    }
-
-    fun saveReversDirectionData(angDeg: Double) {
-        facing = getFacingFromAngle(angDeg + 180)
-    }
-
-    fun saveDirectionData(angDeg: Float) {
-        saveDirectionData(angDeg.toDouble())
-    }
-
-    fun saveDirectionData(angDeg: Double) {
-        facing = getFacingFromAngle(angDeg)
-    }
-
+    /**
+     * 現在の設置角度（度数法: 0° ~ 360°）を取得
+     */
     fun getDirectionAngle(): Double {
-        return facing.getHorizontalAngle()
+        return moduleDirection.directionAngleDeg
+    }
+
+    /**
+     * 角度データをモジュールへ保存
+     */
+    fun saveDirectionData(angleDeg: Double) {
+        moduleDirection.directionAngleDeg = angleDeg
+    }
+
+    /**
+     * 設置方向 (Direction) から角度を設定
+     */
+    fun setDirection(direction: Direction) {
+        // Direction.toYRot() で水平角度（NORTH=180, SOUTH=0, WEST=90, EAST=270 等）を取得
+        moduleDirection.directionAngleDeg = direction.toYRot().toDouble()
     }
 }
-
-var IDirection.facing: EnumFacing
-    get() = moduleDirection.facing
-    set(value) {
-        moduleDirection.facing = value
-    }
