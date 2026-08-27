@@ -1,16 +1,13 @@
-buildscript {
+pluginManagement {
     repositories {
-        mavenCentral()
-        maven(url = "https://oss.sonatype.org/content/repositories/snapshots/") {
-            name = "ossrh-snapshot"
+        gradlePluginPortal()
+        maven {
+            name = "MinecraftForge"
+            url = uri("https://maven.minecraftforge.net/")
         }
-        maven(url = "https://maven.minecraftforge.net/") {
-            name = "forge"
-        }
-    }
-    dependencies {
-        classpath("com.anatawa12.forge:ForgeGradle:1.2-1.0.+") {
-            isChanging = true
+        maven {
+            name = "Kotlin for Forge"
+            url = uri("https://thedarkcolour.github.io/KotlinForForge/")
         }
     }
 }
