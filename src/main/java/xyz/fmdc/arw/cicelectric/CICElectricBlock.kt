@@ -3,7 +3,7 @@ package xyz.fmdc.arw.cicelectric
 import xyz.fmdc.arw.ARWMod
 import xyz.fmdc.arw.baseclass.modelblock.ModelNormalBlockContainer
 
-object CICElectricBlock : ModelNormalBlockContainer(tileEntityClass = CICElectricTile::class.java) {
+class CICElectricBlock : ModelNormalBlockContainer(tileEntityClass = CICElectricTile::class.java) {
     init {
         setBlockName("cic_electric")
         setBlockTextureName(ARWMod.DOMAIN + ":cic_electric")

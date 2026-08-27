@@ -1,6 +1,6 @@
 package xyz.fmdc.arw.cicelectric
 
-import net.minecraft.util.ResourceLocation
+import net.minecraft.resources.ResourceLocation
 import xyz.fmdc.arw.ARWMod
 import xyz.fmdc.arw.baseclass.modelblock.ModelNormalModelBaseFixedTexture
 
