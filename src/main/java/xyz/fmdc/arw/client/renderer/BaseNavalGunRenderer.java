@@ -6,6 +6,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import org.jetbrains.annotations.NotNull;
 import xyz.fmdc.arw.client.util.GlbLoader;
 import xyz.fmdc.arw.client.util.INavalGun;
 
@@ -19,8 +20,8 @@ public abstract class BaseNavalGunRenderer<T extends BlockEntity & INavalGun> im
     }
 
     @Override
-    public void render(T blockEntity, float partialTick, PoseStack poseStack,
-                       MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
+    public void render(@NotNull T blockEntity, float partialTick, @NotNull PoseStack poseStack,
+                       @NotNull MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
 
         GlbLoader.GlbModelData modelData = getModelData(blockEntity);
         if (modelData == null) return;

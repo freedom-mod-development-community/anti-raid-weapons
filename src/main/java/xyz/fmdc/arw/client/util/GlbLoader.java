@@ -13,6 +13,7 @@ import org.joml.Vector3f;
 import xyz.fmdc.arw.AntiRaidWeapons;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -79,28 +80,23 @@ public class GlbLoader {
         GlbModelData modelData = new GlbModelData();
 
         // 1. ヘッダー解析
-        byte[] header = new byte[12];
-        stream.read(header);
+        byte[] header = readBytes(stream, 12);
         ByteBuffer headerBuffer = ByteBuffer.wrap(header).order(ByteOrder.LITTLE_ENDIAN);
         if (headerBuffer.getInt() != 0x46546C67) throw new IllegalArgumentException("Invalid GLB magic!");
         headerBuffer.getInt(); // version
 
         // Chunk 0: JSON
-        byte[] chunk0Header = new byte[8];
-        stream.read(chunk0Header);
+        byte[] chunk0Header = readBytes(stream, 8);
         ByteBuffer c0Buffer = ByteBuffer.wrap(chunk0Header).order(ByteOrder.LITTLE_ENDIAN);
         int chunk0Length = c0Buffer.getInt();
-        byte[] jsonBytes = new byte[chunk0Length];
-        stream.read(jsonBytes);
+        byte[] jsonBytes = readBytes(stream, chunk0Length);
         JsonObject json = JsonParser.parseString(new String(jsonBytes, StandardCharsets.UTF_8)).getAsJsonObject();
 
         // Chunk 1: BIN (バイナリデータバッファ)
-        byte[] chunk1Header = new byte[8];
-        stream.read(chunk1Header);
+        byte[] chunk1Header = readBytes(stream, 8);
         ByteBuffer c1Buffer = ByteBuffer.wrap(chunk1Header).order(ByteOrder.LITTLE_ENDIAN);
         int chunk1Length = c1Buffer.getInt();
-        byte[] binBytes = new byte[chunk1Length];
-        stream.read(binBytes);
+        byte[] binBytes = readBytes(stream, chunk1Length);
         ByteBuffer binBuffer = ByteBuffer.wrap(binBytes).order(ByteOrder.LITTLE_ENDIAN);
 
         // 2. テクスチャ画像のロードと DynamicTexture 登録 (images チャンクの解析)
@@ -213,7 +209,7 @@ public class GlbLoader {
                     );
                     Minecraft.getInstance().getTextureManager().register(registeredLoc, dynTexture);
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    AntiRaidWeapons.LOGGER.error("Failed to register dynamic texture from GLB", e);
                 }
 
                 // 外部参照 (uri) の場合
@@ -256,7 +252,7 @@ public class GlbLoader {
                 return imagesList.get(imageIndex);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            AntiRaidWeapons.LOGGER.warn("Failed to resolve texture location in GLB", e);
         }
         return null;
     }
@@ -319,7 +315,7 @@ public class GlbLoader {
         root.name = "root";
 
         // glTF 内で scenes が定義されている場合はシーンの nodes を優先参照、なければ親のないノードを格納
-        if (json.has("scenes") && json.getAsJsonArray("scenes").size() > 0) {
+        if (json.has("scenes") && !json.getAsJsonArray("scenes").isEmpty()) {
             JsonObject scene = json.getAsJsonArray("scenes").get(0).getAsJsonObject();
             if (scene.has("nodes")) {
                 for (JsonElement nElem : scene.getAsJsonArray("nodes")) {
@@ -406,11 +402,13 @@ public class GlbLoader {
         if (accessor.has("byteOffset")) byteOffset += accessor.get("byteOffset").getAsInt();
 
         int numComponents = switch (type) {
-            case "SCALAR" -> 1;
-            case "VEC2" -> 2;
-            case "VEC3" -> 3;
-            case "VEC4" -> 4;
-            default -> 1;
+            case "SCALAR"       -> 1;
+            case "VEC2"         -> 2;
+            case "VEC3"         -> 3;
+            case "VEC4", "MAT2" -> 4;
+            case "MAT3"         -> 9;
+            case "MAT4"         -> 16;
+            default -> throw new IllegalArgumentException("Unsupported accessor type: " + type);
         };
 
         float[] result = new float[count * numComponents];
@@ -444,6 +442,14 @@ public class GlbLoader {
             }
         }
         return result;
+    }
+
+    private static byte[] readBytes(InputStream stream, int length) throws IOException {
+        byte[] data = stream.readNBytes(length);
+        if (data.length < length) {
+            throw new IllegalArgumentException("Unexpected EOF: expected " + length + " bytes");
+        }
+        return data;
     }
 
     private static String getNodeNameById(JsonObject json, int nodeIdx) {

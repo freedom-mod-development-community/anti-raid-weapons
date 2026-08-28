@@ -28,9 +28,6 @@ public abstract class BaseRadarRenderer<T extends BlockEntity & IRadar> implemen
             return;
         }
 
-        String activeAnimName = blockEntity.getActiveAnimationName();
-        float animTimeSeconds = blockEntity.getAnimationTimeSeconds(partialTick);
-
         // 汎用GLBレンダラーを呼び出し、回転制御ノード（radar / antenna / yaw 等）に回転を割り込み
         glbRenderer.render(
                 modelData, poseStack, bufferSource, packedLight, packedOverlay, partialTick,

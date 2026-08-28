@@ -48,22 +48,6 @@ public class Ops39BlockEntity extends BlockEntity implements INodeRotatableModel
         return Mth.rotLerp(partialTick, this.prevYaw, this.currentYaw);
     }
 
-    /**
-     * 補間済みの現在角度 (0.0 ～ 360.0度) を取得
-     */
-    public float getInterpolatedYaw(float partialTick) {
-        float yaw = getRotationYaw(partialTick) % 360.0f;
-        return yaw < 0.0f ? yaw + 360.0f : yaw;
-    }
-
-    /**
-     * 指定されたアニメーション時間へのマッピング
-     */
-    public float getAnimationTimeByYaw(float maxTime, float partialTick) {
-        float yawProgress = getInterpolatedYaw(partialTick) / 360.0f;
-        return yawProgress * maxTime;
-    }
-
     private void syncToClient() {
         setChanged();
         if (this.level != null) {

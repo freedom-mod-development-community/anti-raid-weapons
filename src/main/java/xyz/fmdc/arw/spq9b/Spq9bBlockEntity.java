@@ -2,7 +2,6 @@ package xyz.fmdc.arw.spq9b;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -27,24 +26,6 @@ public class Spq9bBlockEntity extends BlockEntity implements INodeRotatableModel
     public static void tick(Level level, BlockPos pos, BlockState state, Spq9bBlockEntity be) {
         be.prevYaw = be.currentYaw;
         be.currentYaw = (be.currentYaw + be.rotationSpeed) % 360.0f;
-    }
-
-    /**
-     * 補間済みの現在角度 (0.0 ～ 360.0度) を取得
-     */
-    public float getInterpolatedYaw(float partialTick) {
-        float interpolated = this.prevYaw + Mth.wrapDegrees(this.currentYaw - this.prevYaw) * partialTick;
-        if (interpolated < 0) interpolated += 360.0f;
-        return interpolated % 360.0f;
-    }
-
-    /**
-     * 【重要】指定されたアニメーションの総再生時間(maxTime)に対し、
-     * 現在の角度(Yaw)から「再生すべき時間(Time)」を割り当てて返します。
-     */
-    public float getAnimationTimeByYaw(float maxTime, float partialTick) {
-        float yawProgress = getInterpolatedYaw(partialTick) / 360.0f; // 0.0 ～ 1.0 に正規化
-        return yawProgress * maxTime; // アニメーション時間上の再生位置を決定
     }
 
     @Override
