@@ -1,6 +1,6 @@
 {
-  "parent": "minecraft:block/cube_all",
+  "parent": "minecraft:item/generated",
   "textures": {
-    "all": "arw:blocks/spg_62"
+    "layer0": "arw:block/spg_62"
   }
 }

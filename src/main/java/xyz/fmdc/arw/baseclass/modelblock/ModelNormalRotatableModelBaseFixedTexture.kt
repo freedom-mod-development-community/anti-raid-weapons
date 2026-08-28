@@ -7,7 +7,7 @@ import net.minecraft.client.renderer.MultiBufferSource
 import net.minecraft.client.renderer.RenderType
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.phys.Vec3
-import xyz.fmdc.arw.modelloder.WavefrontObject
+import xyz.fmdc.arw.modelloader.WavefrontObject
 
 /**
  * OBJ の `base` / `yaw` / `pitch` グループを、それぞれ固定部・水平旋回部・俯仰部として描画する基底クラス。
