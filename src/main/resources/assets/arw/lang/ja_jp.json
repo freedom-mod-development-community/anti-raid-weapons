@@ -1,13 +1,4 @@
 {
-  "itemGroup.arw": "対空戦闘兵器 (ARW)",
-  "block.arw.an_sps_49": "AN/SPS-49 対空捜索レーダー",
-  "block.arw.an_uyh_3": "AN/UYH-3 磁気テープ記憶装置",
-  "block.arw.cic_electric": "CIC 電源盤コンソール",
-  "block.arw.nora_1c": "NORA-1C SHF衛星通信アンテナ",
-  "block.arw.norq_1": "NORQ-1 GPS航法受信機",
-  "block.arw.ops_39": "OPS-39 水上捜索レーダー",
-  "block.arw.orn_6e": "ORN-6E TACAN航法アンテナ",
-  "block.arw.spg_62": "AN/SPG-62 射撃指揮レーダー",
-  "block.arw.spq_9b": "AN/SPQ-9B 対艦ミサイル防御レーダー",
-  "block.arw.usc_42": "OE-82/WSC-1(V) (USC-42) 衛星通信アンテナ"
+  "item.arw.spq9b": "SPQ-9B レーダー",
+  "creativetab.arw_tab": "Anti Raid Weapons"
 }
