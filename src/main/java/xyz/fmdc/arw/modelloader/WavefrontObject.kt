@@ -1,4 +1,4 @@
-package xyz.fmdc.arw.modelloder
+package xyz.fmdc.arw.modelloader
 
 import com.mojang.blaze3d.vertex.PoseStack
 import com.mojang.blaze3d.vertex.VertexConsumer

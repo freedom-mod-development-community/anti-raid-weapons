@@ -6,8 +6,7 @@ import com.mojang.math.Axis
 import net.minecraft.client.renderer.MultiBufferSource
 import net.minecraft.client.renderer.RenderType
 import net.minecraft.resources.ResourceLocation
-import xyz.fmdc.arw.baseclass.module.direction.IDirection
-import xyz.fmdc.arw.modelloder.WavefrontObject
+import xyz.fmdc.arw.modelloader.WavefrontObject
 
 abstract class ModelNormalModelBaseFixedTexture<T : ModelNormalTileEntity> : ModelNormalModelBase() {
 
