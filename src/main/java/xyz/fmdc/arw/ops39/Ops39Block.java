@@ -28,7 +28,7 @@ public class Ops39Block extends BaseEntityBlock {
     // 毎Tickの回転処理（tickメソッド）を呼ぶための設定
     @Nullable
     @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(@NotNull Level level, @NotNull BlockState state, BlockEntityType<T> type) {
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(@NotNull Level level, @NotNull BlockState state, @NotNull BlockEntityType<T> type) {
         return createTickerHelper(type, ModBlocks.OPS39.getBEType(), Ops39BlockEntity::tick);
     }
 
