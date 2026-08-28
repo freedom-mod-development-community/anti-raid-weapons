@@ -6,8 +6,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import xyz.fmdc.arw.AntiRaidWeapons;
-import xyz.fmdc.arw.client.renderer.GenericGlbRenderer;
+import org.jetbrains.annotations.NotNull;
 import xyz.fmdc.arw.client.util.GlbLoader;
 import xyz.fmdc.arw.client.util.IRadar;
 
@@ -19,8 +18,8 @@ public abstract class BaseRadarRenderer<T extends BlockEntity & IRadar> implemen
         // 必要に応じて context をフィールドに保持することも可能
     }
     @Override
-    public void render(T blockEntity, float partialTick, PoseStack poseStack,
-                       MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
+    public void render(@NotNull T blockEntity, float partialTick, @NotNull PoseStack poseStack,
+                       @NotNull MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
 
         GlbLoader.GlbModelData modelData = getModelData(blockEntity);
         if (modelData == null) {

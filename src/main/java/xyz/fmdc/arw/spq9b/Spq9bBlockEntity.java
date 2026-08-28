@@ -7,10 +7,10 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;
 import xyz.fmdc.arw.client.util.INodeRotatableModel;
 import xyz.fmdc.arw.client.util.IRadar;
-import xyz.fmdc.arw.registry.ModBlockEntities;
 import xyz.fmdc.arw.registry.ModBlocks;
 
 public class Spq9bBlockEntity extends BlockEntity implements INodeRotatableModel, IRadar {
@@ -48,13 +48,13 @@ public class Spq9bBlockEntity extends BlockEntity implements INodeRotatableModel
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
+    protected void saveAdditional(@NotNull CompoundTag tag) {
         super.saveAdditional(tag);
         tag.putFloat("Yaw", this.currentYaw);
     }
 
     @Override
-    public void load(CompoundTag tag) {
+    public void load(@NotNull CompoundTag tag) {
         super.load(tag);
         this.currentYaw = tag.getFloat("Yaw");
         this.prevYaw = this.currentYaw;

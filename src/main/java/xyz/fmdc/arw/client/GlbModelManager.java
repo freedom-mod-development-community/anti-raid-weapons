@@ -1,9 +1,9 @@
 package xyz.fmdc.arw.client;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
+import org.jetbrains.annotations.NotNull;
 import xyz.fmdc.arw.AntiRaidWeapons;
 import xyz.fmdc.arw.client.util.GlbLoader;
 
@@ -42,7 +42,7 @@ public class GlbModelManager implements ResourceManagerReloadListener {
      * リソースパック読み込み/リロード時に呼び出され、GLBファイルをパースしてキャッシュします。
      */
     @Override
-    public void onResourceManagerReload(ResourceManager resourceManager) {
+    public void onResourceManagerReload(@NotNull ResourceManager resourceManager) {
         models.clear();
         AntiRaidWeapons.LOGGER.info("[ARW-DEBUG] GLBモデルの一括ロードを開始します...");
 
@@ -61,7 +61,7 @@ public class GlbModelManager implements ResourceManagerReloadListener {
                     AntiRaidWeapons.LOGGER.info("[ARW-DEBUG] ファイルを発見しました: {}", location);
                     try (InputStream is = resourceOpt.get().open()) {
                         GlbLoader.GlbModelData data = GlbLoader.loadGlb(is);
-                        if (data != null && data.rootNode != null) {
+                        if (data.rootNode != null) {
                             models.put(location, data);
                             AntiRaidWeapons.LOGGER.info("[ARW-DEBUG] GLBロード成功: {}", location);
                         } else {

@@ -1,9 +1,6 @@
 package xyz.fmdc.arw.client.renderer;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.resources.ResourceLocation;
-import xyz.fmdc.arw.AntiRaidWeapons;
 import xyz.fmdc.arw.client.GlbModelManager;
 import xyz.fmdc.arw.client.util.GlbLoader;
 import xyz.fmdc.arw.oto127mm.Oto127mmBlockEntity;

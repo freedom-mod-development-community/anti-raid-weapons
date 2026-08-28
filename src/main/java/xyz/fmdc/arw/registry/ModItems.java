@@ -1,12 +1,10 @@
 package xyz.fmdc.arw.registry;
 
-import net.minecraftforge.eventbus.api.IEventBus;
-import xyz.fmdc.arw.AntiRaidWeapons;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
+import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import xyz.fmdc.arw.AntiRaidWeapons;
 
 public class ModItems {
     public static final DeferredRegister<Item> ITEMS =

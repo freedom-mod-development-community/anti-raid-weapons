@@ -17,7 +17,10 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class GlbLoader {
 
@@ -119,7 +122,7 @@ public class GlbLoader {
 
                 // 発光（Emissive）判定
                 if (matObj.has("emissiveTexture") ||
-                        (matObj.has("emissiveFactor") && matObj.getAsJsonArray("emissiveFactor").size() > 0)) {
+                        (matObj.has("emissiveFactor") && !matObj.getAsJsonArray("emissiveFactor").isEmpty())) {
                     mat.isEmissive = true;
                 }
 

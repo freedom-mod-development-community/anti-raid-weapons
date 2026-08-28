@@ -10,7 +10,6 @@ import xyz.fmdc.arw.client.renderer.EmmiRenderer;
 import xyz.fmdc.arw.client.renderer.Ops39Renderer;
 import xyz.fmdc.arw.client.renderer.Oto127mmRenderer;
 import xyz.fmdc.arw.client.renderer.Spq9bRenderer;
-import xyz.fmdc.arw.registry.ModBlockEntities;
 import xyz.fmdc.arw.registry.ModBlocks;
 
 @Mod.EventBusSubscriber(modid = AntiRaidWeapons.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
