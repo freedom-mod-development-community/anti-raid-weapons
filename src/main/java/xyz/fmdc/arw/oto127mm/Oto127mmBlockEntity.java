@@ -11,6 +11,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import org.jetbrains.annotations.NotNull;
 import xyz.fmdc.arw.client.renderer.GenericGlbRenderer;
 import xyz.fmdc.arw.registry.ModBlocks;
 import xyz.fmdc.arw.client.util.IYawPitchAnimatableModel;
@@ -178,7 +179,7 @@ public class Oto127mmBlockEntity extends BlockEntity implements IYawPitchAnimata
     // --- NBT & Sync ---
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
+    protected void saveAdditional(@NotNull CompoundTag tag) {
         super.saveAdditional(tag);
         // 現在角度と目標角度の両方を保存
         tag.putFloat("Yaw", this.currentYaw);
@@ -198,7 +199,7 @@ public class Oto127mmBlockEntity extends BlockEntity implements IYawPitchAnimata
     }
 
     @Override
-    public void load(CompoundTag tag) {
+    public void load(@NotNull CompoundTag tag) {
         super.load(tag);
         this.currentYaw = tag.getFloat("Yaw");
         this.currentPitch = tag.getFloat("Pitch");
@@ -221,7 +222,7 @@ public class Oto127mmBlockEntity extends BlockEntity implements IYawPitchAnimata
     }
 
     @Override
-    public CompoundTag getUpdateTag() {
+    public @NotNull CompoundTag getUpdateTag() {
         CompoundTag tag = super.getUpdateTag();
         saveAdditional(tag);
         return tag;
