@@ -13,14 +13,14 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import xyz.fmdc.arw.client.renderer.GenericGlbRenderer;
 import xyz.fmdc.arw.registry.ModBlocks;
-import xyz.fmdc.arw.client.util.INavalGun;
+import xyz.fmdc.arw.client.util.IYawPitchAnimatableModel;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class Oto127mmBlockEntity extends BlockEntity implements INavalGun {
+public class Oto127mmBlockEntity extends BlockEntity implements IYawPitchAnimatableModel {
 
     // 描画用の現在角度・過去角度
     private float currentYaw = 0.0f;

@@ -35,7 +35,7 @@ public class CustomRenderTypes extends RenderType {
         return RenderType.create(
                 "glb_entity_cutout_triangles",
                 DefaultVertexFormat.NEW_ENTITY,
-                VertexFormat.Mode.TRIANGLES, // ★ TRIANGLES に対応
+                VertexFormat.Mode.TRIANGLES, // TRIANGLES に対応
                 256,
                 false,
                 false,
@@ -46,7 +46,7 @@ public class CustomRenderTypes extends RenderType {
                         .setLightmapState(LIGHTMAP) // 環境光・ライティングを有効化
                         .setOverlayState(OVERLAY)
                         .setWriteMaskState(COLOR_DEPTH_WRITE)
-                        .setCullState(CULL) // ★ 裏面カリング有効
+                        .setCullState(CULL) // 裏面カリング有効
                         .createCompositeState(false)
         );
     }

@@ -8,11 +8,11 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import org.jetbrains.annotations.NotNull;
 import xyz.fmdc.arw.client.util.GlbLoader;
-import xyz.fmdc.arw.client.util.INavalGun;
+import xyz.fmdc.arw.client.util.IYawPitchAnimatableModel;
 
 import java.util.List;
 
-public abstract class BaseNavalGunRenderer<T extends BlockEntity & INavalGun> implements BlockEntityRenderer<T> {
+public abstract class BaseNavalGunRenderer<T extends BlockEntity & IYawPitchAnimatableModel> implements BlockEntityRenderer<T> {
 
     protected final GenericGlbRenderer glbRenderer = new GenericGlbRenderer();
 

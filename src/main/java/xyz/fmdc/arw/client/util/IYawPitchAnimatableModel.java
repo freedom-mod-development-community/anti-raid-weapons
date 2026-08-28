@@ -4,8 +4,7 @@ import xyz.fmdc.arw.client.renderer.GenericGlbRenderer;
 
 import java.util.List;
 
-// INavalGun.java (艦砲用)
-public interface INavalGun {
+public interface IYawPitchAnimatableModel {
     float getTargetYaw(float partialTick);
     float getTargetPitch(float partialTick);
 

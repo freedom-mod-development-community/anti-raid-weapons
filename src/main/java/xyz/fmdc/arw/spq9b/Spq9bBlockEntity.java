@@ -7,12 +7,10 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import org.jetbrains.annotations.NotNull;
-import org.joml.Quaternionf;
-import xyz.fmdc.arw.client.util.INodeRotatableModel;
-import xyz.fmdc.arw.client.util.IRadar;
+import xyz.fmdc.arw.client.util.IYawModel;
 import xyz.fmdc.arw.registry.ModBlocks;
 
-public class Spq9bBlockEntity extends BlockEntity implements INodeRotatableModel, IRadar {
+public class Spq9bBlockEntity extends BlockEntity implements IYawModel {
 
     private float currentYaw = 0.0f;
     private float prevYaw = 0.0f;
@@ -42,11 +40,6 @@ public class Spq9bBlockEntity extends BlockEntity implements INodeRotatableModel
     }
 
     @Override
-    public Quaternionf getNodeRotation(String nodeName, float partialTick) {
-        return null;
-    }
-
-    @Override
     public AABB getRenderBoundingBox() {
         // ブロックの現在位置を中心に、描画判定領域を上下左右に広げる
         // 例: 上下に3ブロック、東西南北に3ブロック分領域を拡張
@@ -54,7 +47,7 @@ public class Spq9bBlockEntity extends BlockEntity implements INodeRotatableModel
     }
 
     @Override
-    public float getRotationYaw(float partialTick) {
+    public float getTargetYaw(float partialTick) {
         // 直前の tick と現在の tick の角度を補間してスムーズに描画
         // (360度から0度への跨ぎ時の飛躍を防ぐため補間計算)
         float diff = this.currentYaw - this.prevYaw;

@@ -8,9 +8,9 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import org.jetbrains.annotations.NotNull;
 import xyz.fmdc.arw.client.util.GlbLoader;
-import xyz.fmdc.arw.client.util.IRadar;
+import xyz.fmdc.arw.client.util.IYawModel;
 
-public abstract class BaseRadarRenderer<T extends BlockEntity & IRadar> implements BlockEntityRenderer<T> {
+public abstract class BaseRadarRenderer<T extends BlockEntity & IYawModel> implements BlockEntityRenderer<T> {
 
     protected final GenericGlbRenderer glbRenderer = new GenericGlbRenderer();
 
@@ -38,7 +38,7 @@ public abstract class BaseRadarRenderer<T extends BlockEntity & IRadar> implemen
                             "antenna".equalsIgnoreCase(nodeName) ||
                             "yaw".equalsIgnoreCase(nodeName)) {
 
-                        stack.mulPose(Axis.YP.rotationDegrees(blockEntity.getRotationYaw(pTick)));
+                        stack.mulPose(Axis.YP.rotationDegrees(blockEntity.getTargetYaw(pTick)));
                     }
                 }
         );

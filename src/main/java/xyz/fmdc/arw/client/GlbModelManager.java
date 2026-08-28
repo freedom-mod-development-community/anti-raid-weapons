@@ -24,7 +24,7 @@ public class GlbModelManager implements ResourceManagerReloadListener {
 
     // --- 事前に登録しておくモデル識別子 (ResourceLocation) ---
     public static final ResourceLocation OTO127MM_ID =
-            ResourceLocation.fromNamespaceAndPath(AntiRaidWeapons.MOD_ID, "models/block/mk45mod5.glb");
+            ResourceLocation.fromNamespaceAndPath(AntiRaidWeapons.MOD_ID, "models/block/mk45mod4nla.glb");
 
     // 実際のファイル名に合わせて指定（ops-39-2mat.glb の場合はそちらに変更）
     public static final ResourceLocation OPS39_ID =

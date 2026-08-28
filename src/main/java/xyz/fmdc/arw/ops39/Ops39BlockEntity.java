@@ -9,12 +9,10 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import org.jetbrains.annotations.NotNull;
-import org.joml.Quaternionf;
-import xyz.fmdc.arw.client.util.INodeRotatableModel;
-import xyz.fmdc.arw.client.util.IRadar;
+import xyz.fmdc.arw.client.util.IYawModel;
 import xyz.fmdc.arw.registry.ModBlocks;
 
-public class Ops39BlockEntity extends BlockEntity implements INodeRotatableModel, IRadar {
+public class Ops39BlockEntity extends BlockEntity implements IYawModel {
 
     private float currentYaw = 0.0f;
     private float prevYaw = 0.0f;
@@ -44,7 +42,7 @@ public class Ops39BlockEntity extends BlockEntity implements INodeRotatableModel
      * 描画用の滑らかな回転角度を取得 (360度跨ぎ対応)
      */
     @Override
-    public float getRotationYaw(float partialTick) {
+    public float getTargetYaw(float partialTick) {
         return Mth.rotLerp(partialTick, this.prevYaw, this.currentYaw);
     }
 
@@ -103,11 +101,6 @@ public class Ops39BlockEntity extends BlockEntity implements INodeRotatableModel
                 }
             }
         }
-    }
-
-    @Override
-    public Quaternionf getNodeRotation(String nodeName, float partialTick) {
-        return null;
     }
 
     @Override
