@@ -7,8 +7,10 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import xyz.fmdc.arw.AntiRaidWeapons;
+import xyz.fmdc.arw.common.blockentity.Mk45Mod4BlockEntity;
 import xyz.fmdc.arw.emmi.EmmiBlock;
 import xyz.fmdc.arw.emmi.EmmiBlockEntity;
+import xyz.fmdc.arw.mk45mod4.Mk45mod4Block;
 import xyz.fmdc.arw.ops39.Ops39Block;
 import xyz.fmdc.arw.ops39.Ops39BlockEntity;
 import xyz.fmdc.arw.oto127mm.Oto127mmBlock;
@@ -40,6 +42,9 @@ public class ModBlocks {
 
     public static final BlockEntry<Oto127mmBlock, Oto127mmBlockEntity> OTO127MM =
             new BlockEntry<>("oto127mm", () -> new Oto127mmBlock(defaultProps()), Oto127mmBlockEntity::new);
+
+    public static final BlockEntry<Mk45mod4Block, Mk45Mod4BlockEntity> MK45_MOD4 =
+            new BlockEntry<>("mk45mod4", () -> new Mk45mod4Block(defaultProps()), Mk45Mod4BlockEntity::new);
 
 
     public static void register(IEventBus eventBus) {
