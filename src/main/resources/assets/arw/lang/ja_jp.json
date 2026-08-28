@@ -1,4 +1,5 @@
 {
-  "item.arw.spq9b": "SPQ-9B レーダー",
-  "creativetab.arw_tab": "Anti Raid Weapons"
+  "creativetab.arw.main": "Anti Raid Weapons",
+  "block.arw.spq9b": "SPQ-9B レーダー",
+  "block.arw.ops39": "OPS-39 対水上捜索レーダー"
 }
