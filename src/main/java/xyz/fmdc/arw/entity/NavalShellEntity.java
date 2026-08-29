@@ -19,6 +19,7 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkHooks;
+import xyz.fmdc.arw.AntiRaidWeapons;
 import xyz.fmdc.arw.registry.ModEntities;
 
 public class NavalShellEntity extends Projectile {
@@ -66,6 +67,7 @@ public class NavalShellEntity extends Projectile {
 
     /**
      * 砲口から初速を与えて発射する
+     * @param velocity (m/tick)
      */
     public void shoot(double x, double y, double z, float velocity, float inaccuracy) {
         Vec3 dir = (new Vec3(x, y, z)).normalize().add(
@@ -127,14 +129,17 @@ public class NavalShellEntity extends Projectile {
     protected void onHitEntity(EntityHitResult result) {
         super.onHitEntity(result);
         if (!this.level().isClientSide) {
+            Vec3 hitPos = result.getLocation();
             Entity target = result.getEntity();
+            AntiRaidWeapons.LOGGER.info("NavalShell hit entity '{}' at ({}, {}, {})", target.getName().getString(), hitPos.x, hitPos.y, hitPos.z);
+
             Entity owner = this.getOwner();
             DamageSource damageSource = owner != null
                     ? this.damageSources().indirectMagic(this, owner)
                     : this.damageSources().generic();
 
             target.hurt(damageSource, this.directDamage);
-            explode();
+            explode(hitPos);
         }
     }
 
@@ -142,18 +147,20 @@ public class NavalShellEntity extends Projectile {
     protected void onHitBlock(BlockHitResult result) {
         super.onHitBlock(result);
         if (!this.level().isClientSide) {
-            explode();
+            Vec3 hitPos = result.getLocation();
+            AntiRaidWeapons.LOGGER.info("NavalShell hit block at ({}, {}, {}) [BlockPos: {}]", hitPos.x, hitPos.y, hitPos.z, result.getBlockPos());
+            explode(hitPos);
         }
     }
 
-    private void explode() {
+    private void explode(Vec3 hitPos) {
         if (!this.level().isClientSide) {
             float power = getExplosionPower();
             this.level().explode(
                     this,
-                    this.getX(),
-                    this.getY(),
-                    this.getZ(),
+                    hitPos.x,
+                    hitPos.y,
+                    hitPos.z,
                     power,
                     Level.ExplosionInteraction.MOB
             );

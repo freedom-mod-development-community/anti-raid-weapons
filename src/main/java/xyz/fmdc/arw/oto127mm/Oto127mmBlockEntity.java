@@ -146,7 +146,7 @@ public class Oto127mmBlockEntity extends BlockEntity implements IYawPitchAnimata
             NavalShellEntity shell = new NavalShellEntity(this.level, muzzlePos.x, muzzlePos.y, muzzlePos.z);
             shell.setExplosionPower(4.0f);
             shell.setDirectDamage(50.0f);
-            shell.shoot(direction.x, direction.y, direction.z, 3.5f, 0.1f);
+            shell.shoot(direction.x, direction.y, direction.z, 40.4f, 0.1f);
 
             this.level.addFreshEntity(shell);
         }
