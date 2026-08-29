@@ -11,10 +11,12 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import xyz.fmdc.arw.client.renderer.GenericGlbRenderer;
-import xyz.fmdc.arw.registry.ModBlocks;
 import xyz.fmdc.arw.client.util.IYawPitchAnimatableModel;
+import xyz.fmdc.arw.entity.NavalShellEntity;
+import xyz.fmdc.arw.registry.ModBlocks;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -64,26 +66,26 @@ public class Oto127mmBlockEntity extends BlockEntity implements IYawPitchAnimata
 
         be.tickCounter++;
 
-        // 2. 目標角度の更新テスト（将来的にここを「視線追従」や「AIの照準」に差し替える）
-        // ※例としてサイン波で目標角度（target）を動かしてみる
-        be.setTargetYaw(Mth.sin(be.tickCounter * 0.03f) * 45.0f);
-        float rawTargetPitch = Mth.sin(be.tickCounter * 0.05f) * 40.0f + 25.0f;
-        be.setTargetPitch(-rawTargetPitch);
-
-        // 3. current を target に向かってぬるっと旋回（イージング処理）
-        be.updateRotation();
-
-        // 4. アニメーションクリーンアップ
-        if (!be.runningAnimations.isEmpty()) {
-            long currentTime = level.getGameTime();
-            be.runningAnimations.entrySet().removeIf(entry -> {
-                String animName = entry.getKey();
-                long startTime = entry.getValue();
-                float duration = be.animationDurations.getOrDefault(animName, 1.0f);
-                float elapsedSeconds = (currentTime - startTime) / 20.0f;
-                return elapsedSeconds >= duration;
-            });
-        }
+//        // 2. 目標角度の更新テスト（将来的にここを「視線追従」や「AIの照準」に差し替える）
+//        // ※例としてサイン波で目標角度（target）を動かしてみる
+//        be.setTargetYaw(Mth.sin(be.tickCounter * 0.03f) * 45.0f);
+//        float rawTargetPitch = Mth.sin(be.tickCounter * 0.05f) * 40.0f + 25.0f;
+//        be.setTargetPitch(-rawTargetPitch);
+//
+//        // 3. current を target に向かってぬるっと旋回（イージング処理）
+//        be.updateRotation();
+//
+//        // 4. アニメーションクリーンアップ
+//        if (!be.runningAnimations.isEmpty()) {
+//            long currentTime = level.getGameTime();
+//            be.runningAnimations.entrySet().removeIf(entry -> {
+//                String animName = entry.getKey();
+//                long startTime = entry.getValue();
+//                float duration = be.animationDurations.getOrDefault(animName, 1.0f);
+//                float elapsedSeconds = (currentTime - startTime) / 20.0f;
+//                return elapsedSeconds >= duration;
+//            });
+//        }
 
         // テスト用：発射処理
         if (!level.isClientSide) {
@@ -135,6 +137,19 @@ public class Oto127mmBlockEntity extends BlockEntity implements IYawPitchAnimata
     public void fire() {
         playAnimation("fire", FIRE_ANIM_DURATION);
         playAnimation("reload", RELOAD_ANIM_DURATION);
+
+        if (this.level != null && !this.level.isClientSide) {
+            Vec3 pivot = Vec3.atCenterOf(this.worldPosition).add(0.0, 1.2, 0.0);
+            Vec3 direction = Vec3.directionFromRotation(this.currentPitch, this.currentYaw);
+            Vec3 muzzlePos = pivot.add(direction.scale(2.5));
+
+            NavalShellEntity shell = new NavalShellEntity(this.level, muzzlePos.x, muzzlePos.y, muzzlePos.z);
+            shell.setExplosionPower(4.0f);
+            shell.setDirectDamage(50.0f);
+            shell.shoot(direction.x, direction.y, direction.z, 40.4f, 0.1f);
+
+            this.level.addFreshEntity(shell);
+        }
     }
 
     private void syncToClient() {
@@ -181,7 +196,6 @@ public class Oto127mmBlockEntity extends BlockEntity implements IYawPitchAnimata
     @Override
     protected void saveAdditional(@NotNull CompoundTag tag) {
         super.saveAdditional(tag);
-        // 現在角度と目標角度の両方を保存
         tag.putFloat("Yaw", this.currentYaw);
         tag.putFloat("Pitch", this.currentPitch);
         tag.putFloat("TargetYaw", this.targetYaw);

@@ -6,6 +6,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import xyz.fmdc.arw.api.control.IRemoteControllableWeapon;
+import xyz.fmdc.arw.entity.NavalShellEntity;
 import xyz.fmdc.arw.registry.ModBlocks;
 
 import java.util.UUID;
@@ -49,9 +50,35 @@ public class Mk45Mod4BlockEntity extends IntegratedWeaponBlockEntity implements 
     @Override
     public void fire() {
         if (!canFire()) return;
+
         playAnimation("fire", FIRE_ANIM_DURATION);
         playAnimation("reload", RELOAD_ANIM_DURATION);
-        this.cooldownTicks = 40; // 発射間隔（例: 2秒＝20rpm）
+        this.cooldownTicks = 40; // 発射間隔（2秒＝20rpm）
+
+        // 弾体エンティティの生成と射出（サーバー側）
+        if (this.level != null && !this.level.isClientSide) {
+            spawnShell();
+        }
+    }
+
+    private void spawnShell() {
+        if (this.level == null) return;
+
+        // 砲塔ピボット中心
+        Vec3 pivot = Vec3.atCenterOf(this.worldPosition).add(0.0, 1.2, 0.0);
+
+        // 現在の仰俯角・旋回角に応じた発射方向ベクトル
+        Vec3 direction = Vec3.directionFromRotation(this.currentPitch, this.currentYaw);
+
+        // 砲口（マズル）位置のオフセット（砲身長 約2.8m）
+        Vec3 muzzlePos = pivot.add(direction.scale(2.8));
+
+        NavalShellEntity shell = new NavalShellEntity(this.level, muzzlePos.x, muzzlePos.y, muzzlePos.z);
+        shell.setExplosionPower(4.5f);
+        shell.setDirectDamage(60.0f);
+        shell.shoot(direction.x, direction.y, direction.z, 3.5f, 0.1f);
+
+        this.level.addFreshEntity(shell);
     }
 
     @Override
@@ -70,7 +97,7 @@ public class Mk45Mod4BlockEntity extends IntegratedWeaponBlockEntity implements 
     // --- IRemoteControllableWeapon の実装 ---
     @Override
     public Vec3 getCameraPosition() {
-        // 砲頭カメラの位置オフセット（例: ブロック中心から上方1.8m、前方0.5m）
+        // 砲頭カメラの位置オフセット（ブロック中心から上方1.8m、前方0.5m）
         return Vec3.atCenterOf(this.worldPosition).add(0.0, 1.8, 0.5);
     }
 
