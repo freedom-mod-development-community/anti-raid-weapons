@@ -3,8 +3,10 @@ package xyz.fmdc.arw;
 import com.mojang.logging.LogUtils;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.slf4j.Logger;
+import xyz.fmdc.arw.network.PacketHandler;
 import xyz.fmdc.arw.registry.ModBlockEntities;
 import xyz.fmdc.arw.registry.ModBlocks;
 import xyz.fmdc.arw.registry.ModCreativeTabs;
@@ -25,5 +27,12 @@ public class AntiRaidWeapons {
         ModBlockEntities.register(modEventBus); // ← これが呼ばれているか＆順番が正しいか確認
         ModItems.register(modEventBus);
         ModCreativeTabs.register(modEventBus);
+
+        modEventBus.addListener(this::commonSetup);
+    }
+
+    private void commonSetup(final FMLCommonSetupEvent event) {
+        // パケット登録はマルチスレッド実行時の競合を防ぐため enqueueWork 内で行う
+        event.enqueueWork(PacketHandler::register);
     }
 }

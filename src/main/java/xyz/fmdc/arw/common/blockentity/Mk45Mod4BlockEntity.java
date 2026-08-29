@@ -10,7 +10,7 @@ import xyz.fmdc.arw.registry.ModBlocks;
 
 import java.util.UUID;
 
-public class Mk45Mod4BlockEntity extends IntegratedWeaponBlockEntity implements IRemoteControllableWeapon {
+public class Mk45Mod4BlockEntity extends AbstractGunBlockEntity implements IRemoteControllableWeapon {
 
     // Mk 45 Mod 4 固有のパラメータ設定
     private static final float YAW_TURN_SPEED = 4.0f;   // 1Tickあたり4度（高速旋回）

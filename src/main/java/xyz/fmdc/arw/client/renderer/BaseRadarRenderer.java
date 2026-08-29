@@ -10,30 +10,34 @@ import org.jetbrains.annotations.NotNull;
 import xyz.fmdc.arw.client.util.GlbLoader;
 import xyz.fmdc.arw.client.util.IYawModel;
 
-public abstract class BaseRadarRenderer<T extends BlockEntity & IYawModel> implements BlockEntityRenderer<T> {
+import java.util.function.Function;
+
+public class BaseRadarRenderer<T extends BlockEntity & IYawModel> implements BlockEntityRenderer<T> {
 
     protected final GenericGlbRenderer glbRenderer = new GenericGlbRenderer();
+    private final Function<T, GlbLoader.GlbModelData> modelProvider;
 
+    // 従来の抽象クラス用コンストラクタ（互換性維持）
     public BaseRadarRenderer(BlockEntityRendererProvider.Context context) {
-        // 必要に応じて context をフィールドに保持することも可能
+        this.modelProvider = this::getModelData;
     }
+
+    // 1行登録用のコンストラクタ
+    public BaseRadarRenderer(BlockEntityRendererProvider.Context context, Function<T, GlbLoader.GlbModelData> modelProvider) {
+        this.modelProvider = modelProvider;
+    }
+
     @Override
     public void render(@NotNull T blockEntity, float partialTick, @NotNull PoseStack poseStack,
                        @NotNull MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
 
-        GlbLoader.GlbModelData modelData = getModelData(blockEntity);
-        if (modelData == null) {
-            //AntiRaidWeapons.LOGGER.warn("[ARW-DEBUG] render() は呼ばれましたが、getModelData() が null を返しました！ (BE: {})",
-            //        blockEntity.getBlockPos());
-            return;
-        }
+        GlbLoader.GlbModelData modelData = this.modelProvider.apply(blockEntity);
+        if (modelData == null) { return; }
 
-        // 汎用GLBレンダラーを呼び出し、回転制御ノード（radar / antenna / yaw 等）に回転を割り込み
         glbRenderer.render(
                 modelData, poseStack, bufferSource, packedLight, packedOverlay, partialTick,
                 java.util.Collections.emptyList(),
                 (nodeName, stack, pTick) -> {
-                    // Blender上の回転ノード名に合わせて判定
                     if ("radar".equalsIgnoreCase(nodeName) ||
                             "antenna".equalsIgnoreCase(nodeName) ||
                             "yaw".equalsIgnoreCase(nodeName)) {
@@ -44,7 +48,9 @@ public abstract class BaseRadarRenderer<T extends BlockEntity & IYawModel> imple
         );
     }
 
-    protected abstract GlbLoader.GlbModelData getModelData(T blockEntity);
+    protected GlbLoader.GlbModelData getModelData(T blockEntity) {
+        return null;
+    }
 
     @Override
     public int getViewDistance() {

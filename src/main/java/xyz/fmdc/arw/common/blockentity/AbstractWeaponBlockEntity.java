@@ -9,16 +9,14 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
-import xyz.fmdc.arw.client.renderer.GenericGlbRenderer;
-import xyz.fmdc.arw.client.util.IYawPitchAnimatableModel;
-import xyz.fmdc.arw.common.AbstractEquipmentBlockEntity;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-public abstract class AbstractWeaponBlockEntity extends AbstractEquipmentBlockEntity implements IYawPitchAnimatableModel {
+/**
+ * 全ての火器の基底クラス. ここから主砲や小口径火器等にFCSへの接続の有無等を加味して分岐.描画インターフェースはここには実装しない.
+ */
+public abstract class AbstractWeaponBlockEntity extends AbstractARWBlockEntity {
 
     protected float currentYaw = 0.0f;
     protected float prevYaw = 0.0f;
@@ -92,32 +90,6 @@ public abstract class AbstractWeaponBlockEntity extends AbstractEquipmentBlockEn
     }
 
     public abstract void fire();
-
-    @Override
-    public float getTargetYaw(float partialTick) {
-        return Mth.rotLerp(partialTick, prevYaw, currentYaw);
-    }
-
-    @Override
-    public float getTargetPitch(float partialTick) {
-        return Mth.rotLerp(partialTick, prevPitch, currentPitch);
-    }
-
-    @Override
-    public List<GenericGlbRenderer.ActiveAnimation> getActiveAnimations(float partialTick) {
-        List<GenericGlbRenderer.ActiveAnimation> list = new ArrayList<>();
-        if (this.level == null) return list;
-
-        long currentGameTime = this.level.getGameTime();
-        for (Map.Entry<String, Long> entry : this.runningAnimations.entrySet()) {
-            String name = entry.getKey();
-            long startTime = entry.getValue();
-            float elapsedTicks = (float) (currentGameTime - startTime) + partialTick;
-            float elapsedSeconds = Math.max(0.0f, elapsedTicks / 20.0f);
-            list.add(new GenericGlbRenderer.ActiveAnimation(name, elapsedSeconds));
-        }
-        return list;
-    }
 
     @Override
     protected void saveAdditional(@NotNull CompoundTag tag) {

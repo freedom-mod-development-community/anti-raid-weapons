@@ -148,12 +148,12 @@ public class Oto127mmBlockEntity extends BlockEntity implements IYawPitchAnimata
     // --- INavalGun の実装 ---
 
     @Override
-    public float getTargetYaw(float partialTick) {
+    public float getRenderTargetYaw(float partialTick) {
         return Mth.rotLerp(partialTick, prevYaw, currentYaw);
     }
 
     @Override
-    public float getTargetPitch(float partialTick) {
+    public float getRenderTargetPitch(float partialTick) {
         return Mth.rotLerp(partialTick, prevPitch, currentPitch);
     }
 
