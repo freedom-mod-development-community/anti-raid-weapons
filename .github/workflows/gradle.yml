@@ -35,7 +35,7 @@ jobs:
           fi
 
       - name: Set up JDK ${{ steps.detect.outputs.java_version }}
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: ${{ steps.detect.outputs.java_version }}
           distribution: 'temurin' # Minecraft Mod開発で標準的かつ安定しているJDK
