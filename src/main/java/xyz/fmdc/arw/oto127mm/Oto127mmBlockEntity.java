@@ -7,6 +7,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -17,6 +18,7 @@ import xyz.fmdc.arw.client.renderer.GenericGlbRenderer;
 import xyz.fmdc.arw.client.util.IYawPitchAnimatableModel;
 import xyz.fmdc.arw.entity.NavalShellEntity;
 import xyz.fmdc.arw.registry.ModBlocks;
+import xyz.fmdc.arw.registry.ModSounds;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -139,9 +141,9 @@ public class Oto127mmBlockEntity extends BlockEntity implements IYawPitchAnimata
         playAnimation("reload", RELOAD_ANIM_DURATION);
 
         if (this.level != null && !this.level.isClientSide) {
-            Vec3 pivot = Vec3.atCenterOf(this.worldPosition).add(0.0, 1.2, 0.0);
+            Vec3 pivot = Vec3.atCenterOf(this.worldPosition).add(0.0, 1.8, 0.0);
             Vec3 direction = Vec3.directionFromRotation(this.currentPitch, this.currentYaw);
-            Vec3 muzzlePos = pivot.add(direction.scale(2.5));
+            Vec3 muzzlePos = pivot.add(direction.scale(8.0));
 
             NavalShellEntity shell = new NavalShellEntity(this.level, muzzlePos.x, muzzlePos.y, muzzlePos.z);
             shell.setExplosionPower(4.0f);
@@ -149,6 +151,18 @@ public class Oto127mmBlockEntity extends BlockEntity implements IYawPitchAnimata
             shell.shoot(direction.x, direction.y, direction.z, 40.4f, 0.1f);
 
             this.level.addFreshEntity(shell);
+
+            // サウンド再生（発射音）
+            this.level.playSound(
+                    null,
+                    this.worldPosition.getX() + 0.5,
+                    this.worldPosition.getY() + 0.5,
+                    this.worldPosition.getZ() + 0.5,
+                    ModSounds.OTO127_FIRE.get(),
+                    SoundSource.BLOCKS,
+                    4.0f,
+                    1.0f
+            );
         }
     }
 

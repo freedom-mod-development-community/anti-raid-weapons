@@ -10,6 +10,7 @@ import xyz.fmdc.arw.registry.ModBlocks;
 import xyz.fmdc.arw.registry.ModCreativeTabs;
 import xyz.fmdc.arw.registry.ModEntities;
 import xyz.fmdc.arw.registry.ModItems;
+import xyz.fmdc.arw.registry.ModSounds;
 
 @Mod(AntiRaidWeapons.MOD_ID)
 public class AntiRaidWeapons {
@@ -19,6 +20,7 @@ public class AntiRaidWeapons {
     public AntiRaidWeapons(FMLJavaModLoadingContext context) {
         IEventBus modEventBus = context.getModEventBus();
 
+        ModSounds.register(modEventBus);
         ModBlocks.register(modEventBus);
         ModBlockEntities.register(modEventBus);
         ModEntities.register(modEventBus);
