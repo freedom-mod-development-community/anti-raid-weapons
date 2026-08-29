@@ -1,15 +1,22 @@
 package xyz.fmdc.arw.common.blockentity.weapon;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.state.BlockState;
 import xyz.fmdc.arw.api.control.IDirectMannedWeapon;
+import xyz.fmdc.arw.client.renderer.GenericGlbRenderer;
+import xyz.fmdc.arw.client.util.IYawPitchAnimatableModel;
 import xyz.fmdc.arw.registry.ModBlocks;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * FCSを持たず、プレイヤーが直接座席に乗り込んで目視で操作・射撃を行う旧式機銃・高角砲
  */
-public class WWIIAntiAircraftGunBlockEntity extends StandaloneManualWeaponBlockEntity implements IDirectMannedWeapon {
+public class WWIIAntiAircraftGunBlockEntity extends StandaloneManualWeaponBlockEntity implements IYawPitchAnimatableModel ,IDirectMannedWeapon {
 
     private Player mountedPlayer = null;
 
@@ -27,6 +34,32 @@ public class WWIIAntiAircraftGunBlockEntity extends StandaloneManualWeaponBlockE
     @Override
     public void fire() {
         playAnimation("fire", 0.2f);
+    }
+
+    @Override
+    public float getRenderTargetYaw(float partialTick) {
+        return Mth.rotLerp(partialTick, prevYaw, currentYaw);
+    }
+
+    @Override
+    public float getRenderTargetPitch(float partialTick) {
+        return Mth.rotLerp(partialTick, prevPitch, currentPitch);
+    }
+
+    @Override
+    public List<GenericGlbRenderer.ActiveAnimation> getActiveAnimations(float partialTick) {
+        List<GenericGlbRenderer.ActiveAnimation> list = new ArrayList<>();
+        if (this.level == null) return list;
+
+        long currentGameTime = this.level.getGameTime();
+        for (Map.Entry<String, Long> entry : this.runningAnimations.entrySet()) {
+            String name = entry.getKey();
+            long startTime = entry.getValue();
+            float elapsedTicks = (float) (currentGameTime - startTime) + partialTick;
+            float elapsedSeconds = Math.max(0.0f, elapsedTicks / 20.0f);
+            list.add(new GenericGlbRenderer.ActiveAnimation(name, elapsedSeconds));
+        }
+        return list;
     }
 
     // --- IDirectMannedWeapon の実装 ---
