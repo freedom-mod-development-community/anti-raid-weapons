@@ -8,6 +8,7 @@ import net.minecraftforge.fml.common.Mod;
 import xyz.fmdc.arw.AntiRaidWeapons;
 import xyz.fmdc.arw.client.renderer.*;
 import xyz.fmdc.arw.registry.ModBlocks;
+import xyz.fmdc.arw.registry.ModEntities;
 
 @Mod.EventBusSubscriber(modid = AntiRaidWeapons.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class ClientModEvents {
@@ -19,6 +20,8 @@ public class ClientModEvents {
         event.registerBlockEntityRenderer(ModBlocks.EMMI.getBEType(), EmmiRenderer::new);
         event.registerBlockEntityRenderer(ModBlocks.OTO127MM.getBEType(), Oto127mmRenderer::new);
         event.registerBlockEntityRenderer(ModBlocks.MK45_MOD4.getBEType(), Mk45mod4Renderer::new);
+
+        event.registerEntityRenderer(ModEntities.NAVAL_SHELL.get(), NavalShellRenderer::new);
     }
 
     @SubscribeEvent

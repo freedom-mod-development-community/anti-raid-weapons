@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import xyz.fmdc.arw.registry.ModBlockEntities;
 import xyz.fmdc.arw.registry.ModBlocks;
 import xyz.fmdc.arw.registry.ModCreativeTabs;
+import xyz.fmdc.arw.registry.ModEntities;
 import xyz.fmdc.arw.registry.ModItems;
 
 @Mod(AntiRaidWeapons.MOD_ID)
@@ -15,14 +16,12 @@ public class AntiRaidWeapons {
     public static final String MOD_ID = "arw";
     public static final Logger LOGGER = LogUtils.getLogger();
 
-    // コンストラクタの引数で FMLJavaModLoadingContext を受け取る
     public AntiRaidWeapons(FMLJavaModLoadingContext context) {
-        // インジェクションされた context から IEventBus を取得
         IEventBus modEventBus = context.getModEventBus();
 
-        // 各レジストリの登録
         ModBlocks.register(modEventBus);
-        ModBlockEntities.register(modEventBus); // ← これが呼ばれているか＆順番が正しいか確認
+        ModBlockEntities.register(modEventBus);
+        ModEntities.register(modEventBus);
         ModItems.register(modEventBus);
         ModCreativeTabs.register(modEventBus);
     }
