@@ -1,4 +1,4 @@
-package xyz.fmdc.arw.registry;
+package xyz.fmdc.arw.registry.auto;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -8,6 +8,7 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.RegistryObject;
 import xyz.fmdc.arw.AntiRaidWeapons;
+import xyz.fmdc.arw.registry.ModBlocks;
 
 public class ModCreativeTabs {
     // CreativeModeTab 用の DeferredRegister

@@ -1,20 +1,32 @@
 package xyz.fmdc.arw.common.blockentity;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import xyz.fmdc.arw.api.fcs.FiringSolution;
 import xyz.fmdc.arw.api.fcs.IFcsControllableWeapon;
 import xyz.fmdc.arw.client.renderer.GenericGlbRenderer;
 import xyz.fmdc.arw.client.util.IYawPitchAnimatableModel;
+import xyz.fmdc.arw.common.entity.projectile.FiveInchAmmoType;
+import xyz.fmdc.arw.common.entity.projectile.FiveInchShellEntity;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 //FCS対応近代兵装の基底.
 public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntity implements IYawPitchAnimatableModel,IFcsControllableWeapon {
@@ -29,6 +41,7 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
 
     protected float targetYaw = 0.0f;
     protected float targetPitch = 0.0f;
+    protected int cooldownTicks = 0;
 
     protected abstract float getYawTurnSpeed();
     protected abstract float getPitchTurnSpeed();
@@ -38,6 +51,9 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
     protected abstract float getMaxPitch();
 
     public void tickSingleGun() {
+        if (cooldownTicks > 0) {
+            cooldownTicks--;
+        }
         this.prevYaw = this.currentYaw;
         this.prevPitch = this.currentPitch;
 
@@ -88,7 +104,103 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
         this.targetPitch = Mth.clamp(pitch, getMinPitch(), getMaxPitch());
     }
 
+    // --- 子クラスで定義・オーバーライドする抽象メソッド群 ---
+
+    /** 使用する砲弾の Enum（重量や爆薬量などのパラメータ保持用） */
+    public abstract FiveInchAmmoType getSelectedAmmoType();
+
+    /** 生成する砲弾エンティティの EntityType */
+    public abstract EntityType<FiveInchShellEntity> getShellEntityType();
+
+    /** 砲身の向きベクトル（正規化済み） */
+    public abstract Vec3 getFiringDirection();
+
+    /** ブロックの中心から砲口（マズル）までの相対位置オフセット */
+    public abstract Vec3 getMuzzleOffset();
+
+    /** 再装填時間（Tick単位 / 20ticks = 1秒） */
+    public abstract int getMaxCooldownTicks();
+
+    /** 発射時の効果音（デフォルトは汎用大爆発音） */
+    public SoundEvent getFireSound() {
+        return SoundEvents.GENERIC_EXPLODE;
+    }
+
+    /** 初速パラメータ */
+    public float getMuzzleVelocity() {
+        return 8.0F;
+    }
+
     public abstract void fire();
+    /**
+     * 主砲発射メソッド（子クラスからはこれを呼び出すだけ）
+     */
+    public void fireProcess() {
+        if (this.level == null || this.cooldownTicks > 0) {
+            return;
+        }
+        // クールダウン開始
+        this.cooldownTicks = getMaxCooldownTicks();
+
+        Vec3 direction = getFiringDirection().normalize();
+        Vec3 muzzlePos = Vec3.atCenterOf(this.worldPosition).add(getMuzzleOffset());
+
+        // 1. サウンド再生
+        this.level.playSound(
+                null,
+                BlockPos.containing(muzzlePos),
+                getFireSound(),
+                SoundSource.BLOCKS,
+                10.0F,
+                0.5F
+        );
+
+        // 2. 弾丸エンティティ生成 & エフェクト（サーバー側）
+        if (!this.level.isClientSide) {
+            FiveInchShellEntity shell = new FiveInchShellEntity(getShellEntityType(), this.level);
+            shell.setPos(muzzlePos.x, muzzlePos.y, muzzlePos.z);
+            shell.setAmmoType(getSelectedAmmoType());
+            shell.setDeltaMovement(direction.scale(getMuzzleVelocity()));
+
+            this.level.addFreshEntity(shell);
+
+            // マズルフラッシュと大爆煙の同期発生
+            if (this.level instanceof ServerLevel serverLevel) {
+                spawnMuzzleEffects(serverLevel, muzzlePos, direction);
+            }
+        }
+
+        this.setChanged();
+    }
+
+    /** 砲口エフェクト（炎と重厚な白煙） */
+    protected void spawnMuzzleEffects(ServerLevel serverLevel, Vec3 muzzlePos, Vec3 direction) {
+        // マズルフラッシュ（炎）
+        serverLevel.sendParticles(
+                ParticleTypes.FLAME,
+                muzzlePos.x, muzzlePos.y, muzzlePos.z,
+                25, 0.4, 0.4, 0.4, 0.25
+        );
+
+        // 大爆煙
+        for (int i = 0; i < 40; i++) {
+            double rx = (serverLevel.random.nextDouble() - 0.5) * 2.0;
+            double ry = (serverLevel.random.nextDouble() - 0.5) * 2.0;
+            double rz = (serverLevel.random.nextDouble() - 0.5) * 2.0;
+
+            serverLevel.sendParticles(
+                    ParticleTypes.CAMPFIRE_COSY_SMOKE,
+                    muzzlePos.x + direction.x * 1.5,
+                    muzzlePos.y + direction.y * 1.5,
+                    muzzlePos.z + direction.z * 1.5,
+                    1,
+                    rx * 0.2 + direction.x * 0.6,
+                    ry * 0.2 + direction.y * 0.6,
+                    rz * 0.2 + direction.z * 0.6,
+                    0.15
+            );
+        }
+    }
 
 
     public AbstractSingleGunBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {

@@ -42,7 +42,7 @@ public class BaseNavalGunRenderer<T extends BlockEntity & IYawPitchAnimatableMod
                 activeAnimations,
                 (nodeName, stack, pTick) -> {
                     if ("yaw".equalsIgnoreCase(nodeName)) {
-                        stack.mulPose(Axis.YP.rotationDegrees(blockEntity.getRenderTargetYaw(pTick)));
+                        stack.mulPose(Axis.YP.rotationDegrees(-blockEntity.getRenderTargetYaw(pTick)));
                     } else if ("pitch".equalsIgnoreCase(nodeName)) {
                         stack.mulPose(Axis.XP.rotationDegrees(blockEntity.getRenderTargetPitch(pTick)));
                     }

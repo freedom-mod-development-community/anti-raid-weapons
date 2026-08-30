@@ -1,6 +1,7 @@
 package xyz.fmdc.arw.common.blockentity.weapon;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -8,10 +9,16 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import xyz.fmdc.arw.api.control.IRemoteControllableWeapon;
 import xyz.fmdc.arw.common.blockentity.AbstractSingleGunBlockEntity;
+import xyz.fmdc.arw.common.entity.projectile.FiveInchAmmoType;
+import xyz.fmdc.arw.common.entity.projectile.FiveInchShellEntity;
 import xyz.fmdc.arw.registry.ModBlocks;
+import xyz.fmdc.arw.registry.ModEntities;
 
 import java.util.UUID;
 
+/**
+ * MK45Mod4
+ */
 public class Mk45Mod4BlockEntity extends AbstractSingleGunBlockEntity implements IRemoteControllableWeapon {
 
     // Mk 45 Mod 4 固有のパラメータ設定
@@ -27,8 +34,10 @@ public class Mk45Mod4BlockEntity extends AbstractSingleGunBlockEntity implements
 
     private int tickCounter = 0;
 
+    private FiveInchAmmoType currentAmmo = FiveInchAmmoType.MK80_HE_PD;
+
+
     private UUID controllerPlayerUUID = null;
-    private int cooldownTicks = 0;
 
     public Mk45Mod4BlockEntity(BlockPos pos, BlockState state) {
         super(ModBlocks.MK45_MOD4.getBEType(), pos, state);
@@ -48,15 +57,59 @@ public class Mk45Mod4BlockEntity extends AbstractSingleGunBlockEntity implements
         if (!be.isBeingRemoteControlled() && !be.isConnectedToFcs()) {
             // Standby状態の維持など
         }
+        // テスト用：発射処理
+        if (!level.isClientSide) {
+            if (be.tickCounter % 120 == 0) {
+                be.fire();
+            }
+        }
+        be.tickCounter++;
     }
 
     @Override
     public void fire() {
-        System.out.println("fire");
-        //if (!canFire()) return;
+        if (!canFire()) return;
         playAnimation("fire", FIRE_ANIM_DURATION);
         playAnimation("reload", RELOAD_ANIM_DURATION);
+        fireProcess();
         this.cooldownTicks = 60; // 発射間隔（例: 2秒＝20rpm）
+    }
+
+    @Override
+    public FiveInchAmmoType getSelectedAmmoType() {
+        return this.currentAmmo;
+    }
+
+    @Override
+    public EntityType<FiveInchShellEntity> getShellEntityType() {
+        // 登録済みの 5インチ砲弾 ModEntities.FIVE_INCH_SHELL.get() など
+        return ModEntities.FIVE_INCH_SHELL.get();
+    }
+
+    @Override
+    public Vec3 getFiringDirection() {
+        return Vec3.directionFromRotation(this.currentPitch, this.currentYaw);
+    }
+
+    @Override
+    public Vec3 getMuzzleOffset() {
+        float barrelLength = 7.7f; // 砲身の長さ
+        double pivotHeight = 2.1749 - 0.5; // 旋回軸の高さ（ブロック底部または中心からのYオフセット）
+
+        Vec3 dir = getFiringDirection();
+
+        // 射撃方向に砲身長さを掛け、旋回軸の基準高さを加算
+        return new Vec3(
+                dir.x * barrelLength,
+                dir.y * barrelLength + pivotHeight,
+                dir.z * barrelLength
+        );
+    }
+
+    @Override
+    public int getMaxCooldownTicks() {
+        // Mk45 (Mod 4) 連射速度: 約20発/分 ➔ 1発あたり 3秒 (60 ticks)
+        return 60;
     }
 
     @Override

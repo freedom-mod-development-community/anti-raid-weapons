@@ -25,6 +25,7 @@ import xyz.fmdc.arw.ops39.Ops39Block;
 import xyz.fmdc.arw.ops39.Ops39BlockEntity;
 import xyz.fmdc.arw.oto127mm.Oto127mmBlock;
 import xyz.fmdc.arw.oto127mm.Oto127mmBlockEntity;
+import xyz.fmdc.arw.registry.auto.BlockEntry;
 import xyz.fmdc.arw.spq9b.Spq9bBlock;
 import xyz.fmdc.arw.spq9b.Spq9bBlockEntity;
 

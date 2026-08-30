@@ -1,5 +1,6 @@
 package xyz.fmdc.arw.client;
 
+import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.api.distmarker.Dist;
@@ -11,8 +12,9 @@ import xyz.fmdc.arw.AntiRaidWeapons;
 import xyz.fmdc.arw.client.renderer.*;
 import xyz.fmdc.arw.client.util.IYawModel;
 import xyz.fmdc.arw.client.util.IYawPitchAnimatableModel;
-import xyz.fmdc.arw.registry.BlockEntry;
 import xyz.fmdc.arw.registry.ModBlocks;
+import xyz.fmdc.arw.registry.ModEntities;
+import xyz.fmdc.arw.registry.auto.BlockEntry;
 
 @Mod.EventBusSubscriber(modid = AntiRaidWeapons.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class ClientModEvents {
@@ -29,6 +31,9 @@ public class ClientModEvents {
         registerRadar(event, ModBlocks.OPTICAL_SIGHT_BLOCK, GlbModelManager.OPS39_ID);
         registerRadar(event, ModBlocks.SEARCH_RADAR_BLOCK, GlbModelManager.OPS39_ID);
         registerRadar(event, ModBlocks.TRACKING_RADAR_BLOCK, GlbModelManager.OPS39_ID);
+
+        //entity
+        event.registerEntityRenderer(ModEntities.FIVE_INCH_SHELL.get(), ThrownItemRenderer::new);
     }
 
     @SubscribeEvent

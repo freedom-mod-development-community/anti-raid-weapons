@@ -42,7 +42,7 @@ public class BaseRadarRenderer<T extends BlockEntity & IYawModel> implements Blo
                             "antenna".equalsIgnoreCase(nodeName) ||
                             "yaw".equalsIgnoreCase(nodeName)) {
 
-                        stack.mulPose(Axis.YP.rotationDegrees(blockEntity.getTargetYaw(pTick)));
+                        stack.mulPose(Axis.YP.rotationDegrees(-blockEntity.getTargetYaw(pTick)));
                     }
                 }
         );

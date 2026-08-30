@@ -7,10 +7,11 @@ import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.slf4j.Logger;
 import xyz.fmdc.arw.network.PacketHandler;
-import xyz.fmdc.arw.registry.ModBlockEntities;
 import xyz.fmdc.arw.registry.ModBlocks;
-import xyz.fmdc.arw.registry.ModCreativeTabs;
-import xyz.fmdc.arw.registry.ModItems;
+import xyz.fmdc.arw.registry.ModEntities;
+import xyz.fmdc.arw.registry.auto.ModBlockEntities;
+import xyz.fmdc.arw.registry.auto.ModCreativeTabs;
+import xyz.fmdc.arw.registry.auto.ModItems;
 
 @Mod(AntiRaidWeapons.MOD_ID)
 public class AntiRaidWeapons {
@@ -24,8 +25,9 @@ public class AntiRaidWeapons {
 
         // 各レジストリの登録
         ModBlocks.register(modEventBus);
-        ModBlockEntities.register(modEventBus); // ← これが呼ばれているか＆順番が正しいか確認
+        ModBlockEntities.register(modEventBus);
         ModItems.register(modEventBus);
+        ModEntities.register(modEventBus);
         ModCreativeTabs.register(modEventBus);
 
         modEventBus.addListener(this::commonSetup);
