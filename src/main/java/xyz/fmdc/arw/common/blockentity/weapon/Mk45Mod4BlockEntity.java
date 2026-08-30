@@ -1,27 +1,31 @@
-package xyz.fmdc.arw.common.blockentity;
+package xyz.fmdc.arw.common.blockentity.weapon;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import xyz.fmdc.arw.api.control.IRemoteControllableWeapon;
+import xyz.fmdc.arw.common.blockentity.AbstractSingleGunBlockEntity;
 import xyz.fmdc.arw.registry.ModBlocks;
 
 import java.util.UUID;
 
-public class Mk45Mod4BlockEntity extends AbstractGunBlockEntity implements IRemoteControllableWeapon {
+public class Mk45Mod4BlockEntity extends AbstractSingleGunBlockEntity implements IRemoteControllableWeapon {
 
     // Mk 45 Mod 4 固有のパラメータ設定
     private static final float YAW_TURN_SPEED = 4.0f;   // 1Tickあたり4度（高速旋回）
     private static final float PITCH_TURN_SPEED = 3.0f; // 1Tickあたり3度
-    private static final float MIN_YAW = -150.0f;
-    private static final float MAX_YAW = 150.0f;
+    private static final float MIN_YAW = -190.0f;
+    private static final float MAX_YAW = 190.0f;
     private static final float MIN_PITCH = -65.0f;     // 仰角（上向き）
     private static final float MAX_PITCH = 15.0f;      // 俯角（下向き）
 
     public static final float FIRE_ANIM_DURATION = 0.8f;
     public static final float RELOAD_ANIM_DURATION = 2.0f;
+
+    private int tickCounter = 0;
 
     private UUID controllerPlayerUUID = null;
     private int cooldownTicks = 0;
@@ -34,7 +38,7 @@ public class Mk45Mod4BlockEntity extends AbstractGunBlockEntity implements IRemo
 
     public static void tick(Level level, BlockPos pos, BlockState state, Mk45Mod4BlockEntity be) {
         // 共通の武器旋回・アニメーション処理を実行
-        be.tickWeapon();
+        be.tickSingleGun();
 
         if (be.cooldownTicks > 0) {
             be.cooldownTicks--;
@@ -48,10 +52,11 @@ public class Mk45Mod4BlockEntity extends AbstractGunBlockEntity implements IRemo
 
     @Override
     public void fire() {
-        if (!canFire()) return;
+        System.out.println("fire");
+        //if (!canFire()) return;
         playAnimation("fire", FIRE_ANIM_DURATION);
         playAnimation("reload", RELOAD_ANIM_DURATION);
-        this.cooldownTicks = 40; // 発射間隔（例: 2秒＝20rpm）
+        this.cooldownTicks = 60; // 発射間隔（例: 2秒＝20rpm）
     }
 
     @Override
@@ -100,5 +105,11 @@ public class Mk45Mod4BlockEntity extends AbstractGunBlockEntity implements IRemo
         if (triggerFire && canFire()) {
             fire();
         }
+    }
+
+    @Override
+    public AABB getRenderBoundingBox() {
+        // 例: 上下に3ブロック、東西南北に3ブロック分領域を拡張
+        return new AABB(this.worldPosition).inflate(5.0);
     }
 }

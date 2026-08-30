@@ -41,7 +41,7 @@ public class MannedTankTurretBlock extends BaseEntityBlock {
     @Nullable @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return (lvl, pos, st, be) -> {
-            if (be instanceof MannedTankTurretBlockEntity gun) gun.tickWeapon();
+            if (be instanceof MannedTankTurretBlockEntity gun) gun.tickSingleGun();
         };
     }
 }

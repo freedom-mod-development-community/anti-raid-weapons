@@ -3,12 +3,12 @@ package xyz.fmdc.arw.common.blockentity.weapon;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import xyz.fmdc.arw.common.blockentity.AbstractWeaponBlockEntity;
+import xyz.fmdc.arw.common.blockentity.AbstractSingleGunBlockEntity;
 
 /**
- * FCSネットワークに接続しない、手動・旧式兵装の抽象クラス
+ * FCSネットワークに接続しない、手動単装砲.
  */
-public abstract class StandaloneManualWeaponBlockEntity extends AbstractWeaponBlockEntity {
+public abstract class StandaloneManualWeaponBlockEntity extends AbstractSingleGunBlockEntity {
 
     public StandaloneManualWeaponBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);

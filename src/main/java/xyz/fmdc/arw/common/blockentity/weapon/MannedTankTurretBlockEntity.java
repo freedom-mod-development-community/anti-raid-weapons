@@ -4,13 +4,13 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.state.BlockState;
 import xyz.fmdc.arw.api.control.IDirectMannedWeapon;
-import xyz.fmdc.arw.common.blockentity.AbstractGunBlockEntity;
+import xyz.fmdc.arw.common.blockentity.AbstractSingleGunBlockEntity;
 import xyz.fmdc.arw.registry.ModBlocks;
 
 /**
  * 砲手として砲塔内に乗り込みつつ、FCSからリアルタイムに偏差計算アシスト（FiringSolution）を受けて射撃する近代戦車砲
  */
-public class MannedTankTurretBlockEntity extends AbstractGunBlockEntity implements IDirectMannedWeapon {
+public class MannedTankTurretBlockEntity extends AbstractSingleGunBlockEntity implements IDirectMannedWeapon {
 
     private Player mountedPlayer = null;
 

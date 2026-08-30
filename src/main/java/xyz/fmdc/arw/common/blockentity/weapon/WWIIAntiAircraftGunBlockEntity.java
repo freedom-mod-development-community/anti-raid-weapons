@@ -62,6 +62,11 @@ public class WWIIAntiAircraftGunBlockEntity extends StandaloneManualWeaponBlockE
         return list;
     }
 
+    @Override
+    protected boolean canFire() {
+        return false;
+    }
+
     // --- IDirectMannedWeapon の実装 ---
     @Override public boolean isManned() { return this.mountedPlayer != null; }
     @Override public Player getControllingPlayer() { return this.mountedPlayer; }

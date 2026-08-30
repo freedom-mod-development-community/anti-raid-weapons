@@ -5,12 +5,13 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import xyz.fmdc.arw.api.control.IRemoteControllableWeapon;
+import xyz.fmdc.arw.common.blockentity.AbstractSingleGunBlockEntity;
 import xyz.fmdc.arw.registry.ModBlocks;
 
 /**
  * FCSの自動追従機能を持たず、遠隔カメラ映像越しにプレイヤーが直接マウス等で動かす小口径RWS
  */
-public class ManualRwsGunBlockEntity extends StandaloneManualWeaponBlockEntity implements IRemoteControllableWeapon {
+public class ManualRwsGunBlockEntity extends AbstractSingleGunBlockEntity implements IRemoteControllableWeapon {
 
     private Player controllingPlayer = null;
 
@@ -28,6 +29,11 @@ public class ManualRwsGunBlockEntity extends StandaloneManualWeaponBlockEntity i
     @Override
     public void fire() {
         playAnimation("fire", 0.1f);
+    }
+
+    @Override
+    protected boolean canFire() {
+        return false;
     }
 
     // --- IRemoteControllableWeapon の実装 ---

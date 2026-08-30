@@ -8,10 +8,16 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * 本modに置ける Block entity 最上位クラス. ここはネットワーク関係をちょいとおいておくにとどめる
  */
 public abstract class AbstractARWBlockEntity extends BlockEntity {
+
+    protected final Map<String, Long> runningAnimations = new HashMap<>();
+    protected final Map<String, Float> animationDurations = new HashMap<>();
 
     public AbstractARWBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);

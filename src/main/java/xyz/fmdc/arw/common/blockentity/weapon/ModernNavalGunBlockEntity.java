@@ -6,12 +6,12 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import xyz.fmdc.arw.api.control.IRemoteControllableWeapon;
-import xyz.fmdc.arw.common.blockentity.AbstractGunBlockEntity;
+import xyz.fmdc.arw.common.blockentity.AbstractSingleGunBlockEntity;
 
 /**
  * 通常時はFCSによる全自動照準で動作し、緊急・割り込み時にはCICモニター等から手動遠隔射撃ができる近代艦砲の抽象基底クラス
  */
-public abstract class ModernNavalGunBlockEntity extends AbstractGunBlockEntity implements IRemoteControllableWeapon {
+public abstract class ModernNavalGunBlockEntity extends AbstractSingleGunBlockEntity implements IRemoteControllableWeapon {
 
     protected Player remoteController = null;
 

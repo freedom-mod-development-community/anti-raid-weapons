@@ -10,7 +10,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import xyz.fmdc.arw.common.blockentity.weapon.VlsBlockEntity;
+import xyz.fmdc.arw.common.blockentity.vls.VlsBlockEntity;
 
 public class VlsBlock extends BaseEntityBlock {
     public VlsBlock(Properties properties) { super(properties); }
@@ -23,7 +23,7 @@ public class VlsBlock extends BaseEntityBlock {
     @Nullable @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return (lvl, pos, st, be) -> {
-            if (be instanceof VlsBlockEntity gun) gun.tickWeapon();
+            if (be instanceof VlsBlockEntity vls) vls.tickVLS();
         };
     }
 }

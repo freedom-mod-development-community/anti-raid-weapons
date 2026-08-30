@@ -33,6 +33,14 @@ public class PacketHandler {
                 ServerboundWeaponControlPacket::handle,
                 Optional.of(NetworkDirection.PLAY_TO_SERVER)
         );
+        INSTANCE.registerMessage(
+                id(),
+                Mk45PacketTest.class,
+                Mk45PacketTest::encode,
+                Mk45PacketTest::new,
+                Mk45PacketTest::handle,
+                Optional.of(NetworkDirection.PLAY_TO_SERVER)
+        );
     }
 
     // クライアントからのパケット送信ヘルパー
