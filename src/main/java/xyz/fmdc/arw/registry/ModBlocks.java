@@ -1,6 +1,7 @@
 package xyz.fmdc.arw.registry;
 
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -15,6 +16,8 @@ import xyz.fmdc.arw.ops39.Ops39Block;
 import xyz.fmdc.arw.ops39.Ops39BlockEntity;
 import xyz.fmdc.arw.oto127mm.Oto127mmBlock;
 import xyz.fmdc.arw.oto127mm.Oto127mmBlockEntity;
+import xyz.fmdc.arw.radardisplay.RadarDisplayBlock;
+import xyz.fmdc.arw.radardisplay.RadarDisplayBlockEntity;
 import xyz.fmdc.arw.spq9b.Spq9bBlock;
 import xyz.fmdc.arw.spq9b.Spq9bBlockEntity;
 
@@ -28,6 +31,10 @@ public class ModBlocks {
                 .mapColor(MapColor.METAL)
                 .strength(5.0F, 6.0F)
                 .noOcclusion();
+    }
+
+    public static BlockBehaviour.Properties stoneProps() {
+        return BlockBehaviour.Properties.copy(Blocks.STONE);
     }
 
     // Block + Item + BlockEntity を1行で一括登録
@@ -45,6 +52,9 @@ public class ModBlocks {
 
     public static final BlockEntry<Mk45mod4Block, Mk45Mod4BlockEntity> MK45_MOD4 =
             new BlockEntry<>("mk45mod4", () -> new Mk45mod4Block(defaultProps()), Mk45Mod4BlockEntity::new);
+
+    public static final BlockEntry<RadarDisplayBlock, RadarDisplayBlockEntity> RADAR_DISPLAY =
+            new BlockEntry<>("radar_display", () -> new RadarDisplayBlock(stoneProps()), RadarDisplayBlockEntity::new);
 
 
     public static void register(IEventBus eventBus) {

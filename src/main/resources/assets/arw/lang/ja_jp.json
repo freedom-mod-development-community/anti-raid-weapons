@@ -3,5 +3,7 @@
   "block.arw.spq9b": "SPQ-9B レーダー",
   "block.arw.ops39": "OPS-39 対水上捜索レーダー",
   "block.arw.oto127mm": "OTO 127mm 速射砲",
+  "block.arw.radar_display": "レーダー表示ブロック",
+  "gui.arw.radar_display.title": "レーダー表示",
   "subtitles.arw.oto127_fire": "OTO 127mm砲 発射"
 }

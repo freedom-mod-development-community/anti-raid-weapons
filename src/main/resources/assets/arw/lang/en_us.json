@@ -3,5 +3,7 @@
   "block.arw.spq9b": "SPQ-9B Radar",
   "block.arw.ops39": "OPS-39 Surface Search Radar",
   "block.arw.oto127mm": "OTO 127mm Naval Gun",
+  "block.arw.radar_display": "Radar Display Block",
+  "gui.arw.radar_display.title": "Radar Display",
   "subtitles.arw.oto127_fire": "OTO 127mm Gun fires"
 }
