@@ -5,6 +5,7 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.slf4j.Logger;
+import xyz.fmdc.arw.network.ModPacketHandler;
 import xyz.fmdc.arw.registry.ModBlockEntities;
 import xyz.fmdc.arw.registry.ModBlocks;
 import xyz.fmdc.arw.registry.ModCreativeTabs;
@@ -26,5 +27,7 @@ public class AntiRaidWeapons {
         ModEntities.register(modEventBus);
         ModItems.register(modEventBus);
         ModCreativeTabs.register(modEventBus);
+
+        ModPacketHandler.register();
     }
 }
