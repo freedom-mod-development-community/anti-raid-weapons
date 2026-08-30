@@ -8,6 +8,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import org.jetbrains.annotations.NotNull;
 import xyz.fmdc.arw.common.blockentity.AbstractSingleGunBlockEntity;
 import xyz.fmdc.arw.network.Mk45PacketTest;
 import xyz.fmdc.arw.network.PacketHandler;
@@ -50,7 +51,7 @@ public class Mk45TestGUI extends Screen {
 
         // 発射ボタン（中央下部に配置）
         this.addRenderableWidget(Button.builder(
-                Component.literal("FIRE").withStyle(ChatFormatting.RED, ChatFormatting.BOLD),
+                Component.literal("FIRE").withStyle(ChatFormatting.DARK_RED, ChatFormatting.BOLD),
                 button -> {
                     // サーバーへ発射命令パケットを送信
                     PacketHandler.sendToServer(new Mk45PacketTest(this.pos, true));
@@ -76,7 +77,7 @@ public class Mk45TestGUI extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+    public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         // 背景を薄暗くする（バニラの標準背景 overlay）
         this.renderBackground(guiGraphics);
 

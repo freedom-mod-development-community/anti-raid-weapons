@@ -8,7 +8,7 @@ import xyz.fmdc.arw.registry.ModBlocks;
 /**
  * 特定の1目標に旋回追従・電波照射し高精度ロックオンデータを出力する照射レーダー（STIR等）
  */
-public class TrackingRadarBlockEntity extends FcsRadarBlockEntity {
+public class TrackingRadarBlockEntity extends HorizontalRadarBlockEntity {
 
     private TargetTrack lockedTarget = null;
 
@@ -21,7 +21,6 @@ public class TrackingRadarBlockEntity extends FcsRadarBlockEntity {
         return 384.0f;
     }
 
-    @Override
     public boolean isActiveRadar() {
         return true;
     }

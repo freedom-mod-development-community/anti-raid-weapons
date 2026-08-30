@@ -18,10 +18,10 @@ public class VlsBlock extends BaseEntityBlock {
     @Override public @NotNull RenderShape getRenderShape(@NotNull BlockState state) { return RenderShape.ENTITYBLOCK_ANIMATED; }
 
     @Nullable @Override
-    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) { return new VlsBlockEntity(pos, state); }
+    public BlockEntity newBlockEntity(@NotNull BlockPos pos, @NotNull BlockState state) { return new VlsBlockEntity(pos, state); }
 
     @Nullable @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(@NotNull Level level, @NotNull BlockState state, @NotNull BlockEntityType<T> type) {
         return (lvl, pos, st, be) -> {
             if (be instanceof VlsBlockEntity vls) vls.tickVLS();
         };

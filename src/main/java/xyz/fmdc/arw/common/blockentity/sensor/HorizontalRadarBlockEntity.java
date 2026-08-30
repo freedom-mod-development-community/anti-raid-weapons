@@ -18,7 +18,7 @@ import java.util.UUID;
 /**
  * ターゲットスキャンと方位計算を行う全センサーの基底クラス
  */
-public abstract class AbstractHRadarBlockEntity extends AbstractARWBlockEntity implements IYawModel, IFcsSensorNode {
+public abstract class HorizontalRadarBlockEntity extends AbstractARWBlockEntity implements IYawModel, IFcsSensorNode {
 
     protected UUID networkId = UUID.randomUUID();
     protected boolean isFcsConnected = false;
@@ -30,7 +30,7 @@ public abstract class AbstractHRadarBlockEntity extends AbstractARWBlockEntity i
 
     protected float currentScanAngle = 0.0f;
 
-    public AbstractHRadarBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
+    public HorizontalRadarBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
     }
 

@@ -8,7 +8,7 @@ import xyz.fmdc.arw.registry.ModBlocks;
 /**
  * FCSを介さず、アナログ高角砲等へ1対1で直結して照準方位角を送る光学測遠機
  */
-public class OpticalSightBlockEntity extends AbstractHRadarBlockEntity {
+public class OpticalSightBlockEntity extends HorizontalRadarBlockEntity {
 
     private StandaloneManualWeaponBlockEntity connectedWeapon;
     private float sightYaw = 0.0f;
