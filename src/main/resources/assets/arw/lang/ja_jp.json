@@ -26,6 +26,20 @@
   "tooltip.arw.length": "全長: %s m",
   "tooltip.arw.explosive_filler": "炸薬量: %s kg",
 
+  "tooltip.arw.fcs_connector.linked_core_uuid": "接続先 FCS コア UUID: %s",
+  "tooltip.arw.fcs_connector.no_core": "FCS コア未設定。FCS コアを右クリックして登録してください。",
+  "message.arw.fcs_connector.core_selected": "[ARW] FCS コア (UUID: %s) をリンクしました",
+  "message.arw.fcs_connector.registered": "[ARW] '%s' (UUID: %s) を FCS コアに登録しました",
+  "message.arw.fcs_connector.already_registered": "[ARW] '%s' (UUID: %s) は既に FCS コアに登録されています",
+  "message.arw.fcs_connector.unregistered": "[ARW] '%s' (UUID: %s) を FCS コアから登録解除しました",
+  "message.arw.fcs_connector.not_registered": "[ARW] '%s' (UUID: %s) は FCS コアに登録されていません",
+  "message.arw.fcs_connector.core_not_found": "[ARW] リンクされた FCS コア (UUID: %s) が見つかりません",
+  "message.arw.fcs_connector.no_core_linked": "[ARW] FCS コアが設定されていません。先に FCS コアを右クリックしてください",
+  "message.arw.fcs_connector.different_dimension": "[ARW] FCS コアが別のディメンションに存在します",
+  "message.arw.fcs_connector.register_failed": "[ARW] '%s' の FCS コアへの登録に失敗しました",
+  "message.arw.fcs_connector.already_linked_to_other_core": "[ARW] この機器は別のFCSコア (UUID: %s) に既にリンクされています。登録先のコアまたはコネクターで先に解除してください",
+  "message.arw.fcs_connector.cannot_unlink_other_core": "[ARW] この機器は別のFCSコア (UUID: %s) にリンクされているため、このコネクターでは解除できません",
+
   "gui.arw.radar_display.title": "レーダー表示",
   "gui.arw.fcs_core.title": "FCS コア ネットワーク管理",
   "subtitles.arw.oto127_fire": "OTO 127mm砲 発射"

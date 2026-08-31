@@ -16,6 +16,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xyz.fmdc.arw.common.blockentity.weapon.MannedTankTurretBlockEntity;
 import xyz.fmdc.arw.common.blockentity.weapon.WWIIAntiAircraftGunBlockEntity;
+import xyz.fmdc.arw.common.item.FcsConnectorItem;
 
 public class MannedTankTurretBlock extends BaseEntityBlock {
     public MannedTankTurretBlock(Properties properties) { super(properties); }
@@ -24,6 +25,9 @@ public class MannedTankTurretBlock extends BaseEntityBlock {
 
     @Override
     public @NotNull InteractionResult use(@NotNull BlockState state, Level level, @NotNull BlockPos pos, @NotNull Player player, InteractionHand hand, BlockHitResult hit) {
+        if (player.getItemInHand(hand).getItem() instanceof FcsConnectorItem) {
+            return InteractionResult.PASS;
+        }
         if (!level.isClientSide) {
             BlockEntity be = level.getBlockEntity(pos);
             if (be instanceof WWIIAntiAircraftGunBlockEntity gun) {

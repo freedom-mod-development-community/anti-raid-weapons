@@ -18,6 +18,7 @@ import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xyz.fmdc.arw.common.blockentity.weapon.Oto127mmBlockEntity;
+import xyz.fmdc.arw.common.item.FcsConnectorItem;
 import xyz.fmdc.arw.registry.ModBlocks;
 
 public class Oto127mmBlock extends BaseEntityBlock {
@@ -46,6 +47,9 @@ public class Oto127mmBlock extends BaseEntityBlock {
     @Override
     public @NotNull InteractionResult use(@NotNull BlockState state, Level level, @NotNull BlockPos pos, @NotNull Player player,
                                           @NotNull InteractionHand hand, @NotNull BlockHitResult hit) {
+        if (player.getItemInHand(hand).getItem() instanceof FcsConnectorItem) {
+            return InteractionResult.PASS;
+        }
         if (!level.isClientSide) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof MenuProvider menuProvider && player instanceof ServerPlayer serverPlayer) {
