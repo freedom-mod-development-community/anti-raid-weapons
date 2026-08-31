@@ -1,0 +1,9 @@
+{
+  "oto127_fire": {
+    "category": "block",
+    "subtitle": "subtitles.arw.oto127_fire",
+    "sounds": [
+      "arw:block/127mm_launch"
+    ]
+  }
+}
