@@ -7,7 +7,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import xyz.fmdc.arw.network.ModPacketHandler;
+import xyz.fmdc.arw.network.PacketHandler;
 import xyz.fmdc.arw.network.UpdateRadarDisplayConfigPacket;
 import xyz.fmdc.arw.radardisplay.RadarDisplayBlockEntity;
 
@@ -58,7 +58,7 @@ public class RadarDisplayScreen extends Screen {
         }
 
         // サーバーへ同期パケットを送信して保存
-        ModPacketHandler.sendToServer(new UpdateRadarDisplayConfigPacket(this.pos, this.selectedRange, this.selectedTopMode));
+        PacketHandler.sendToServer(new UpdateRadarDisplayConfigPacket(this.pos, this.selectedRange, this.selectedTopMode));
     }
 
     @Override

@@ -41,6 +41,11 @@ public class PacketHandler {
                 Mk45PacketTest::handle,
                 Optional.of(NetworkDirection.PLAY_TO_SERVER)
         );
+        INSTANCE.messageBuilder(UpdateRadarDisplayConfigPacket.class, id())
+                .encoder(UpdateRadarDisplayConfigPacket::toBytes)
+                .decoder(UpdateRadarDisplayConfigPacket::new)
+                .consumerMainThread(UpdateRadarDisplayConfigPacket::handle)
+                .add();
     }
 
     // クライアントからのパケット送信ヘルパー
