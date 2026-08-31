@@ -10,6 +10,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import xyz.fmdc.arw.common.blockentity.weapon.Oto127mmBlockEntity;
 import xyz.fmdc.arw.registry.ModBlocks;
 
 public class Oto127mmBlock extends BaseEntityBlock {

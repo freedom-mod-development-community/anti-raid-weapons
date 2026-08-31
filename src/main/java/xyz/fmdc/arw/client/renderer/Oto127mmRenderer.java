@@ -3,7 +3,7 @@ package xyz.fmdc.arw.client.renderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import xyz.fmdc.arw.client.GlbModelManager;
 import xyz.fmdc.arw.client.util.GlbLoader;
-import xyz.fmdc.arw.oto127mm.Oto127mmBlockEntity;
+import xyz.fmdc.arw.common.blockentity.weapon.Oto127mmBlockEntity;
 
 public class Oto127mmRenderer extends BaseNavalGunRenderer<Oto127mmBlockEntity> {
 

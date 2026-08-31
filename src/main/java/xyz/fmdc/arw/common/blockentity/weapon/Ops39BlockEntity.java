@@ -1,4 +1,4 @@
-package xyz.fmdc.arw.ops39;
+package xyz.fmdc.arw.common.blockentity.weapon;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;

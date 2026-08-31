@@ -10,6 +10,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import xyz.fmdc.arw.common.blockentity.weapon.Ops39BlockEntity;
 import xyz.fmdc.arw.registry.ModBlocks;
 
 public class Ops39Block extends BaseEntityBlock {

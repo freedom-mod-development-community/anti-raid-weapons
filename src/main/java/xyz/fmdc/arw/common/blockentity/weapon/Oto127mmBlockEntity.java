@@ -1,4 +1,4 @@
-package xyz.fmdc.arw.oto127mm;
+package xyz.fmdc.arw.common.blockentity.weapon;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -77,17 +77,17 @@ public class Oto127mmBlockEntity extends BlockEntity implements IYawPitchAnimata
 //        // 3. current を target に向かってぬるっと旋回（イージング処理）
 //        be.updateRotation();
 //
-//        // 4. アニメーションクリーンアップ
-//        if (!be.runningAnimations.isEmpty()) {
-//            long currentTime = level.getGameTime();
-//            be.runningAnimations.entrySet().removeIf(entry -> {
-//                String animName = entry.getKey();
-//                long startTime = entry.getValue();
-//                float duration = be.animationDurations.getOrDefault(animName, 1.0f);
-//                float elapsedSeconds = (currentTime - startTime) / 20.0f;
-//                return elapsedSeconds >= duration;
-//            });
-//        }
+        // 4. アニメーションクリーンアップ
+        if (!be.runningAnimations.isEmpty()) {
+            long currentTime = level.getGameTime();
+            be.runningAnimations.entrySet().removeIf(entry -> {
+                String animName = entry.getKey();
+                long startTime = entry.getValue();
+                float duration = be.animationDurations.getOrDefault(animName, 1.0f);
+                float elapsedSeconds = (currentTime - startTime) / 20.0f;
+                return elapsedSeconds >= duration;
+            });
+        }
 
         // テスト用：発射処理
         if (!level.isClientSide) {
@@ -138,7 +138,6 @@ public class Oto127mmBlockEntity extends BlockEntity implements IYawPitchAnimata
 
     public void fire() {
         playAnimation("fire", FIRE_ANIM_DURATION);
-        playAnimation("reload", RELOAD_ANIM_DURATION);
 
         if (this.level != null && !this.level.isClientSide) {
             Vec3 pivot = Vec3.atCenterOf(this.worldPosition).add(0.0, 1.8, 0.0);
@@ -164,6 +163,8 @@ public class Oto127mmBlockEntity extends BlockEntity implements IYawPitchAnimata
                     1.0f
             );
         }
+
+        playAnimation("reload", RELOAD_ANIM_DURATION);
     }
 
     private void syncToClient() {
