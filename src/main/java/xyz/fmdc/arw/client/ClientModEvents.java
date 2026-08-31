@@ -15,6 +15,7 @@ import xyz.fmdc.arw.client.util.IYawPitchAnimatableModel;
 import xyz.fmdc.arw.registry.ModBlocks;
 import xyz.fmdc.arw.registry.ModEntities;
 import xyz.fmdc.arw.registry.auto.BlockEntry;
+import xyz.fmdc.arw.registry.auto.ModBlockEntities;
 
 @Mod.EventBusSubscriber(modid = AntiRaidWeapons.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class ClientModEvents {
@@ -34,6 +35,7 @@ public class ClientModEvents {
 
         //entity
         event.registerEntityRenderer(ModEntities.FIVE_INCH_SHELL.get(), ThrownItemRenderer::new);
+        event.registerEntityRenderer(ModEntities.NAVAL_SHELL.get(), NavalShellRenderer::new);
     }
 
     @SubscribeEvent
