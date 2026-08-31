@@ -13,7 +13,7 @@ import net.minecraft.util.Mth;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import xyz.fmdc.arw.AntiRaidWeapons;
-import xyz.fmdc.arw.entity.NavalShellEntity;
+import xyz.fmdc.arw.common.entity.projectile.NavalShellEntity;
 
 public class NavalShellRenderer extends EntityRenderer<NavalShellEntity> {
 

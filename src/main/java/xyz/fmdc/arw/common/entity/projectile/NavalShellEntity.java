@@ -1,4 +1,4 @@
-package xyz.fmdc.arw.entity;
+package xyz.fmdc.arw.common.entity.projectile;
 
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;

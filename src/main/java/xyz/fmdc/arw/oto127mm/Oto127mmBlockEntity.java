@@ -16,7 +16,7 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import xyz.fmdc.arw.client.renderer.GenericGlbRenderer;
 import xyz.fmdc.arw.client.util.IYawPitchAnimatableModel;
-import xyz.fmdc.arw.entity.NavalShellEntity;
+import xyz.fmdc.arw.common.entity.projectile.NavalShellEntity;
 import xyz.fmdc.arw.registry.ModBlocks;
 import xyz.fmdc.arw.registry.ModSounds;
 
