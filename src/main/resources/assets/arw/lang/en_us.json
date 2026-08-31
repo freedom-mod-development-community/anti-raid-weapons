@@ -6,6 +6,26 @@
   "block.arw.radar_display": "Radar Display Block",
   "block.arw.fcs_core": "FCS Core",
   "item.arw.fcs_connector": "FCS Connector",
+
+  "item.arw.five_inch_shell_mk68_he_cvt": "5-Inch Shell (Mark 68 HE-CVT)",
+  "item.arw.five_inch_shell_mk80_he_pd": "5-Inch Shell (Mark 80 HE-PD)",
+  "item.arw.five_inch_shell_mk91_illum_mt": "5-Inch Shell (Mark 91 Illum-MT)",
+  "item.arw.five_inch_shell_mk116_he_vt": "5-Inch Shell (Mark 116 HE-VT)",
+  "item.arw.five_inch_shell_mk127_he_cvt": "5-Inch Shell (Mark 127 HE-CVT)",
+  "item.arw.five_inch_shell_mk156_he_ir": "5-Inch Shell (Mark 156 HE-IR)",
+  "item.arw.five_inch_shell_mk172_he_icm": "5-Inch Shell (Mark 172 HE-ICM)",
+
+  "tooltip.arw.caliber": "Caliber: %s",
+  "tooltip.arw.ammo_type": "Type: %s",
+  "tooltip.arw.ammo_category.point_detonating": "Point-Detonating High Explosive (HE-PD)",
+  "tooltip.arw.ammo_category.proximity": "Proximity High Explosive (HE-VT/CVT)",
+  "tooltip.arw.ammo_category.illumination": "Illumination Shell (Illum)",
+  "tooltip.arw.ammo_category.infrared": "Infrared Fuse High Explosive (HE-IR)",
+  "tooltip.arw.ammo_category.cargo_submunition": "Improved Conventional Munition (ICM)",
+  "tooltip.arw.weight": "Weight: %s kg",
+  "tooltip.arw.length": "Length: %s m",
+  "tooltip.arw.explosive_filler": "Explosive Filler: %s kg",
+
   "gui.arw.radar_display.title": "Radar Display",
   "gui.arw.fcs_core.title": "FCS Core Network Manager",
   "subtitles.arw.oto127_fire": "OTO 127mm Gun fires"

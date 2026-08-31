@@ -9,7 +9,6 @@ import net.minecraftforge.registries.RegistryObject;
 import xyz.fmdc.arw.AntiRaidWeapons;
 import xyz.fmdc.arw.common.entity.projectile.FiveInchShellEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import xyz.fmdc.arw.common.entity.projectile.NavalShellEntity;
 
 public class ModEntities {
 
@@ -24,19 +23,9 @@ public class ModEntities {
             ENTITY_TYPES.register("5inch_shell", () ->
                     EntityType.Builder.<FiveInchShellEntity>of(FiveInchShellEntity::new, MobCategory.MISC)
                             .sized(0.25F, 0.25F) // ヒットボックスの大きさ（幅, 高さ）
-                            .clientTrackingRange(8)  // 描画更新の追尾範囲
+                            .clientTrackingRange(8)  // 描画更新の追従範囲
                             .updateInterval(1)       // パケット更新間隔（1tick毎で滑らかに飛翔）
                             .build("5inch_shell")
-            );
-
-    // 2. oto用の砲弾エンティティの登録
-    public static final RegistryObject<EntityType<NavalShellEntity>> NAVAL_SHELL =
-            ENTITY_TYPES.register("naval_shell", () ->
-                    EntityType.Builder.<NavalShellEntity>of(NavalShellEntity::new, MobCategory.MISC)
-                            .sized(0.25F, 0.25F) // ヒットボックスの大きさ（幅, 高さ）
-                            .clientTrackingRange(8)  // 描画更新の追尾範囲
-                            .updateInterval(1)       // パケット更新間隔（1tick毎で滑らかに飛翔）
-                            .build("naval_shell")
             );
 
     public static void register(IEventBus eventBus) {
