@@ -24,7 +24,7 @@ import xyz.fmdc.arw.emmi.EmmiBlockEntity;
 import xyz.fmdc.arw.common.block.Mk45mod4Block;
 import xyz.fmdc.arw.ops39.Ops39Block;
 import xyz.fmdc.arw.common.blockentity.weapon.Ops39BlockEntity;
-import xyz.fmdc.arw.oto127mm.Oto127mmBlock;
+import xyz.fmdc.arw.common.block.Oto127mmBlock;
 import xyz.fmdc.arw.common.blockentity.weapon.Oto127mmBlockEntity;
 import xyz.fmdc.arw.radardisplay.RadarDisplayBlock;
 import xyz.fmdc.arw.radardisplay.RadarDisplayBlockEntity;

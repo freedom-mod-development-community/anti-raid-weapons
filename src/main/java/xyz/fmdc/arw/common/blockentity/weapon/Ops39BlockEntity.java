@@ -1,85 +1,120 @@
 package xyz.fmdc.arw.common.blockentity.weapon;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
-import net.minecraft.util.Mth;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
-import org.jetbrains.annotations.NotNull;
+import net.minecraft.world.phys.Vec3;
+import xyz.fmdc.arw.api.control.IRemoteControllableWeapon;
 import xyz.fmdc.arw.client.util.IYawModel;
-import xyz.fmdc.arw.common.blockentity.AbstractARWBlockEntity;
+import xyz.fmdc.arw.common.blockentity.AbstractSingleGunBlockEntity;
+import xyz.fmdc.arw.common.entity.projectile.FiveInchAmmoType;
+import xyz.fmdc.arw.common.entity.projectile.FiveInchShellEntity;
 import xyz.fmdc.arw.registry.ModBlocks;
+import xyz.fmdc.arw.registry.ModEntities;
 
-public class Ops39BlockEntity extends AbstractARWBlockEntity implements IYawModel {
+import java.util.UUID;
 
-    private float currentYaw = 0.0f;
-    private float prevYaw = 0.0f;
+public class Ops39BlockEntity extends AbstractSingleGunBlockEntity implements IYawModel, IRemoteControllableWeapon {
 
-    private static final float RPM = 20.0f;
-    // 毎Tick回転する速度 (20 RPM * 360 deg / (60s * 20ticks) = 6.0 deg/tick)
-    private static final float ROTATION_SPEED = RPM * 360.0f / (60.0f * 20.0f);
+    private static final float YAW_TURN_SPEED = 6.0f;
+    private static final float PITCH_TURN_SPEED = 5.0f;
+    private static final float MIN_YAW = -180.0f;
+    private static final float MAX_YAW = 180.0f;
+    private static final float MIN_PITCH = -45.0f;
+    private static final float MAX_PITCH = 45.0f;
+
+    private FiveInchAmmoType currentAmmo = FiveInchAmmoType.MK80_HE_PD;
+    private UUID controllerPlayerUUID = null;
 
     public Ops39BlockEntity(BlockPos pos, BlockState state) {
         super(ModBlocks.OPS39.getBEType(), pos, state);
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, Ops39BlockEntity be) {
-        // 1. 補間用の前Tick角度を保持
-        be.prevYaw = be.currentYaw;
-
-        // 2. 角度の加算 (0.0 ～ 360.0度)
-        be.currentYaw = (be.currentYaw + ROTATION_SPEED) % 360.0f;
-
-        // 3. サーバー側での定期同期 (例: 100Tick = 5秒ごとに位相ズレをクライアントへ同期)
-        if (!level.isClientSide && be.currentYaw < be.prevYaw) { // 1周(360度)回転するごとに同期する例
-            be.syncToClient();
-        }
+        be.tickSingleGun();
     }
 
-    /**
-     * 描画用の滑らかな回転角度を取得 (360度跨ぎ対応)
-     */
     @Override
     public float getTargetYaw(float partialTick) {
-        return Mth.rotLerp(partialTick, this.prevYaw, this.currentYaw);
-    }
-
-    // --- NBT & Sync ---
-
-    @Override
-    protected void saveAdditional(@NotNull CompoundTag tag) {
-        super.saveAdditional(tag);
-        tag.putFloat("Yaw", this.currentYaw);
+        return getRenderTargetYaw(partialTick);
     }
 
     @Override
-    public void load(@NotNull CompoundTag tag) {
-        super.load(tag);
-        this.currentYaw = tag.getFloat("Yaw");
-        this.prevYaw = this.currentYaw;
+    public void fire() {
+        if (!canFire()) return;
+        fireProcess();
     }
 
     @Override
-    public void onDataPacket(net.minecraft.network.Connection net, ClientboundBlockEntityDataPacket pkt) {
-        CompoundTag tag = pkt.getTag();
-        if (tag != null && this.level != null && this.level.isClientSide) {
-            if (tag.contains("Yaw")) {
-                float serverYaw = tag.getFloat("Yaw");
+    public FiveInchAmmoType getSelectedAmmoType() {
+        return this.currentAmmo;
+    }
 
-                // クライアントとサーバーの位相差（角度差）を計算
-                float diff = Mth.wrapDegrees(serverYaw - this.currentYaw);
+    @Override
+    public EntityType<FiveInchShellEntity> getShellEntityType() {
+        return ModEntities.FIVE_INCH_SHELL.get();
+    }
 
-                // ズレが大きく開いている場合のみ補正（同期時のカクつきを防止）
-                if (Math.abs(diff) > 15.0f) {
-                    this.currentYaw = serverYaw;
-                    this.prevYaw = serverYaw;
-                } else {
-                    // わずかなズレなら、少しずつ追いつかせる（イージング）
-                    this.currentYaw = (this.currentYaw + diff * 0.2f) % 360.0f;
-                }
-            }
+    @Override
+    public Vec3 getFiringDirection() {
+        return Vec3.directionFromRotation(this.currentPitch, this.currentYaw);
+    }
+
+    @Override
+    public Vec3 getMuzzleOffset() {
+        return new Vec3(0.0, 1.0, 0.0);
+    }
+
+    @Override
+    public int getMaxCooldownTicks() {
+        return 20;
+    }
+
+    @Override
+    protected boolean canFire() {
+        return this.cooldownTicks <= 0;
+    }
+
+    // --- 旋回性能定義 ---
+    @Override protected float getYawTurnSpeed() { return YAW_TURN_SPEED; }
+    @Override protected float getPitchTurnSpeed() { return PITCH_TURN_SPEED; }
+    @Override protected float getMinYaw() { return MIN_YAW; }
+    @Override protected float getMaxYaw() { return MAX_YAW; }
+    @Override protected float getMinPitch() { return MIN_PITCH; }
+    @Override protected float getMaxPitch() { return MAX_PITCH; }
+
+    // --- IRemoteControllableWeapon の実装 ---
+    @Override
+    public Vec3 getCameraPosition() {
+        return Vec3.atCenterOf(this.worldPosition).add(0.0, 1.5, 0.0);
+    }
+
+    @Override
+    public boolean isBeingRemoteControlled() {
+        return this.controllerPlayerUUID != null;
+    }
+
+    @Override
+    public void startRemoteControl(Player player) {
+        this.controllerPlayerUUID = player.getUUID();
+        syncToClient();
+    }
+
+    @Override
+    public void stopRemoteControl(Player player) {
+        this.controllerPlayerUUID = null;
+        syncToClient();
+    }
+
+    @Override
+    public void handleRemoteInput(float yawInput, float pitchInput, boolean triggerFire) {
+        setTargetYaw(yawInput);
+        setTargetPitch(pitchInput);
+        if (triggerFire && canFire()) {
+            fire();
         }
     }
 

@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import xyz.fmdc.arw.network.PacketHandler;
 import xyz.fmdc.arw.registry.ModBlocks;
 import xyz.fmdc.arw.registry.ModEntities;
+import xyz.fmdc.arw.registry.ModMenuTypes;
 import xyz.fmdc.arw.registry.ModSounds;
 import xyz.fmdc.arw.registry.auto.ModBlockEntities;
 import xyz.fmdc.arw.registry.auto.ModCreativeTabs;
@@ -30,6 +31,7 @@ public class AntiRaidWeapons {
         ModItems.register(modEventBus);
         ModEntities.register(modEventBus);
         ModSounds.register(modEventBus);
+        ModMenuTypes.register(modEventBus);
         ModCreativeTabs.register(modEventBus);
 
         PacketHandler.register();
