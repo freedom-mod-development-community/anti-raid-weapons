@@ -15,7 +15,6 @@ import xyz.fmdc.arw.client.util.IYawPitchAnimatableModel;
 import xyz.fmdc.arw.registry.ModBlocks;
 import xyz.fmdc.arw.registry.ModEntities;
 import xyz.fmdc.arw.registry.auto.BlockEntry;
-import xyz.fmdc.arw.registry.auto.ModBlockEntities;
 
 @Mod.EventBusSubscriber(modid = AntiRaidWeapons.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class ClientModEvents {
@@ -29,6 +28,7 @@ public class ClientModEvents {
         registerNavalGun(event, ModBlocks.MK45_MOD4, GlbModelManager.MK45MOD4_ID);
         registerNavalGun(event, ModBlocks.WW2_AA_GUN_BLOCK, GlbModelManager.MK45MOD4_ID);
         registerNavalGun(event, ModBlocks.MANNED_TANK_TURRET_BLOCK, GlbModelManager.MK45MOD4_ID);
+        registerNavalGun(event, ModBlocks.PHALANX, GlbModelManager.PHALANX_ID);
         registerRadar(event, ModBlocks.OPTICAL_SIGHT_BLOCK, GlbModelManager.OPS39_ID);
         registerRadar(event, ModBlocks.SEARCH_RADAR_BLOCK, GlbModelManager.OPS39_ID);
         registerRadar(event, ModBlocks.TRACKING_RADAR_BLOCK, GlbModelManager.OPS39_ID);

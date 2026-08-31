@@ -77,17 +77,17 @@ public class Oto127mmBlockEntity extends BlockEntity implements IYawPitchAnimata
 //        // 3. current を target に向かってぬるっと旋回（イージング処理）
 //        be.updateRotation();
 //
-//        // 4. アニメーションクリーンアップ
-//        if (!be.runningAnimations.isEmpty()) {
-//            long currentTime = level.getGameTime();
-//            be.runningAnimations.entrySet().removeIf(entry -> {
-//                String animName = entry.getKey();
-//                long startTime = entry.getValue();
-//                float duration = be.animationDurations.getOrDefault(animName, 1.0f);
-//                float elapsedSeconds = (currentTime - startTime) / 20.0f;
-//                return elapsedSeconds >= duration;
-//            });
-//        }
+        // 4. アニメーションクリーンアップ
+        if (!be.runningAnimations.isEmpty()) {
+            long currentTime = level.getGameTime();
+            be.runningAnimations.entrySet().removeIf(entry -> {
+                String animName = entry.getKey();
+                long startTime = entry.getValue();
+                float duration = be.animationDurations.getOrDefault(animName, 1.0f);
+                float elapsedSeconds = (currentTime - startTime) / 20.0f;
+                return elapsedSeconds >= duration;
+            });
+        }
 
         // テスト用：発射処理
         if (!level.isClientSide) {

@@ -25,8 +25,16 @@ public class GenericGlbRenderer {
 
     /**
      * 再生中アニメーションの情報を保持するレコード
+     * @param name アニメーション名
+     * @param timeSeconds 経過時間（秒）
+     * @param loop ループ再生するかどうか（trueで繰り返す、falseで最終フレームで固定）
      */
-    public record ActiveAnimation(String name, float timeSeconds) {}
+    public record ActiveAnimation(String name, float timeSeconds, boolean loop) {
+        // 後方互換用のコンストラクタ（デフォルトは単発再生 = false）
+        public ActiveAnimation(String name, float timeSeconds) {
+            this(name, timeSeconds, false);
+        }
+    }
 
     /**
      * GLBモデルを描画します。
@@ -67,7 +75,7 @@ public class GenericGlbRenderer {
             for (ActiveAnimation activeAnim : activeAnimations) {
                 if (modelData.animations.containsKey(activeAnim.name())) {
                     GlbLoader.GlbAnimation anim = modelData.animations.get(activeAnim.name());
-                    applyAnimationToNode(node.name, anim, activeAnim.timeSeconds(), translation, rotation, scale);
+                    applyAnimationToNode(node.name, anim, activeAnim.timeSeconds(), activeAnim.loop(), translation, rotation, scale);
                 }
             }
         }
@@ -98,25 +106,31 @@ public class GenericGlbRenderer {
         poseStack.popPose();
     }
 
-    private void applyAnimationToNode(String nodeName, GlbLoader.GlbAnimation anim, float time,
+    private void applyAnimationToNode(String nodeName, GlbLoader.GlbAnimation anim, float time, boolean loop,
                                       Vector3f translation, Quaternionf rotation, Vector3f scale) {
 
-        float clampedTime = Math.min(time, anim.maxTime);
+        // 時間の計算：ループ設定に応じて余剰（余り）を取るかクランプするかを決定
+        float animTime;
+        if (loop && anim.maxTime > 0.0f) {
+            animTime = time % anim.maxTime;
+        } else {
+            animTime = Math.min(time, anim.maxTime);
+        }
 
         for (GlbLoader.AnimationChannel ch : anim.channels) {
             if (!ch.targetNodeName.equalsIgnoreCase(nodeName)) continue;
 
             switch (ch.path) {
                 case "translation" -> {
-                    Vector3f animVec = sampleVector3(ch, clampedTime);
+                    Vector3f animVec = sampleVector3(ch, animTime);
                     if (animVec != null) translation.set(animVec);
                 }
                 case "rotation" -> {
-                    Quaternionf q = sampleQuaternion(ch, clampedTime);
+                    Quaternionf q = sampleQuaternion(ch, animTime);
                     if (q != null) rotation.set(q);
                 }
                 case "scale" -> {
-                    Vector3f s = sampleVector3(ch, clampedTime);
+                    Vector3f s = sampleVector3(ch, animTime);
                     if (s != null) scale.set(s);
                 }
             }

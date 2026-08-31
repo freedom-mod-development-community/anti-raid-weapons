@@ -10,18 +10,14 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import xyz.fmdc.arw.AntiRaidWeapons;
 import xyz.fmdc.arw.common.block.*;
-import xyz.fmdc.arw.common.blockentity.weapon.Mk45Mod4BlockEntity;
 import xyz.fmdc.arw.common.blockentity.fcs.FcsCoreBlockEntity;
 import xyz.fmdc.arw.common.blockentity.sensor.OpticalSightBlockEntity;
 import xyz.fmdc.arw.common.blockentity.sensor.SearchRadarBlockEntity;
 import xyz.fmdc.arw.common.blockentity.sensor.TrackingRadarBlockEntity;
-import xyz.fmdc.arw.common.blockentity.weapon.MannedTankTurretBlockEntity;
-import xyz.fmdc.arw.common.blockentity.weapon.ManualRwsGunBlockEntity;
 import xyz.fmdc.arw.common.blockentity.vls.VlsBlockEntity;
-import xyz.fmdc.arw.common.blockentity.weapon.WWIIAntiAircraftGunBlockEntity;
+import xyz.fmdc.arw.common.blockentity.weapon.*;
 import xyz.fmdc.arw.emmi.EmmiBlock;
 import xyz.fmdc.arw.emmi.EmmiBlockEntity;
-import xyz.fmdc.arw.common.block.Mk45mod4Block;
 import xyz.fmdc.arw.ops39.Ops39Block;
 import xyz.fmdc.arw.ops39.Ops39BlockEntity;
 import xyz.fmdc.arw.oto127mm.Oto127mmBlock;
@@ -61,6 +57,8 @@ public class ModBlocks {
             new BlockEntry<>("oto127mm", () -> new Oto127mmBlock(defaultProps()), Oto127mmBlockEntity::new);
     public static final BlockEntry<Mk45mod4Block, Mk45Mod4BlockEntity> MK45_MOD4 =
             new BlockEntry<>("mk45mod4", () -> new Mk45mod4Block(defaultProps()), Mk45Mod4BlockEntity::new);
+    public static final BlockEntry<phalanxBlock, PhalanxBlockEntity> PHALANX =
+            new BlockEntry<>("phalanx", () -> new phalanxBlock(defaultProps()), PhalanxBlockEntity::new);
 
     public static final BlockEntry<RadarDisplayBlock, RadarDisplayBlockEntity> RADAR_DISPLAY =
             new BlockEntry<>("radar_display", () -> new RadarDisplayBlock(stoneProps()), RadarDisplayBlockEntity::new);
