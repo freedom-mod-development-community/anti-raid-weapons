@@ -32,7 +32,7 @@ public class ModEntities {
     // 2. oto用の砲弾エンティティの登録
     public static final RegistryObject<EntityType<NavalShellEntity>> NAVAL_SHELL =
             ENTITY_TYPES.register("naval_shell", () ->
-                    EntityType.Builder.<FiveInchShellEntity>of(NavalShellEntity::new, MobCategory.MISC)
+                    EntityType.Builder.<NavalShellEntity>of(NavalShellEntity::new, MobCategory.MISC)
                             .sized(0.25F, 0.25F) // ヒットボックスの大きさ（幅, 高さ）
                             .clientTrackingRange(8)  // 描画更新の追尾範囲
                             .updateInterval(1)       // パケット更新間隔（1tick毎で滑らかに飛翔）
