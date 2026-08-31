@@ -22,15 +22,15 @@ import xyz.fmdc.arw.common.blockentity.weapon.WWIIAntiAircraftGunBlockEntity;
 import xyz.fmdc.arw.emmi.EmmiBlock;
 import xyz.fmdc.arw.emmi.EmmiBlockEntity;
 import xyz.fmdc.arw.common.block.Mk45mod4Block;
-import xyz.fmdc.arw.ops39.Ops39Block;
+import xyz.fmdc.arw.common.block.Ops39Block;
 import xyz.fmdc.arw.common.blockentity.weapon.Ops39BlockEntity;
 import xyz.fmdc.arw.common.block.Oto127mmBlock;
 import xyz.fmdc.arw.common.blockentity.weapon.Oto127mmBlockEntity;
 import xyz.fmdc.arw.radardisplay.RadarDisplayBlock;
 import xyz.fmdc.arw.radardisplay.RadarDisplayBlockEntity;
 import xyz.fmdc.arw.registry.auto.BlockEntry;
-import xyz.fmdc.arw.spq9b.Spq9bBlock;
-import xyz.fmdc.arw.spq9b.Spq9bBlockEntity;
+import xyz.fmdc.arw.common.block.Spq9bBlock;
+import xyz.fmdc.arw.common.blockentity.sensor.Spq9bBlockEntity;
 
 public class ModBlocks {
     public static final DeferredRegister<Block> BLOCKS =

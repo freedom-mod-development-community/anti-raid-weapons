@@ -1,4 +1,4 @@
-package xyz.fmdc.arw.spq9b;
+package xyz.fmdc.arw.common.blockentity.sensor;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
