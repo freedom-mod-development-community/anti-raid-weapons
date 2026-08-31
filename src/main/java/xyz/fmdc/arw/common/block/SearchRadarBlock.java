@@ -17,6 +17,7 @@ import org.jetbrains.annotations.Nullable;
 import xyz.fmdc.arw.client.gui.RadarTest;
 import xyz.fmdc.arw.common.blockentity.sensor.HorizontalRadarBlockEntity;
 import xyz.fmdc.arw.common.blockentity.sensor.SearchRadarBlockEntity;
+import xyz.fmdc.arw.common.item.FcsConnectorItem;
 
 public class SearchRadarBlock extends BaseEntityBlock {
     public SearchRadarBlock(Properties properties) { super(properties); }
@@ -38,6 +39,9 @@ public class SearchRadarBlock extends BaseEntityBlock {
     @Override
     public @NotNull InteractionResult use(@NotNull BlockState state, Level level, @NotNull BlockPos pos, @NotNull Player player,
                                           @NotNull InteractionHand hand, @NotNull BlockHitResult hit) {
+        if (player.getItemInHand(hand).getItem() instanceof FcsConnectorItem) {
+            return InteractionResult.PASS;
+        }
 
         // クライアント側（描画側）でのみGUIを開く
         if (level.isClientSide) {

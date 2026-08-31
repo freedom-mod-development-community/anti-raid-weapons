@@ -18,6 +18,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xyz.fmdc.arw.client.gui.FcsCoreClientHandler;
 import xyz.fmdc.arw.common.blockentity.fcs.FcsCoreBlockEntity;
+import xyz.fmdc.arw.common.item.FcsConnectorItem;
 
 public class FcsCoreBlock extends BaseEntityBlock {
     public FcsCoreBlock(Properties properties) {
@@ -46,6 +47,9 @@ public class FcsCoreBlock extends BaseEntityBlock {
     @Override
     public @NotNull InteractionResult use(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos,
                                          @NotNull Player player, @NotNull InteractionHand hand, @NotNull BlockHitResult hit) {
+        if (player.getItemInHand(hand).getItem() instanceof FcsConnectorItem) {
+            return InteractionResult.PASS;
+        }
         if (level.isClientSide) {
             DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> FcsCoreClientHandler.openScreen(pos));
         }

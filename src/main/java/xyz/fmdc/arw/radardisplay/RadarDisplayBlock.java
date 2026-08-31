@@ -14,6 +14,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import xyz.fmdc.arw.common.item.FcsConnectorItem;
 import xyz.fmdc.arw.radardisplay.client.RadarDisplayClientHandler;
 
 public class RadarDisplayBlock extends BaseEntityBlock {
@@ -37,6 +38,9 @@ public class RadarDisplayBlock extends BaseEntityBlock {
     @Override
     public @NotNull InteractionResult use(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos,
                                          @NotNull Player player, @NotNull InteractionHand hand, @NotNull BlockHitResult hit) {
+        if (player.getItemInHand(hand).getItem() instanceof FcsConnectorItem) {
+            return InteractionResult.PASS;
+        }
         if (level.isClientSide) {
             DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> RadarDisplayClientHandler.openScreen(pos));
         }

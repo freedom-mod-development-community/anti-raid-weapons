@@ -26,6 +26,20 @@
   "tooltip.arw.length": "Length: %s m",
   "tooltip.arw.explosive_filler": "Explosive Filler: %s kg",
 
+  "tooltip.arw.fcs_connector.linked_core_uuid": "Linked FCS Core UUID: %s",
+  "tooltip.arw.fcs_connector.no_core": "No FCS Core linked. Right-click an FCS Core block to link.",
+  "message.arw.fcs_connector.core_selected": "[ARW] Linked FCS Core (UUID: %s)",
+  "message.arw.fcs_connector.registered": "[ARW] Successfully registered '%s' (UUID: %s) to FCS Core",
+  "message.arw.fcs_connector.already_registered": "[ARW] '%s' (UUID: %s) is already registered to FCS Core",
+  "message.arw.fcs_connector.unregistered": "[ARW] Unregistered '%s' (UUID: %s) from FCS Core",
+  "message.arw.fcs_connector.not_registered": "[ARW] '%s' (UUID: %s) is not registered to FCS Core",
+  "message.arw.fcs_connector.core_not_found": "[ARW] Linked FCS Core (UUID: %s) was not found.",
+  "message.arw.fcs_connector.no_core_linked": "[ARW] No FCS Core linked. Right-click an FCS Core block first.",
+  "message.arw.fcs_connector.different_dimension": "[ARW] FCS Core is in a different dimension.",
+  "message.arw.fcs_connector.register_failed": "[ARW] Failed to register '%s' to FCS Core.",
+  "message.arw.fcs_connector.already_linked_to_other_core": "[ARW] This device is already linked to another FCS Core (UUID: %s). Unlink it first from the registered core or its connector.",
+  "message.arw.fcs_connector.cannot_unlink_other_core": "[ARW] This device is linked to a different FCS Core (UUID: %s) and cannot be unlinked with this connector.",
+
   "gui.arw.radar_display.title": "Radar Display",
   "gui.arw.fcs_core.title": "FCS Core Network Manager",
   "subtitles.arw.oto127_fire": "OTO 127mm Gun fires"

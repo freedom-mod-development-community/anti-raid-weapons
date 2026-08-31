@@ -46,6 +46,11 @@ public class PacketHandler {
                 .decoder(UpdateRadarDisplayConfigPacket::new)
                 .consumerMainThread(UpdateRadarDisplayConfigPacket::handle)
                 .add();
+        INSTANCE.messageBuilder(ServerboundFcsCoreUnregisterPacket.class, id())
+                .encoder(ServerboundFcsCoreUnregisterPacket::toBytes)
+                .decoder(ServerboundFcsCoreUnregisterPacket::new)
+                .consumerMainThread(ServerboundFcsCoreUnregisterPacket::handle)
+                .add();
     }
 
     // クライアントからのパケット送信ヘルパー
