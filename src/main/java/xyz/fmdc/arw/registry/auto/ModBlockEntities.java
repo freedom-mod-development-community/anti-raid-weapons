@@ -1,4 +1,4 @@
-package xyz.fmdc.arw.registry;
+package xyz.fmdc.arw.registry.auto;
 
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.eventbus.api.IEventBus;

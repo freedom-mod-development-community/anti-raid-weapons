@@ -11,39 +11,49 @@ import xyz.fmdc.arw.client.util.GlbLoader;
 import xyz.fmdc.arw.client.util.IYawPitchAnimatableModel;
 
 import java.util.List;
+import java.util.function.Function;
 
-public abstract class BaseNavalGunRenderer<T extends BlockEntity & IYawPitchAnimatableModel> implements BlockEntityRenderer<T> {
+public class BaseNavalGunRenderer<T extends BlockEntity & IYawPitchAnimatableModel> implements BlockEntityRenderer<T> {
 
     protected final GenericGlbRenderer glbRenderer = new GenericGlbRenderer();
+    private final Function<T, GlbLoader.GlbModelData> modelProvider;
 
+    // 1. 従来通りの抽象メソッドを使う場合のコンストラクタ（後換性維持）
     public BaseNavalGunRenderer(BlockEntityRendererProvider.Context context) {
+        this.modelProvider = this::getModelData;
+    }
+
+    // 2. 1行でモデル指定したい場合に使用するコンストラクタ（追加）
+    public BaseNavalGunRenderer(BlockEntityRendererProvider.Context context, Function<T, GlbLoader.GlbModelData> modelProvider) {
+        this.modelProvider = modelProvider;
     }
 
     @Override
     public void render(@NotNull T blockEntity, float partialTick, @NotNull PoseStack poseStack,
                        @NotNull MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
 
-        GlbLoader.GlbModelData modelData = getModelData(blockEntity);
+        GlbLoader.GlbModelData modelData = this.modelProvider.apply(blockEntity);
         if (modelData == null) return;
 
-        // INavalGun 経由で再生中アニメーションのリストを取得
         List<GenericGlbRenderer.ActiveAnimation> activeAnimations = blockEntity.getActiveAnimations(partialTick);
 
-        // 汎用GLBレンダラーの呼び出し
         glbRenderer.render(
                 modelData, poseStack, bufferSource, packedLight, packedOverlay, partialTick,
                 activeAnimations,
                 (nodeName, stack, pTick) -> {
                     if ("yaw".equalsIgnoreCase(nodeName)) {
-                        stack.mulPose(Axis.YP.rotationDegrees(blockEntity.getTargetYaw(pTick)));
+                        stack.mulPose(Axis.YP.rotationDegrees(-blockEntity.getRenderTargetYaw(pTick)));
                     } else if ("pitch".equalsIgnoreCase(nodeName)) {
-                        stack.mulPose(Axis.XP.rotationDegrees(blockEntity.getTargetPitch(pTick)));
+                        stack.mulPose(Axis.XP.rotationDegrees(blockEntity.getRenderTargetPitch(pTick)));
                     }
                 }
         );
     }
 
-    protected abstract GlbLoader.GlbModelData getModelData(T blockEntity);
+    // デフォルト実装を返し、overrideは任意にする
+    protected GlbLoader.GlbModelData getModelData(T blockEntity) {
+        return null;
+    }
 
     @Override
     public int getViewDistance() {
