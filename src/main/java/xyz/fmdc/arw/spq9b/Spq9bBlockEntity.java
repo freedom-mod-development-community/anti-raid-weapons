@@ -3,14 +3,14 @@ package xyz.fmdc.arw.spq9b;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import org.jetbrains.annotations.NotNull;
 import xyz.fmdc.arw.client.util.IYawModel;
+import xyz.fmdc.arw.common.blockentity.AbstractARWBlockEntity;
 import xyz.fmdc.arw.registry.ModBlocks;
 
-public class Spq9bBlockEntity extends BlockEntity implements IYawModel {
+public class Spq9bBlockEntity extends AbstractARWBlockEntity implements IYawModel {
 
     private float currentYaw = 0.0f;
     private float prevYaw = 0.0f;
@@ -41,8 +41,6 @@ public class Spq9bBlockEntity extends BlockEntity implements IYawModel {
 
     @Override
     public AABB getRenderBoundingBox() {
-        // ブロックの現在位置を中心に、描画判定領域を上下左右に広げる
-        // 例: 上下に3ブロック、東西南北に3ブロック分領域を拡張
         return new AABB(this.worldPosition).inflate(3.0);
     }
 

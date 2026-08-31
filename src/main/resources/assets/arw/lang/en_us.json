@@ -4,6 +4,9 @@
   "block.arw.ops39": "OPS-39 Surface Search Radar",
   "block.arw.oto127mm": "OTO 127mm Naval Gun",
   "block.arw.radar_display": "Radar Display Block",
+  "block.arw.fcs_core": "FCS Core",
+  "item.arw.fcs_connector": "FCS Connector",
   "gui.arw.radar_display.title": "Radar Display",
+  "gui.arw.fcs_core.title": "FCS Core Network Manager",
   "subtitles.arw.oto127_fire": "OTO 127mm Gun fires"
 }

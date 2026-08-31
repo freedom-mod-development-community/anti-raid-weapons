@@ -20,7 +20,6 @@ import java.util.UUID;
  */
 public abstract class HorizontalRadarBlockEntity extends AbstractARWBlockEntity implements IYawModel, IFcsSensorNode {
 
-    protected UUID networkId = UUID.randomUUID();
     protected boolean isFcsConnected = false;
     protected final List<TargetTrack> detectedTargets = new ArrayList<>();
     protected TargetTrack primaryLockedTarget = null;
@@ -45,7 +44,7 @@ public abstract class HorizontalRadarBlockEntity extends AbstractARWBlockEntity 
 
     @Override
     public UUID getNetworkId() {
-        return this.networkId;
+        return this.uuid;
     }
 
     @Override
@@ -71,14 +70,12 @@ public abstract class HorizontalRadarBlockEntity extends AbstractARWBlockEntity 
     @Override
     protected void saveAdditional(@NotNull CompoundTag tag) {
         super.saveAdditional(tag);
-        tag.putUUID("NetworkId", this.networkId);
         tag.putBoolean("FcsConnected", this.isFcsConnected);
     }
 
     @Override
     public void load(@NotNull CompoundTag tag) {
         super.load(tag);
-        if (tag.hasUUID("NetworkId")) this.networkId = tag.getUUID("NetworkId");
         this.isFcsConnected = tag.getBoolean("FcsConnected");
     }
 

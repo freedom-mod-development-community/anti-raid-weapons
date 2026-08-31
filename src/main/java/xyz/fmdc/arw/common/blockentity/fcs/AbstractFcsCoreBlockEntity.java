@@ -1,10 +1,8 @@
 package xyz.fmdc.arw.common.blockentity.fcs;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import org.jetbrains.annotations.NotNull;
 import xyz.fmdc.arw.api.fcs.*;
 import xyz.fmdc.arw.common.blockentity.AbstractARWBlockEntity;
 
@@ -15,7 +13,6 @@ import java.util.*;
  */
 public abstract class AbstractFcsCoreBlockEntity extends AbstractARWBlockEntity implements IFcsNetworkNode {
 
-    protected UUID networkId = UUID.randomUUID();
     protected final List<IFcsSensorNode> connectedSensors = new ArrayList<>();
     protected final List<IFcsControllableWeapon> connectedWeapons = new ArrayList<>();
 
@@ -44,7 +41,7 @@ public abstract class AbstractFcsCoreBlockEntity extends AbstractARWBlockEntity 
 
     @Override
     public UUID getNetworkId() {
-        return this.networkId;
+        return this.uuid;
     }
 
     @Override
@@ -54,16 +51,4 @@ public abstract class AbstractFcsCoreBlockEntity extends AbstractARWBlockEntity 
 
     @Override
     public void setFcsConnected(boolean connected) {}
-
-    @Override
-    protected void saveAdditional(@NotNull CompoundTag tag) {
-        super.saveAdditional(tag);
-        tag.putUUID("NetworkId", this.networkId);
-    }
-
-    @Override
-    public void load(@NotNull CompoundTag tag) {
-        super.load(tag);
-        if (tag.hasUUID("NetworkId")) this.networkId = tag.getUUID("NetworkId");
-    }
 }

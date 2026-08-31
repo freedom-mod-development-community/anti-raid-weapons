@@ -4,28 +4,25 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import xyz.fmdc.arw.client.renderer.GenericGlbRenderer;
 import xyz.fmdc.arw.client.util.IYawPitchAnimatableModel;
+import xyz.fmdc.arw.common.blockentity.AbstractARWBlockEntity;
 import xyz.fmdc.arw.common.entity.projectile.NavalShellEntity;
 import xyz.fmdc.arw.registry.ModBlocks;
 import xyz.fmdc.arw.registry.ModSounds;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class Oto127mmBlockEntity extends BlockEntity implements IYawPitchAnimatableModel {
+public class Oto127mmBlockEntity extends AbstractARWBlockEntity implements IYawPitchAnimatableModel {
 
     // 描画用の現在角度・過去角度
     private float currentYaw = 0.0f;
@@ -52,9 +49,6 @@ public class Oto127mmBlockEntity extends BlockEntity implements IYawPitchAnimata
 
     private int tickCounter = 0;
 
-    private final Map<String, Long> runningAnimations = new HashMap<>();
-    private final Map<String, Float> animationDurations = new HashMap<>();
-
     public Oto127mmBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlocks.OTO127MM.getBEType(), pos, state);
         animationDurations.put("fire", FIRE_ANIM_DURATION);
@@ -68,15 +62,6 @@ public class Oto127mmBlockEntity extends BlockEntity implements IYawPitchAnimata
 
         be.tickCounter++;
 
-//        // 2. 目標角度の更新テスト（将来的にここを「視線追従」や「AIの照準」に差し替える）
-//        // ※例としてサイン波で目標角度（target）を動かしてみる
-//        be.setTargetYaw(Mth.sin(be.tickCounter * 0.03f) * 45.0f);
-//        float rawTargetPitch = Mth.sin(be.tickCounter * 0.05f) * 40.0f + 25.0f;
-//        be.setTargetPitch(-rawTargetPitch);
-//
-//        // 3. current を target に向かってぬるっと旋回（イージング処理）
-//        be.updateRotation();
-//
         // 4. アニメーションクリーンアップ
         if (!be.runningAnimations.isEmpty()) {
             long currentTime = level.getGameTime();
@@ -167,14 +152,6 @@ public class Oto127mmBlockEntity extends BlockEntity implements IYawPitchAnimata
         playAnimation("reload", RELOAD_ANIM_DURATION);
     }
 
-    private void syncToClient() {
-        setChanged();
-        if (this.level != null) {
-            BlockState state = getBlockState();
-            this.level.sendBlockUpdated(this.worldPosition, state, state, 3);
-        }
-    }
-
     // --- INavalGun の実装 ---
 
     @Override
@@ -248,18 +225,6 @@ public class Oto127mmBlockEntity extends BlockEntity implements IYawPitchAnimata
                 this.animationDurations.put(name, duration);
             }
         }
-    }
-
-    @Override
-    public @NotNull CompoundTag getUpdateTag() {
-        CompoundTag tag = super.getUpdateTag();
-        saveAdditional(tag);
-        return tag;
-    }
-
-    @Override
-    public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
     }
 
     @Override

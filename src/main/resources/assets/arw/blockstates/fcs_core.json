@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "arw:block/fcs_core"
+    }
+  }
+}
