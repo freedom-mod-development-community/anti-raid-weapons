@@ -29,9 +29,8 @@ import java.util.Map;
 import java.util.UUID;
 
 //FCS対応近代兵装の基底.
-public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntity implements IYawPitchAnimatableModel,IFcsControllableWeapon {
+public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntity implements IYawPitchAnimatableModel, IFcsControllableWeapon {
 
-    protected UUID networkId = UUID.randomUUID();
     protected boolean isFcsConnected = false;
     protected float currentYaw = 0.0f;
     protected float prevYaw = 0.0f;
@@ -59,7 +58,6 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
 
         updateRotation();
         cleanUpAnimations();
-
     }
 
     protected void updateRotation() {
@@ -121,7 +119,7 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
     /** 再装填時間（Tick単位 / 20ticks = 1秒） */
     public abstract int getMaxCooldownTicks();
 
-    /** 発射時の効果音（デフォルトは汎用大爆発音） */
+    /** 発射時の効果音（デフォルトは汎重大爆発音） */
     public SoundEvent getFireSound() {
         return SoundEvents.GENERIC_EXPLODE;
     }
@@ -202,7 +200,6 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
         }
     }
 
-
     public AbstractSingleGunBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
     }
@@ -235,7 +232,7 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
 
     @Override
     public UUID getNetworkId() {
-        return this.networkId;
+        return this.uuid;
     }
 
     @Override
@@ -268,7 +265,6 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
         tag.putFloat("Pitch", this.currentPitch);
         tag.putFloat("TargetYaw", this.targetYaw);
         tag.putFloat("TargetPitch", this.targetPitch);
-        tag.putUUID("NetworkId", this.networkId);
         tag.putBoolean("FcsConnected", this.isFcsConnected);
 
         ListTag animList = new ListTag();
@@ -299,7 +295,6 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
                 this.animationDurations.put(animTag.getString("Name"), animTag.getFloat("Duration"));
             }
         }
-        if (tag.hasUUID("NetworkId")) this.networkId = tag.getUUID("NetworkId");
         this.isFcsConnected = tag.getBoolean("FcsConnected");
     }
 
@@ -315,7 +310,6 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
                 ListTag animList = tag.getList("RunningAnims", Tag.TAG_COMPOUND);
                 for (int i = 0; i < animList.size(); i++) {
                     CompoundTag animTag = animList.getCompound(i);
-                    // ★修正：NBTから "Start" を取得する
                     this.runningAnimations.put(animTag.getString("Name"), animTag.getLong("Start"));
                     this.animationDurations.put(animTag.getString("Name"), animTag.getFloat("Duration"));
                 }

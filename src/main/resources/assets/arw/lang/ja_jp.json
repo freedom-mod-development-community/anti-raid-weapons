@@ -4,6 +4,9 @@
   "block.arw.ops39": "OPS-39 対水上捜索レーダー",
   "block.arw.oto127mm": "OTO 127mm 速射砲",
   "block.arw.radar_display": "レーダー表示ブロック",
+  "block.arw.fcs_core": "FCS コア",
+  "item.arw.fcs_connector": "FCS 接続ツール",
   "gui.arw.radar_display.title": "レーダー表示",
+  "gui.arw.fcs_core.title": "FCS コア ネットワーク管理",
   "subtitles.arw.oto127_fire": "OTO 127mm砲 発射"
 }

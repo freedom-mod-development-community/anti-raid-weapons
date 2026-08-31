@@ -1,12 +1,12 @@
 package xyz.fmdc.arw.emmi;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import xyz.fmdc.arw.common.blockentity.AbstractARWBlockEntity;
 import xyz.fmdc.arw.registry.ModBlocks;
 
-public class EmmiBlockEntity extends BlockEntity{
+public class EmmiBlockEntity extends AbstractARWBlockEntity {
 
     public EmmiBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlocks.EMMI.getBEType(), pos, state);

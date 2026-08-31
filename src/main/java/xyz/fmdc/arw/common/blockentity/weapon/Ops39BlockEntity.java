@@ -5,14 +5,14 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import org.jetbrains.annotations.NotNull;
 import xyz.fmdc.arw.client.util.IYawModel;
+import xyz.fmdc.arw.common.blockentity.AbstractARWBlockEntity;
 import xyz.fmdc.arw.registry.ModBlocks;
 
-public class Ops39BlockEntity extends BlockEntity implements IYawModel {
+public class Ops39BlockEntity extends AbstractARWBlockEntity implements IYawModel {
 
     private float currentYaw = 0.0f;
     private float prevYaw = 0.0f;
@@ -46,14 +46,6 @@ public class Ops39BlockEntity extends BlockEntity implements IYawModel {
         return Mth.rotLerp(partialTick, this.prevYaw, this.currentYaw);
     }
 
-    private void syncToClient() {
-        setChanged();
-        if (this.level != null) {
-            BlockState state = getBlockState();
-            this.level.sendBlockUpdated(this.worldPosition, state, state, 3);
-        }
-    }
-
     // --- NBT & Sync ---
 
     @Override
@@ -67,18 +59,6 @@ public class Ops39BlockEntity extends BlockEntity implements IYawModel {
         super.load(tag);
         this.currentYaw = tag.getFloat("Yaw");
         this.prevYaw = this.currentYaw;
-    }
-
-    @Override
-    public @NotNull CompoundTag getUpdateTag() {
-        CompoundTag tag = super.getUpdateTag();
-        saveAdditional(tag);
-        return tag;
-    }
-
-    @Override
-    public ClientboundBlockEntityDataPacket getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
     }
 
     @Override
