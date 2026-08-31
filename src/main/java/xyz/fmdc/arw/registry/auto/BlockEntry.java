@@ -1,4 +1,4 @@
-package xyz.fmdc.arw.registry;
+package xyz.fmdc.arw.registry.auto;
 
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -6,6 +6,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.registries.RegistryObject;
+import xyz.fmdc.arw.registry.ModBlocks;
 
 import java.util.function.Supplier;
 

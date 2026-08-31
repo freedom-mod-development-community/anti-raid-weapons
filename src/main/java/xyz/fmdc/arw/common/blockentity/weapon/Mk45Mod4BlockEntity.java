@@ -1,31 +1,43 @@
-package xyz.fmdc.arw.common.blockentity;
+package xyz.fmdc.arw.common.blockentity.weapon;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import xyz.fmdc.arw.api.control.IRemoteControllableWeapon;
-import xyz.fmdc.arw.entity.NavalShellEntity;
+import xyz.fmdc.arw.common.blockentity.AbstractSingleGunBlockEntity;
+import xyz.fmdc.arw.common.entity.projectile.FiveInchAmmoType;
+import xyz.fmdc.arw.common.entity.projectile.FiveInchShellEntity;
 import xyz.fmdc.arw.registry.ModBlocks;
+import xyz.fmdc.arw.registry.ModEntities;
 
 import java.util.UUID;
 
-public class Mk45Mod4BlockEntity extends IntegratedWeaponBlockEntity implements IRemoteControllableWeapon {
+/**
+ * MK45Mod4
+ */
+public class Mk45Mod4BlockEntity extends AbstractSingleGunBlockEntity implements IRemoteControllableWeapon {
 
     // Mk 45 Mod 4 固有のパラメータ設定
     private static final float YAW_TURN_SPEED = 4.0f;   // 1Tickあたり4度（高速旋回）
     private static final float PITCH_TURN_SPEED = 3.0f; // 1Tickあたり3度
-    private static final float MIN_YAW = -150.0f;
-    private static final float MAX_YAW = 150.0f;
+    private static final float MIN_YAW = -190.0f;
+    private static final float MAX_YAW = 190.0f;
     private static final float MIN_PITCH = -65.0f;     // 仰角（上向き）
     private static final float MAX_PITCH = 15.0f;      // 俯角（下向き）
 
     public static final float FIRE_ANIM_DURATION = 0.8f;
     public static final float RELOAD_ANIM_DURATION = 2.0f;
 
+    private int tickCounter = 0;
+
+    private FiveInchAmmoType currentAmmo = FiveInchAmmoType.MK80_HE_PD;
+
+
     private UUID controllerPlayerUUID = null;
-    private int cooldownTicks = 0;
 
     public Mk45Mod4BlockEntity(BlockPos pos, BlockState state) {
         super(ModBlocks.MK45_MOD4.getBEType(), pos, state);
@@ -35,7 +47,7 @@ public class Mk45Mod4BlockEntity extends IntegratedWeaponBlockEntity implements 
 
     public static void tick(Level level, BlockPos pos, BlockState state, Mk45Mod4BlockEntity be) {
         // 共通の武器旋回・アニメーション処理を実行
-        be.tickWeapon();
+        be.tickSingleGun();
 
         if (be.cooldownTicks > 0) {
             be.cooldownTicks--;
@@ -45,40 +57,59 @@ public class Mk45Mod4BlockEntity extends IntegratedWeaponBlockEntity implements 
         if (!be.isBeingRemoteControlled() && !be.isConnectedToFcs()) {
             // Standby状態の維持など
         }
+        // テスト用：発射処理
+        if (!level.isClientSide) {
+            if (be.tickCounter % 120 == 0) {
+                be.fire();
+            }
+        }
+        be.tickCounter++;
     }
 
     @Override
     public void fire() {
         if (!canFire()) return;
-
         playAnimation("fire", FIRE_ANIM_DURATION);
         playAnimation("reload", RELOAD_ANIM_DURATION);
-        this.cooldownTicks = 40; // 発射間隔（2秒＝20rpm）
-
-        // 弾体エンティティの生成と射出（サーバー側）
-        if (this.level != null && !this.level.isClientSide) {
-            spawnShell();
-        }
+        fireProcess();
+        this.cooldownTicks = 60; // 発射間隔（例: 2秒＝20rpm）
     }
 
-    private void spawnShell() {
-        if (this.level == null) return;
+    @Override
+    public FiveInchAmmoType getSelectedAmmoType() {
+        return this.currentAmmo;
+    }
 
-        // 砲塔ピボット中心
-        Vec3 pivot = Vec3.atCenterOf(this.worldPosition).add(0.0, 1.2, 0.0);
+    @Override
+    public EntityType<FiveInchShellEntity> getShellEntityType() {
+        // 登録済みの 5インチ砲弾 ModEntities.FIVE_INCH_SHELL.get() など
+        return ModEntities.FIVE_INCH_SHELL.get();
+    }
 
-        // 現在の仰俯角・旋回角に応じた発射方向ベクトル
-        Vec3 direction = Vec3.directionFromRotation(this.currentPitch, this.currentYaw);
+    @Override
+    public Vec3 getFiringDirection() {
+        return Vec3.directionFromRotation(this.currentPitch, this.currentYaw);
+    }
 
-        // 砲口（マズル）位置のオフセット（砲身長 約2.8m）
-        Vec3 muzzlePos = pivot.add(direction.scale(2.8));
+    @Override
+    public Vec3 getMuzzleOffset() {
+        float barrelLength = 7.7f; // 砲身の長さ
+        double pivotHeight = 2.1749 - 0.5; // 旋回軸の高さ（ブロック底部または中心からのYオフセット）
 
-        NavalShellEntity shell = new NavalShellEntity(this.level, muzzlePos.x, muzzlePos.y, muzzlePos.z);
-        shell.setExplosionPower(4.5f);
-        shell.setDirectDamage(60.0f);
-        shell.shoot(direction.x, direction.y, direction.z, 3.5f, 0.1f);
+        Vec3 dir = getFiringDirection();
 
-        this.level.addFreshEntity(shell);
+        // 射撃方向に砲身長さを掛け、旋回軸の基準高さを加算
+        return new Vec3(
+                dir.x * barrelLength,
+                dir.y * barrelLength + pivotHeight,
+                dir.z * barrelLength
+        );
+    }
+
+    @Override
+    public int getMaxCooldownTicks() {
+        // Mk45 (Mod 4) 連射速度: 約20発/分 ➔ 1発あたり 3秒 (60 ticks)
+        return 60;
     }
 
     @Override
@@ -97,7 +128,7 @@ public class Mk45Mod4BlockEntity extends IntegratedWeaponBlockEntity implements 
     // --- IRemoteControllableWeapon の実装 ---
     @Override
     public Vec3 getCameraPosition() {
-        // 砲頭カメラの位置オフセット（ブロック中心から上方1.8m、前方0.5m）
+        // 砲頭カメラの位置オフセット（例: ブロック中心から上方1.8m、前方0.5m）
         return Vec3.atCenterOf(this.worldPosition).add(0.0, 1.8, 0.5);
     }
 
@@ -127,5 +158,11 @@ public class Mk45Mod4BlockEntity extends IntegratedWeaponBlockEntity implements 
         if (triggerFire && canFire()) {
             fire();
         }
+    }
+
+    @Override
+    public AABB getRenderBoundingBox() {
+        // 例: 上下に3ブロック、東西南北に3ブロック分領域を拡張
+        return new AABB(this.worldPosition).inflate(5.0);
     }
 }

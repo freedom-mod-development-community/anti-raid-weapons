@@ -1,4 +1,4 @@
-package xyz.fmdc.arw.common;
+package xyz.fmdc.arw.common.blockentity;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -8,9 +8,18 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 
-public abstract class AbstractEquipmentBlockEntity extends BlockEntity {
+import java.util.HashMap;
+import java.util.Map;
 
-    public AbstractEquipmentBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
+/**
+ * 本modに置ける Block entity 最上位クラス. ここはネットワーク関係をちょいとおいておくにとどめる
+ */
+public abstract class AbstractARWBlockEntity extends BlockEntity {
+
+    protected final Map<String, Long> runningAnimations = new HashMap<>();
+    protected final Map<String, Float> animationDurations = new HashMap<>();
+
+    public AbstractARWBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
     }
 
