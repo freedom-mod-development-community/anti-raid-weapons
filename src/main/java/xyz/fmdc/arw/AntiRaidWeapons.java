@@ -6,6 +6,8 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.slf4j.Logger;
+import xyz.fmdc.arw.network.ModPacketHandler;
+import xyz.fmdc.arw.registry.ModBlockEntities;
 import xyz.fmdc.arw.network.PacketHandler;
 import xyz.fmdc.arw.registry.ModBlocks;
 import xyz.fmdc.arw.registry.ModEntities;
@@ -30,6 +32,7 @@ public class AntiRaidWeapons {
         ModEntities.register(modEventBus);
         ModCreativeTabs.register(modEventBus);
 
+        ModPacketHandler.register();
         modEventBus.addListener(this::commonSetup);
     }
 

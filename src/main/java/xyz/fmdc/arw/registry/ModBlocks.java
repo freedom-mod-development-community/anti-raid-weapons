@@ -1,6 +1,7 @@
 package xyz.fmdc.arw.registry;
 
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
@@ -25,6 +26,8 @@ import xyz.fmdc.arw.ops39.Ops39Block;
 import xyz.fmdc.arw.ops39.Ops39BlockEntity;
 import xyz.fmdc.arw.oto127mm.Oto127mmBlock;
 import xyz.fmdc.arw.oto127mm.Oto127mmBlockEntity;
+import xyz.fmdc.arw.radardisplay.RadarDisplayBlock;
+import xyz.fmdc.arw.radardisplay.RadarDisplayBlockEntity;
 import xyz.fmdc.arw.registry.auto.BlockEntry;
 import xyz.fmdc.arw.spq9b.Spq9bBlock;
 import xyz.fmdc.arw.spq9b.Spq9bBlockEntity;
@@ -43,6 +46,10 @@ public class ModBlocks {
                 .noOcclusion();
     }
 
+    public static BlockBehaviour.Properties stoneProps() {
+        return BlockBehaviour.Properties.copy(Blocks.STONE);
+    }
+
     // Block + Item + BlockEntity を1行で一括登録
     public static final BlockEntry<Ops39Block, Ops39BlockEntity> OPS39 =
             new BlockEntry<>("ops39", () -> new Ops39Block(defaultProps()), Ops39BlockEntity::new);
@@ -54,6 +61,9 @@ public class ModBlocks {
             new BlockEntry<>("oto127mm", () -> new Oto127mmBlock(defaultProps()), Oto127mmBlockEntity::new);
     public static final BlockEntry<Mk45mod4Block, Mk45Mod4BlockEntity> MK45_MOD4 =
             new BlockEntry<>("mk45mod4", () -> new Mk45mod4Block(defaultProps()), Mk45Mod4BlockEntity::new);
+
+    public static final BlockEntry<RadarDisplayBlock, RadarDisplayBlockEntity> RADAR_DISPLAY =
+            new BlockEntry<>("radar_display", () -> new RadarDisplayBlock(stoneProps()), RadarDisplayBlockEntity::new);
 
     // --- FCS ---
     public static final BlockEntry<FcsCoreBlock, FcsCoreBlockEntity> FCS_CORE_BLOCK =
