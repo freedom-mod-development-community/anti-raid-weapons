@@ -46,7 +46,6 @@ public class ClientModEvents {
 
         //entity
         event.registerEntityRenderer(ModEntities.FIVE_INCH_SHELL.get(), ThrownItemRenderer::new);
-        event.registerEntityRenderer(ModEntities.NAVAL_SHELL.get(), NavalShellRenderer::new);
     }
 
     @SubscribeEvent

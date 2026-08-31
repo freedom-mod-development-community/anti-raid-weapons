@@ -6,6 +6,26 @@
   "block.arw.radar_display": "レーダー表示ブロック",
   "block.arw.fcs_core": "FCS コア",
   "item.arw.fcs_connector": "FCS 接続ツール",
+
+  "item.arw.five_inch_shell_mk68_he_cvt": "5インチ砲弾 (Mark 68 HE-CVT)",
+  "item.arw.five_inch_shell_mk80_he_pd": "5インチ砲弾 (Mark 80 HE-PD)",
+  "item.arw.five_inch_shell_mk91_illum_mt": "5インチ砲弾 (Mark 91 Illum-MT)",
+  "item.arw.five_inch_shell_mk116_he_vt": "5インチ砲弾 (Mark 116 HE-VT)",
+  "item.arw.five_inch_shell_mk127_he_cvt": "5インチ砲弾 (Mark 127 HE-CVT)",
+  "item.arw.five_inch_shell_mk156_he_ir": "5インチ砲弾 (Mark 156 HE-IR)",
+  "item.arw.five_inch_shell_mk172_he_icm": "5インチ砲弾 (Mark 172 HE-ICM)",
+
+  "tooltip.arw.caliber": "口径: %s",
+  "tooltip.arw.ammo_type": "弾薬種: %s",
+  "tooltip.arw.ammo_category.point_detonating": "瞬発信管榴弾 (HE-PD)",
+  "tooltip.arw.ammo_category.proximity": "近接信管榴弾 (HE-VT/CVT)",
+  "tooltip.arw.ammo_category.illumination": "照明弾 (Illum)",
+  "tooltip.arw.ammo_category.infrared": "赤外線信管榴弾 (HE-IR)",
+  "tooltip.arw.ammo_category.cargo_submunition": "子弾散布弾 (ICM)",
+  "tooltip.arw.weight": "重量: %s kg",
+  "tooltip.arw.length": "全長: %s m",
+  "tooltip.arw.explosive_filler": "炸薬量: %s kg",
+
   "gui.arw.radar_display.title": "レーダー表示",
   "gui.arw.fcs_core.title": "FCS コア ネットワーク管理",
   "subtitles.arw.oto127_fire": "OTO 127mm砲 発射"
