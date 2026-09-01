@@ -5,9 +5,11 @@ import com.mojang.math.Axis;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import org.jetbrains.annotations.NotNull;
 import xyz.fmdc.arw.client.util.FastGlbModel;
+import xyz.fmdc.arw.client.util.IDirectionalBlockEntity;
 import xyz.fmdc.arw.client.util.IYawPitchAnimatableModel;
 
 import java.util.List;
@@ -30,6 +32,12 @@ public class BaseNavalGunRenderer<T extends BlockEntity & IYawPitchAnimatableMod
         FastGlbModel modelData = this.modelProvider.apply(blockEntity);
         if (modelData == null) return;
 
+        poseStack.pushPose();
+        poseStack.translate(0.5, 0.0, 0.5);
+        Direction facing = getDirectionFromBlockEntity(blockEntity);
+        poseStack.mulPose(Axis.YP.rotationDegrees(-facing.toYRot()));
+        //poseStack.translate(-0.5, 0.0, -0.5);
+
         List<GenericFastGlbRenderer.ActiveAnimation> activeAnimations = blockEntity.getActiveAnimations(partialTick);
 
         glbRenderer.render(
@@ -43,6 +51,7 @@ public class BaseNavalGunRenderer<T extends BlockEntity & IYawPitchAnimatableMod
                     }
                 }
         );
+        poseStack.popPose();
     }
 
     // デフォルト実装を返し、overrideは任意にする
@@ -53,5 +62,13 @@ public class BaseNavalGunRenderer<T extends BlockEntity & IYawPitchAnimatableMod
     @Override
     public int getViewDistance() {
         return 256;
+    }
+
+    public Direction getDirectionFromBlockEntity(BlockEntity blockEntity) {
+        if (blockEntity instanceof IDirectionalBlockEntity directional) {
+            return directional.getFacing();
+        }
+        // インターフェースを実装していない一般ブロック用のフォールバック
+        return Direction.SOUTH;
     }
 }

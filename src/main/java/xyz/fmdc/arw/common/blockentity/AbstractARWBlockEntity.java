@@ -20,7 +20,7 @@ import java.util.UUID;
 /**
  * 本modにおける Block entity 最上位クラス.
  */
-public abstract class AbstractARWBlockEntity extends BlockEntity {
+public abstract class AbstractARWBlockEntity extends BlockEntity{
 
     protected UUID uuid = UUID.randomUUID();
     protected UUID linkedFcsCoreUuid = null;

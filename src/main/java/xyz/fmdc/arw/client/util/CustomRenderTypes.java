@@ -7,7 +7,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 
 public class CustomRenderTypes extends RenderType {
-    // 抽象クラスのダミーコンストラクタ
+
     public CustomRenderTypes(String name, VertexFormat format, VertexFormat.Mode mode, int bufferSize, boolean affectsCrumbling, boolean sortOnUpload, Runnable setupState, Runnable clearState) {
         super(name, format, mode, bufferSize, affectsCrumbling, sortOnUpload, setupState, clearState);
     }
@@ -17,7 +17,7 @@ public class CustomRenderTypes extends RenderType {
         return RenderType.create(
                 "glb_emissive_opaque",
                 DefaultVertexFormat.NEW_ENTITY,
-                VertexFormat.Mode.TRIANGLES, // ★ QUADS から TRIANGLES に変更
+                VertexFormat.Mode.TRIANGLES,
                 256,
                 false,
                 false,
@@ -25,28 +25,31 @@ public class CustomRenderTypes extends RenderType {
                         .setShaderState(RENDERTYPE_EYES_SHADER)
                         .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
                         .setTransparencyState(NO_TRANSPARENCY)
+                        .setDepthTestState(LEQUAL_DEPTH_TEST) //深度テストを有効化 (Less or Equal)
                         .setWriteMaskState(COLOR_DEPTH_WRITE)
-                        .setCullState(CULL) // ★ 正常な三角形になるため CULL を有効化
+                        .setCullState(CULL)
                         .createCompositeState(false)
         );
     }
-    // 通常の不不透明 / くり抜き透明（テクスチャ透過あり）用
+
+    // 通常の不透明 / くり抜き透明（テクスチャ透過あり）用
     public static RenderType entityCutoutTriangles(ResourceLocation texture) {
         return RenderType.create(
                 "glb_entity_cutout_triangles",
                 DefaultVertexFormat.NEW_ENTITY,
-                VertexFormat.Mode.TRIANGLES, // TRIANGLES に対応
+                VertexFormat.Mode.TRIANGLES,
                 256,
                 false,
                 false,
                 RenderType.CompositeState.builder()
-                        .setShaderState(RENDERTYPE_ENTITY_CUTOUT_SHADER) // バニラの Cutout シェーダー
+                        .setShaderState(RENDERTYPE_ENTITY_CUTOUT_SHADER)
                         .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
                         .setTransparencyState(NO_TRANSPARENCY)
-                        .setLightmapState(LIGHTMAP) // 環境光・ライティングを有効化
+                        .setLightmapState(LIGHTMAP)
                         .setOverlayState(OVERLAY)
+                        .setDepthTestState(LEQUAL_DEPTH_TEST) //深度テストを有効化 (Less or Equal)
                         .setWriteMaskState(COLOR_DEPTH_WRITE)
-                        .setCullState(CULL) // 裏面カリング有効
+                        .setCullState(CULL)
                         .createCompositeState(false)
         );
     }
