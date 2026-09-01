@@ -26,12 +26,11 @@ public class GlbModelManager implements ResourceManagerReloadListener {
 
     public static final ResourceLocation OTO127MM_ID = ResourceLocation.fromNamespaceAndPath(AntiRaidWeapons.MOD_ID, "models/block/mk45mod4nla.glb");
     public static final ResourceLocation MK45MOD4_ID = ResourceLocation.fromNamespaceAndPath(AntiRaidWeapons.MOD_ID, "models/block/mk45mod4nla.glb");
-    public static final ResourceLocation PHALANX_ID = ResourceLocation.fromNamespaceAndPath(AntiRaidWeapons.MOD_ID, "models/block/mk45mod4nla.glb");
+    public static final ResourceLocation PHALANX_ID = ResourceLocation.fromNamespaceAndPath(AntiRaidWeapons.MOD_ID, "models/block/phalanx.glb");
     public static final ResourceLocation OPS39_ID = ResourceLocation.fromNamespaceAndPath(AntiRaidWeapons.MOD_ID, "models/block/ops-39-2mat.glb");
     public static final ResourceLocation SPQ9B_ID = ResourceLocation.fromNamespaceAndPath(AntiRaidWeapons.MOD_ID, "models/block/spq9b.glb");
     public static final ResourceLocation EMMI_ID = ResourceLocation.fromNamespaceAndPath(AntiRaidWeapons.MOD_ID, "models/block/emmision-test-old.glb");
     public static final ResourceLocation ATAGO_ID = ResourceLocation.fromNamespaceAndPath(AntiRaidWeapons.MOD_ID, "models/block/atago.glb");
-    public static final ResourceLocation MK13GMLS_ID = ResourceLocation.fromNamespaceAndPath(AntiRaidWeapons.MOD_ID, "models/block/mk13-gmls.glb");
 
     private GlbModelManager() {}
 
@@ -46,7 +45,7 @@ public class GlbModelManager implements ResourceManagerReloadListener {
             AntiRaidWeapons.LOGGER.info("[ARW-DEBUG] GLBモデル(VBO)の一括ロードを開始します...");
 
             ResourceLocation[] targets = new ResourceLocation[] {
-                    OTO127MM_ID, MK45MOD4_ID, OPS39_ID, SPQ9B_ID, EMMI_ID, ATAGO_ID, MK13GMLS_ID
+                    OTO127MM_ID, MK45MOD4_ID, OPS39_ID, SPQ9B_ID, EMMI_ID, ATAGO_ID, PHALANX_ID
             };
 
             for (ResourceLocation location : targets) {

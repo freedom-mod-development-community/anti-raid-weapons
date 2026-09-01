@@ -10,17 +10,18 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import org.jetbrains.annotations.NotNull;
 import xyz.fmdc.arw.client.util.FastGlbModel;
 import xyz.fmdc.arw.client.util.IDirectionalBlockEntity;
-import xyz.fmdc.arw.client.util.IYawModel;
+import xyz.fmdc.arw.client.util.IYawPitchBarrelAnimatableModel;
 
+import java.util.List;
 import java.util.function.Function;
 
-public class BaseRadarRenderer<T extends BlockEntity & IYawModel> implements BlockEntityRenderer<T> {
+public class BaseCIWSRenderer<T extends BlockEntity & IYawPitchBarrelAnimatableModel> implements BlockEntityRenderer<T> {
 
     protected final GenericFastGlbRenderer glbRenderer = new GenericFastGlbRenderer();
     private final Function<T, FastGlbModel> modelProvider;
 
-    // 1行登録用のコンストラクタ
-    public BaseRadarRenderer(BlockEntityRendererProvider.Context context, Function<T, FastGlbModel> modelProvider) {
+    // 1行でモデル指定したい場合に使用するコンストラクタ（追加）
+    public BaseCIWSRenderer(BlockEntityRendererProvider.Context context, Function<T, FastGlbModel> modelProvider) {
         this.modelProvider = modelProvider;
     }
 
@@ -29,29 +30,32 @@ public class BaseRadarRenderer<T extends BlockEntity & IYawModel> implements Blo
                        @NotNull MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
 
         FastGlbModel modelData = this.modelProvider.apply(blockEntity);
-        if (modelData == null) { return; }
+        if (modelData == null) return;
 
         poseStack.pushPose();
         poseStack.translate(0.5, 0.0, 0.5);
         Direction facing = getDirectionFromBlockEntity(blockEntity);
         poseStack.mulPose(Axis.YP.rotationDegrees(-facing.toYRot()));
-        //poseStack.translate(-0.5, 0.0, -0.5);
+
+        List<GenericFastGlbRenderer.ActiveAnimation> activeAnimations = blockEntity.getActiveAnimations(partialTick);
 
         glbRenderer.render(
                 modelData, poseStack, bufferSource, packedLight, packedOverlay, partialTick,
-                java.util.Collections.emptyList(),
+                activeAnimations,
                 (nodeName, stack, pTick) -> {
-                    if ("radar".equalsIgnoreCase(nodeName) ||
-                            "antenna".equalsIgnoreCase(nodeName) ||
-                            "yaw".equalsIgnoreCase(nodeName)) {
-
-                        stack.mulPose(Axis.YP.rotationDegrees(-blockEntity.getTargetYaw(pTick)));
+                    if ("yaw".equalsIgnoreCase(nodeName)) {
+                        stack.mulPose(Axis.YP.rotationDegrees(-blockEntity.getRenderTargetYaw(pTick)));
+                    } else if ("pitch".equalsIgnoreCase(nodeName)) {
+                        stack.mulPose(Axis.XP.rotationDegrees(blockEntity.getRenderTargetPitch(pTick)));
+                    }else if ("barrel".equalsIgnoreCase(nodeName)) {
+                        stack.mulPose(Axis.ZP.rotationDegrees(blockEntity.getRenderBarrelAng(pTick)));
                     }
                 }
         );
         poseStack.popPose();
     }
 
+    // デフォルト実装を返し、overrideは任意にする
     protected FastGlbModel getModelData(T blockEntity) {
         return null;
     }
@@ -66,6 +70,6 @@ public class BaseRadarRenderer<T extends BlockEntity & IYawModel> implements Blo
             return directional.getFacing();
         }
         // インターフェースを実装していない一般ブロック用のフォールバック
-        return Direction.NORTH;
+        return Direction.SOUTH;
     }
 }

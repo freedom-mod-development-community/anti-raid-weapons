@@ -5,7 +5,6 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
@@ -19,7 +18,7 @@ import xyz.fmdc.arw.common.blockentity.weapon.PhalanxBlockEntity;
 import xyz.fmdc.arw.common.item.FcsConnectorItem;
 import xyz.fmdc.arw.registry.ModBlocks;
 
-public class phalanxBlock extends BaseEntityBlock {
+public class phalanxBlock extends ARWBaseEntityBlock {
 
     public phalanxBlock(BlockBehaviour.Properties properties) {
         super(properties);
