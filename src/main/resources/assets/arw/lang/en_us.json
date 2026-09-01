@@ -6,7 +6,10 @@
   "block.arw.atago": "RealScale DDG-177 Atago",
   "block.arw.radar_display": "Radar Display Block",
   "block.arw.fcs_core": "FCS Core",
+  "block.arw.mk13_gmls": "Mk.13 Missile Launcher",
   "item.arw.fcs_connector": "FCS Connector",
+
+  "entity.arw.rim_66m2": "RIM-66M-2 (SM-2MR Block III)",
 
   "item.arw.five_inch_shell_mk68_he_cvt": "5-Inch Shell (Mark 68 HE-CVT)",
   "item.arw.five_inch_shell_mk80_he_pd": "5-Inch Shell (Mark 80 HE-PD)",

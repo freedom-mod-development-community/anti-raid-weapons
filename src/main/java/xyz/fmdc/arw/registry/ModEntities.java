@@ -7,6 +7,7 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.RegistryObject;
 import xyz.fmdc.arw.AntiRaidWeapons;
+import xyz.fmdc.arw.common.entity.missile.Rim66M2;
 import xyz.fmdc.arw.common.entity.projectile.FiveInchShellEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 
@@ -26,6 +27,16 @@ public class ModEntities {
                             .clientTrackingRange(8)  // 描画更新の追従範囲
                             .updateInterval(1)       // パケット更新間隔（1tick毎で滑らかに飛翔）
                             .build("5inch_shell")
+            );
+
+    // 2. RIM-66M-2 (SM-2 Block III) ミサイルエンティティの登録
+    public static final RegistryObject<EntityType<Rim66M2>> RIM_66M2 =
+            ENTITY_TYPES.register("rim_66m2", () ->
+                    EntityType.Builder.<Rim66M2>of(Rim66M2::new, MobCategory.MISC)
+                            .sized(0.34F, 4.72F) // ヒットボックス：直径0.34m, 全長4.72m
+                            .clientTrackingRange(32) // 高速長距離迎撃のためトラッキング範囲を拡張
+                            .updateInterval(1)
+                            .build("rim_66m2")
             );
 
     public static void register(IEventBus eventBus) {
