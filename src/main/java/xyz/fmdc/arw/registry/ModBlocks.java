@@ -10,23 +10,20 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import xyz.fmdc.arw.AntiRaidWeapons;
 import xyz.fmdc.arw.common.block.*;
+import xyz.fmdc.arw.common.block.decoration.AtagoBlock;
+import xyz.fmdc.arw.common.blockentity.decoration.AtagoBlockEntity;
 import xyz.fmdc.arw.common.blockentity.fcs.FcsCoreBlockEntity;
 import xyz.fmdc.arw.common.blockentity.sensor.OpticalSightBlockEntity;
 import xyz.fmdc.arw.common.blockentity.sensor.SearchRadarBlockEntity;
+import xyz.fmdc.arw.common.blockentity.sensor.Spq9bBlockEntity;
 import xyz.fmdc.arw.common.blockentity.sensor.TrackingRadarBlockEntity;
 import xyz.fmdc.arw.common.blockentity.vls.VlsBlockEntity;
 import xyz.fmdc.arw.common.blockentity.weapon.*;
 import xyz.fmdc.arw.emmi.EmmiBlock;
 import xyz.fmdc.arw.emmi.EmmiBlockEntity;
-import xyz.fmdc.arw.common.block.Ops39Block;
-import xyz.fmdc.arw.common.blockentity.weapon.Ops39BlockEntity;
-import xyz.fmdc.arw.common.block.Oto127mmBlock;
-import xyz.fmdc.arw.common.blockentity.weapon.Oto127mmBlockEntity;
 import xyz.fmdc.arw.radardisplay.RadarDisplayBlock;
 import xyz.fmdc.arw.radardisplay.RadarDisplayBlockEntity;
 import xyz.fmdc.arw.registry.auto.BlockEntry;
-import xyz.fmdc.arw.common.block.Spq9bBlock;
-import xyz.fmdc.arw.common.blockentity.sensor.Spq9bBlockEntity;
 
 public class ModBlocks {
     public static final DeferredRegister<Block> BLOCKS =
@@ -53,6 +50,8 @@ public class ModBlocks {
             new BlockEntry<>("spq9b", () -> new Spq9bBlock(defaultProps()), Spq9bBlockEntity::new);
     public static final BlockEntry<EmmiBlock, EmmiBlockEntity> EMMI =
             new BlockEntry<>("emmision-test", () -> new EmmiBlock(defaultProps()), EmmiBlockEntity::new);
+    public static final BlockEntry<AtagoBlock, AtagoBlockEntity> ATAGO =
+            new BlockEntry<>("atago", () -> new AtagoBlock(defaultProps()), AtagoBlockEntity::new);
     public static final BlockEntry<Oto127mmBlock, Oto127mmBlockEntity> OTO127MM =
             new BlockEntry<>("oto127mm", () -> new Oto127mmBlock(defaultProps()), Oto127mmBlockEntity::new);
     public static final BlockEntry<Mk45mod4Block, Mk45Mod4BlockEntity> MK45_MOD4 =

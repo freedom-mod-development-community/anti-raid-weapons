@@ -42,6 +42,9 @@ public class GlbModelManager implements ResourceManagerReloadListener {
     public static final ResourceLocation EMMI_ID =
             ResourceLocation.fromNamespaceAndPath(AntiRaidWeapons.MOD_ID, "models/block/emmision-test-old.glb");
 
+    public static final ResourceLocation ATAGO_ID =
+            ResourceLocation.fromNamespaceAndPath(AntiRaidWeapons.MOD_ID, "models/block/atago.glb");
+
     private GlbModelManager() {}
 
     /**
@@ -57,7 +60,8 @@ public class GlbModelManager implements ResourceManagerReloadListener {
                 MK45MOD4_ID,
                 OPS39_ID,
                 SPQ9B_ID,
-                EMMI_ID
+                EMMI_ID,
+                ATAGO_ID
         };
 
         for (ResourceLocation location : targets) {
