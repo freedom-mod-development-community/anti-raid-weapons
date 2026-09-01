@@ -12,7 +12,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import xyz.fmdc.arw.client.renderer.GenericGlbRenderer;
+import xyz.fmdc.arw.client.renderer.GenericFastGlbRenderer;
 import xyz.fmdc.arw.client.util.IYawPitchAnimatableModel;
 import xyz.fmdc.arw.common.blockentity.AbstractARWBlockEntity;
 import xyz.fmdc.arw.common.entity.projectile.FiveInchAmmoType;
@@ -215,8 +215,8 @@ public abstract class ARWCIWSBlockEntity extends AbstractARWBlockEntity implemen
     /**
      * Rendererの render() から毎フレーム呼び出され、現在再生すべき Glb アニメーションを返す
      */
-    public List<GenericGlbRenderer.ActiveAnimation> getActiveAnimations(float partialTick) {
-        List<GenericGlbRenderer.ActiveAnimation> activeAnims = new ArrayList<>();
+    public List<GenericFastGlbRenderer.ActiveAnimation> getActiveAnimations(float partialTick) {
+        List<GenericFastGlbRenderer.ActiveAnimation> activeAnims = new ArrayList<>();
         if (this.level == null) return activeAnims;
 
         long currentTime = this.level.getGameTime();
@@ -224,18 +224,18 @@ public abstract class ARWCIWSBlockEntity extends AbstractARWBlockEntity implemen
 
         switch (this.currentState) {
             case START_FIRE:
-                activeAnims.add(new GenericGlbRenderer.ActiveAnimation("start_fire", elapsedSeconds, false));
+                activeAnims.add(new GenericFastGlbRenderer.ActiveAnimation("start_fire", elapsedSeconds, false));
                 break;
 
             case FIRING:
                 // firing アニメーションをループ再生
                 float firingDuration = getAnimationDuration("firing");
                 float loopTime = (firingDuration > 0) ? (elapsedSeconds % firingDuration) : elapsedSeconds;
-                activeAnims.add(new GenericGlbRenderer.ActiveAnimation("firing", loopTime, true));
+                activeAnims.add(new GenericFastGlbRenderer.ActiveAnimation("firing", loopTime, true));
                 break;
 
             case END_FIRE:
-                activeAnims.add(new GenericGlbRenderer.ActiveAnimation("end_fire", elapsedSeconds, false));
+                activeAnims.add(new GenericFastGlbRenderer.ActiveAnimation("end_fire", elapsedSeconds, false));
                 break;
 
             case IDLE:

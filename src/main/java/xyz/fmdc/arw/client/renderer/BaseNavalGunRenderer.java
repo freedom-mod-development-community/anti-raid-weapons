@@ -7,7 +7,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import org.jetbrains.annotations.NotNull;
-import xyz.fmdc.arw.client.util.GlbLoader;
+import xyz.fmdc.arw.client.util.FastGlbModel;
 import xyz.fmdc.arw.client.util.IYawPitchAnimatableModel;
 
 import java.util.List;
@@ -15,8 +15,8 @@ import java.util.function.Function;
 
 public class BaseNavalGunRenderer<T extends BlockEntity & IYawPitchAnimatableModel> implements BlockEntityRenderer<T> {
 
-    protected final GenericGlbRenderer glbRenderer = new GenericGlbRenderer();
-    private final Function<T, GlbLoader.GlbModelData> modelProvider;
+    protected final GenericFastGlbRenderer glbRenderer = new GenericFastGlbRenderer();
+    private final Function<T, FastGlbModel> modelProvider;
 
     // 1. 従来通りの抽象メソッドを使う場合のコンストラクタ（後換性維持）
     public BaseNavalGunRenderer(BlockEntityRendererProvider.Context context) {
@@ -24,7 +24,7 @@ public class BaseNavalGunRenderer<T extends BlockEntity & IYawPitchAnimatableMod
     }
 
     // 2. 1行でモデル指定したい場合に使用するコンストラクタ（追加）
-    public BaseNavalGunRenderer(BlockEntityRendererProvider.Context context, Function<T, GlbLoader.GlbModelData> modelProvider) {
+    public BaseNavalGunRenderer(BlockEntityRendererProvider.Context context, Function<T, FastGlbModel> modelProvider) {
         this.modelProvider = modelProvider;
     }
 
@@ -32,10 +32,10 @@ public class BaseNavalGunRenderer<T extends BlockEntity & IYawPitchAnimatableMod
     public void render(@NotNull T blockEntity, float partialTick, @NotNull PoseStack poseStack,
                        @NotNull MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
 
-        GlbLoader.GlbModelData modelData = this.modelProvider.apply(blockEntity);
+        FastGlbModel modelData = this.modelProvider.apply(blockEntity);
         if (modelData == null) return;
 
-        List<GenericGlbRenderer.ActiveAnimation> activeAnimations = blockEntity.getActiveAnimations(partialTick);
+        List<GenericFastGlbRenderer.ActiveAnimation> activeAnimations = blockEntity.getActiveAnimations(partialTick);
 
         glbRenderer.render(
                 modelData, poseStack, bufferSource, packedLight, packedOverlay, partialTick,
@@ -51,7 +51,7 @@ public class BaseNavalGunRenderer<T extends BlockEntity & IYawPitchAnimatableMod
     }
 
     // デフォルト実装を返し、overrideは任意にする
-    protected GlbLoader.GlbModelData getModelData(T blockEntity) {
+    protected FastGlbModel getModelData(T blockEntity) {
         return null;
     }
 

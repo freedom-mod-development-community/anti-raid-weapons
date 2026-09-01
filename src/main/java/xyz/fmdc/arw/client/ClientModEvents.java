@@ -32,18 +32,20 @@ public class ClientModEvents {
 
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
-        event.registerBlockEntityRenderer(ModBlocks.OPS39.getBEType(), Ops39Renderer::new);
-        event.registerBlockEntityRenderer(ModBlocks.SPQ9B.getBEType(), Spq9bRenderer::new);
-        event.registerBlockEntityRenderer(ModBlocks.EMMI.getBEType(), EmmiRenderer::new);
-        event.registerBlockEntityRenderer(ModBlocks.OTO127MM.getBEType(), Oto127mmRenderer::new);
+        registerRadar(event, ModBlocks.OPS39, GlbModelManager.OPS39_ID);
+        registerRadar(event, ModBlocks.SPQ9B, GlbModelManager.SPQ9B_ID);
+        registerRadar(event, ModBlocks.OPTICAL_SIGHT_BLOCK, GlbModelManager.OPS39_ID);
+        registerRadar(event, ModBlocks.SEARCH_RADAR_BLOCK, GlbModelManager.OPS39_ID);
+        registerRadar(event, ModBlocks.TRACKING_RADAR_BLOCK, GlbModelManager.OPS39_ID);
+
+        registerDecoration(event, ModBlocks.EMMI, GlbModelManager.EMMI_ID);
         registerDecoration(event, ModBlocks.ATAGO, GlbModelManager.ATAGO_ID);
+
+        registerNavalGun(event, ModBlocks.OTO127MM, GlbModelManager.OTO127MM_ID);
         registerNavalGun(event, ModBlocks.MK45_MOD4, GlbModelManager.MK45MOD4_ID);
         registerNavalGun(event, ModBlocks.WW2_AA_GUN_BLOCK, GlbModelManager.MK45MOD4_ID);
         registerNavalGun(event, ModBlocks.MANNED_TANK_TURRET_BLOCK, GlbModelManager.MK45MOD4_ID);
         registerNavalGun(event, ModBlocks.PHALANX, GlbModelManager.PHALANX_ID);
-        registerRadar(event, ModBlocks.OPTICAL_SIGHT_BLOCK, GlbModelManager.OPS39_ID);
-        registerRadar(event, ModBlocks.SEARCH_RADAR_BLOCK, GlbModelManager.OPS39_ID);
-        registerRadar(event, ModBlocks.TRACKING_RADAR_BLOCK, GlbModelManager.OPS39_ID);
 
         //entity
         event.registerEntityRenderer(ModEntities.FIVE_INCH_SHELL.get(), ThrownItemRenderer::new);
@@ -62,7 +64,7 @@ public class ClientModEvents {
 
         event.registerBlockEntityRenderer(
                 blockEntry.getBEType(), // または getBEType()
-                ctx -> new BaseNavalGunRenderer<>(ctx, be -> GlbModelManager.INSTANCE.getModel(resourceLocation))
+                ctx -> new BaseNavalGunRenderer<>(ctx, be -> GlbModelManager.INSTANCE.getFastModel(resourceLocation))
         );
     }
     private static <BE extends BlockEntity & IYawModel> void registerRadar(
@@ -72,7 +74,7 @@ public class ClientModEvents {
 
         event.registerBlockEntityRenderer(
                 blockEntry.getBEType(), // または getBEType()
-                ctx -> new BaseRadarRenderer<>(ctx, be -> GlbModelManager.INSTANCE.getModel(resourceLocation))
+                ctx -> new BaseRadarRenderer<>(ctx, be -> GlbModelManager.INSTANCE.getFastModel(resourceLocation))
         );
     }
 
@@ -83,7 +85,7 @@ public class ClientModEvents {
 
         event.registerBlockEntityRenderer(
                 blockEntry.getBEType(), // または getBEType()
-                ctx -> new BaseStaticFastRenderer<>(ctx, be -> GlbModelManager.INSTANCE.getFastModel(resourceLocation))
+                ctx -> new BaseStaticRenderer<>(ctx, be -> GlbModelManager.INSTANCE.getFastModel(resourceLocation))
         );
     }
 }

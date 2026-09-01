@@ -3,6 +3,7 @@
   "block.arw.spq9b": "SPQ-9B Radar",
   "block.arw.ops39": "OPS-39 Surface Search Radar",
   "block.arw.oto127mm": "OTO 127mm Naval Gun",
+  "block.arw.atago": "RealScale DDG-177 Atago",
   "block.arw.radar_display": "Radar Display Block",
   "block.arw.fcs_core": "FCS Core",
   "item.arw.fcs_connector": "FCS Connector",

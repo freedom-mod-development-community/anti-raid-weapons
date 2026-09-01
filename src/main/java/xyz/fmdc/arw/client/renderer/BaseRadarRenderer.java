@@ -7,15 +7,15 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import org.jetbrains.annotations.NotNull;
-import xyz.fmdc.arw.client.util.GlbLoader;
+import xyz.fmdc.arw.client.util.FastGlbModel;
 import xyz.fmdc.arw.client.util.IYawModel;
 
 import java.util.function.Function;
 
 public class BaseRadarRenderer<T extends BlockEntity & IYawModel> implements BlockEntityRenderer<T> {
 
-    protected final GenericGlbRenderer glbRenderer = new GenericGlbRenderer();
-    private final Function<T, GlbLoader.GlbModelData> modelProvider;
+    protected final GenericFastGlbRenderer glbRenderer = new GenericFastGlbRenderer();
+    private final Function<T, FastGlbModel> modelProvider;
 
     // 従来の抽象クラス用コンストラクタ（互換性維持）
     public BaseRadarRenderer(BlockEntityRendererProvider.Context context) {
@@ -23,7 +23,7 @@ public class BaseRadarRenderer<T extends BlockEntity & IYawModel> implements Blo
     }
 
     // 1行登録用のコンストラクタ
-    public BaseRadarRenderer(BlockEntityRendererProvider.Context context, Function<T, GlbLoader.GlbModelData> modelProvider) {
+    public BaseRadarRenderer(BlockEntityRendererProvider.Context context, Function<T, FastGlbModel> modelProvider) {
         this.modelProvider = modelProvider;
     }
 
@@ -31,7 +31,7 @@ public class BaseRadarRenderer<T extends BlockEntity & IYawModel> implements Blo
     public void render(@NotNull T blockEntity, float partialTick, @NotNull PoseStack poseStack,
                        @NotNull MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
 
-        GlbLoader.GlbModelData modelData = this.modelProvider.apply(blockEntity);
+        FastGlbModel modelData = this.modelProvider.apply(blockEntity);
         if (modelData == null) { return; }
 
         glbRenderer.render(
@@ -48,7 +48,7 @@ public class BaseRadarRenderer<T extends BlockEntity & IYawModel> implements Blo
         );
     }
 
-    protected GlbLoader.GlbModelData getModelData(T blockEntity) {
+    protected FastGlbModel getModelData(T blockEntity) {
         return null;
     }
 

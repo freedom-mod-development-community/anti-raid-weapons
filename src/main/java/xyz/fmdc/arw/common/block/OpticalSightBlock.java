@@ -30,5 +30,3 @@ public class OpticalSightBlock extends BaseEntityBlock {
         };
     }
 }
-
-// OpticalSightBlock, TrackingRadarBlock も上記と同様に newBlockEntity の戻り値をそれぞれの BlockEntity に差し替えて作成します。
