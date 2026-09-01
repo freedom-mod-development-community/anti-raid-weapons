@@ -36,6 +36,7 @@ public class ClientModEvents {
         event.registerBlockEntityRenderer(ModBlocks.SPQ9B.getBEType(), Spq9bRenderer::new);
         event.registerBlockEntityRenderer(ModBlocks.EMMI.getBEType(), EmmiRenderer::new);
         event.registerBlockEntityRenderer(ModBlocks.OTO127MM.getBEType(), Oto127mmRenderer::new);
+        registerDecoration(event, ModBlocks.ATAGO, GlbModelManager.ATAGO_ID);
         registerNavalGun(event, ModBlocks.MK45_MOD4, GlbModelManager.MK45MOD4_ID);
         registerNavalGun(event, ModBlocks.WW2_AA_GUN_BLOCK, GlbModelManager.MK45MOD4_ID);
         registerNavalGun(event, ModBlocks.MANNED_TANK_TURRET_BLOCK, GlbModelManager.MK45MOD4_ID);
@@ -72,6 +73,17 @@ public class ClientModEvents {
         event.registerBlockEntityRenderer(
                 blockEntry.getBEType(), // または getBEType()
                 ctx -> new BaseRadarRenderer<>(ctx, be -> GlbModelManager.INSTANCE.getModel(resourceLocation))
+        );
+    }
+
+    private static <BE extends BlockEntity> void registerDecoration(
+            EntityRenderersEvent.RegisterRenderers event,
+            BlockEntry<?, BE> blockEntry,
+            ResourceLocation resourceLocation) {
+
+        event.registerBlockEntityRenderer(
+                blockEntry.getBEType(), // または getBEType()
+                ctx -> new BaseStaticRenderer<>(ctx, be -> GlbModelManager.INSTANCE.getModel(resourceLocation))
         );
     }
 }
