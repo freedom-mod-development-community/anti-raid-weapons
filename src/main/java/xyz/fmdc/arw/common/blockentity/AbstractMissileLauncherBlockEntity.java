@@ -100,6 +100,15 @@ public abstract class AbstractMissileLauncherBlockEntity extends AbstractARWBloc
      */
     public abstract Vec3 getLaunchOffset();
 
+    /**
+     * ミサイル発射地点のワールド絶対座標を取得します。
+     * デフォルトはブロック中心座標 + getLaunchOffset() です。
+     * ランチャー上の描画モデルと完全に位置を一致させる場合は子クラスでオーバーライドします。
+     */
+    public Vec3 getLaunchPosition() {
+        return Vec3.atCenterOf(this.worldPosition).add(getLaunchOffset());
+    }
+
     // --- ランチャー共通更新処理 ---
 
     /**
@@ -145,6 +154,18 @@ public abstract class AbstractMissileLauncherBlockEntity extends AbstractARWBloc
                 return elapsedSeconds >= duration;
             });
         }
+    }
+
+    /**
+     * 指定アニメーションが現在再生中かどうかを判定します。
+     */
+    public boolean isAnimationRunning(String animName) {
+        if (this.level == null) return false;
+        Long startTime = this.runningAnimations.get(animName);
+        if (startTime == null) return false;
+        float duration = this.animationDurations.getOrDefault(animName, 1.0f);
+        float elapsedSeconds = (this.level.getGameTime() - startTime) / 20.0f;
+        return elapsedSeconds < duration;
     }
 
     /**
@@ -259,7 +280,7 @@ public abstract class AbstractMissileLauncherBlockEntity extends AbstractARWBloc
         this.cooldownTicks = getMaxCooldownTicks();
 
         Vec3 direction = getFiringDirection().normalize();
-        Vec3 launchPos = Vec3.atCenterOf(this.worldPosition).add(getLaunchOffset());
+        Vec3 launchPos = getLaunchPosition();
 
         // 1. サウンド再生
         this.level.playSound(
@@ -271,12 +292,13 @@ public abstract class AbstractMissileLauncherBlockEntity extends AbstractARWBloc
                 0.8F
         );
 
-        // 2. サーバー側エフェクト & エンティティ生成
+        // 2. サーバー側エフェクト & エンティティ生成 & クライアント同期
         if (!this.level.isClientSide) {
             if (this.level instanceof ServerLevel serverLevel) {
                 spawnLaunchEffects(serverLevel, launchPos, direction);
             }
             spawnMissileEntity(launchPos, direction);
+            syncToClient();
         }
 
         this.setChanged();
@@ -290,7 +312,7 @@ public abstract class AbstractMissileLauncherBlockEntity extends AbstractARWBloc
             AbstractMissileEntity missile = createMissileEntity(serverLevel, launchPos, direction);
             if (missile != null) {
                 missile.setPos(launchPos.x, launchPos.y, launchPos.z);
-                missile.setDeltaMovement(direction.scale(getInitialLaunchVelocity()));
+                missile.setInitialMovement(direction.scale(getInitialLaunchVelocity()));
                 serverLevel.addFreshEntity(missile);
             }
         }
@@ -477,6 +499,26 @@ public abstract class AbstractMissileLauncherBlockEntity extends AbstractARWBloc
     @Override
     public void onDataPacket(net.minecraft.network.Connection net, ClientboundBlockEntityDataPacket pkt) {
         CompoundTag tag = pkt.getTag();
+        if (tag != null) {
+            if (tag.contains("TargetYaw")) this.targetYaw = tag.getFloat("TargetYaw");
+            if (tag.contains("TargetPitch")) this.targetPitch = tag.getFloat("TargetPitch");
+            if (tag.contains("CooldownTicks")) this.cooldownTicks = tag.getInt("CooldownTicks");
+
+            this.runningAnimations.clear();
+            if (tag.contains("RunningAnims", Tag.TAG_LIST)) {
+                ListTag animList = tag.getList("RunningAnims", Tag.TAG_COMPOUND);
+                for (int i = 0; i < animList.size(); i++) {
+                    CompoundTag animTag = animList.getCompound(i);
+                    this.runningAnimations.put(animTag.getString("Name"), animTag.getLong("Start"));
+                    this.animationDurations.put(animTag.getString("Name"), animTag.getFloat("Duration"));
+                }
+            }
+        }
+    }
+
+    @Override
+    public void handleUpdateTag(CompoundTag tag) {
+        super.handleUpdateTag(tag);
         if (tag != null) {
             if (tag.contains("TargetYaw")) this.targetYaw = tag.getFloat("TargetYaw");
             if (tag.contains("TargetPitch")) this.targetPitch = tag.getFloat("TargetPitch");

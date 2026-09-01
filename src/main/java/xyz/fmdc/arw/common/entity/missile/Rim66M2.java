@@ -6,6 +6,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import xyz.fmdc.arw.AntiRaidWeapons;
 import xyz.fmdc.arw.common.entity.AbstractMissileEntity;
 import xyz.fmdc.arw.registry.ModEntities;
 
@@ -25,7 +26,7 @@ public class Rim66M2 extends AbstractMissileEntity {
 
         // 指定諸元
         this.maxSpeed = 60.0F;           // 最高移動速度 : 60.0m/tick
-        this.acceleration = 0.08F;       // 推力加速度 : 0.08 blocks/tick^2
+        this.acceleration = 0.8F;       // 推力加速度 : 0.8 blocks/tick^2
         this.motorBurnTicks = 120;       // モーター燃焼時間 : 120 tick (6.0秒)
         this.maxLifeTicks = 2400;        // 最大寿命 : 2400 tick (120.0秒)
 
@@ -42,8 +43,13 @@ public class Rim66M2 extends AbstractMissileEntity {
         this.setPos(x, y, z);
     }
 
+    public Rim66M2(Level level, double x, double y, double z, Vec3 motion) {
+        this(level, x, y, z);
+        setInitialMovement(motion);
+    }
+
     /**
-     * 超高速飛翔（最大60m/tick）におけるトンネリングすり抜けを防止する近接信管判定.
+     * 超高速飛行（最大60m/tick）におけるトンネリングすり抜けを防止する近接信管判定.
      * 前tickの位置から現在位置までの移動線分（スイープAABB）を包含して目標を検知します。
      */
     @Override
@@ -60,12 +66,20 @@ public class Rim66M2 extends AbstractMissileEntity {
         );
 
         if (!nearby.isEmpty()) {
+            LivingEntity target = nearby.get(0);
+            Vec3 hitPos = this.position();
+            AntiRaidWeapons.LOGGER.info("{} proximity fuse triggered near entity '{}' (Type: {}) at ({}, {}, {})",
+                    this.getType().getDescription().getString(),
+                    target.getName().getString(),
+                    target.getType().getDescription().getString(),
+                    hitPos.x, hitPos.y, hitPos.z);
             explode();
         }
     }
 
     /**
-     * 超高速飛翔に対応した連続スモークトレイル・ロケット噴煙エフェクト.
+     * 超高速飛行に対応した連続スモークトレイル・ロケット噴煙エフェクト.
+     * GLBモデル後方のノズル位置（機体中心から約2.32m後方）からパーティクルを噴射します。
      */
     @Override
     protected void spawnFlightParticles() {
@@ -73,15 +87,18 @@ public class Rim66M2 extends AbstractMissileEntity {
         double speed = motion.length();
         if (speed < 0.01) return;
 
-        Vec3 pos = this.position();
-        // 飛翔速度に応じて補間パーティクル数を算出し、途切れのない排気煙を生成
+        Vec3 forward = motion.normalize();
+        // モデル後端のノズル位置（原点から-2.32m）から噴煙を発生
+        Vec3 nozzlePos = this.position().subtract(forward.scale(2.32));
+
+        // 飛行速度に応じて補間パーティクル数を算出し、途切れのない排気煙を生成
         int steps = Math.min((int) Math.ceil(speed * 1.5), 24);
         Vec3 stepVec = motion.scale(-1.0 / steps);
 
         for (int i = 0; i < steps; i++) {
-            double px = pos.x + stepVec.x * i;
-            double py = pos.y + stepVec.y * i;
-            double pz = pos.z + stepVec.z * i;
+            double px = nozzlePos.x + stepVec.x * i;
+            double py = nozzlePos.y + stepVec.y * i;
+            double pz = nozzlePos.z + stepVec.z * i;
 
             this.level().addParticle(
                     ParticleTypes.CAMPFIRE_COSY_SMOKE,

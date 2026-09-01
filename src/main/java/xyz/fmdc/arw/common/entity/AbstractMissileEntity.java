@@ -14,6 +14,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.ThrowableProjectile;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
@@ -21,9 +22,16 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.Nullable;
+import xyz.fmdc.arw.AntiRaidWeapons;
 
 import java.util.List;
 import java.util.UUID;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.TicketType;
+import net.minecraft.world.level.ChunkPos;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
 /**
  * ミサイル（誘導弾・ロケット推進弾）の基底抽象クラス.
@@ -33,6 +41,14 @@ public abstract class AbstractMissileEntity extends ThrowableProjectile {
 
     private static final EntityDataAccessor<Boolean> IS_MOTOR_BURNING =
             SynchedEntityData.defineId(AbstractMissileEntity.class, EntityDataSerializers.BOOLEAN);
+
+    /** ミサイル用チャンクロードチケット定義（タイムアウト60ticks = 3秒のセーフティ付き） */
+    public static final TicketType<UUID> MISSILE_CHUNK_TICKET =
+            TicketType.create("arw_missile", UUID::compareTo, 60);
+    private static final int CHUNK_LOAD_RADIUS = 2; // 半径2 -> 中心チャンクのチケットレベル31（ENTITY_TICKING）
+
+    protected boolean chunkLoadingEnabled = true;
+    private final Set<ChunkPos> activeChunkTickets = new HashSet<>();
 
     protected float explosionPower = 6.0F;
     protected float directDamage = 100.0F;
@@ -111,6 +127,22 @@ public abstract class AbstractMissileEntity extends ThrowableProjectile {
         return null;
     }
 
+    /**
+     * 発射時の初速と姿勢（Yaw/Pitch）を初期化します。
+     */
+    public void setInitialMovement(Vec3 motion) {
+        this.setDeltaMovement(motion);
+        double horizDist = Math.sqrt(motion.x * motion.x + motion.z * motion.z);
+        if (horizDist > 1.0E-4 || Math.abs(motion.y) > 1.0E-4) {
+            float targetYaw = (float) (Mth.atan2(motion.x, motion.z) * (180.0 / Math.PI));
+            float targetPitch = (float) (Mth.atan2(motion.y, horizDist) * (180.0 / Math.PI));
+            this.setYRot(targetYaw);
+            this.setXRot(targetPitch);
+            this.yRotO = targetYaw;
+            this.xRotO = targetPitch;
+        }
+    }
+
     @Override
     public void tick() {
         super.tick();
@@ -125,6 +157,7 @@ public abstract class AbstractMissileEntity extends ThrowableProjectile {
 
         // 飛行・推進制御（サーバー側）
         if (!this.level().isClientSide) {
+            updateChunkLoading();
             boolean motorActive = this.lifeTicks <= this.motorBurnTicks;
             if (isMotorBurning() != motorActive) {
                 setMotorBurning(motorActive);
@@ -213,12 +246,19 @@ public abstract class AbstractMissileEntity extends ThrowableProjectile {
         );
 
         if (!nearby.isEmpty()) {
+            LivingEntity target = nearby.get(0);
+            Vec3 hitPos = this.position();
+            AntiRaidWeapons.LOGGER.info("{} proximity fuse triggered near entity '{}' (Type: {}) at ({}, {}, {})",
+                    this.getType().getDescription().getString(),
+                    target.getName().getString(),
+                    target.getType().getDescription().getString(),
+                    hitPos.x, hitPos.y, hitPos.z);
             explode();
         }
     }
 
     /**
-     * 進行ベクトルから機体の Yaw / Pitch を更新
+     * 進行ベクトルから機体の Yaw / Pitch を更新（前tickの値を保持して描画補間を正常化）
      */
     protected void updateRotationFromMovement() {
         Vec3 motion = this.getDeltaMovement();
@@ -226,10 +266,10 @@ public abstract class AbstractMissileEntity extends ThrowableProjectile {
         if (horizDist > 1.0E-4 || Math.abs(motion.y) > 1.0E-4) {
             float targetYaw = (float) (Mth.atan2(motion.x, motion.z) * (180.0 / Math.PI));
             float targetPitch = (float) (Mth.atan2(motion.y, horizDist) * (180.0 / Math.PI));
+            this.yRotO = this.getYRot();
+            this.xRotO = this.getXRot();
             this.setYRot(targetYaw);
             this.setXRot(targetPitch);
-            this.yRotO = targetYaw;
-            this.xRotO = targetPitch;
         }
     }
 
@@ -258,6 +298,12 @@ public abstract class AbstractMissileEntity extends ThrowableProjectile {
         super.onHitEntity(result);
         if (!this.level().isClientSide) {
             Entity target = result.getEntity();
+            Vec3 hitPos = result.getLocation();
+            AntiRaidWeapons.LOGGER.info("{} hit entity '{}' (Type: {}) at ({}, {}, {})",
+                    this.getType().getDescription().getString(),
+                    target.getName().getString(),
+                    target.getType().getDescription().getString(),
+                    hitPos.x, hitPos.y, hitPos.z);
             target.hurt(this.damageSources().thrown(this, getOwner()), this.directDamage);
         }
     }
@@ -265,6 +311,15 @@ public abstract class AbstractMissileEntity extends ThrowableProjectile {
     @Override
     protected void onHitBlock(BlockHitResult result) {
         super.onHitBlock(result);
+        if (!this.level().isClientSide) {
+            BlockState blockState = this.level().getBlockState(result.getBlockPos());
+            Vec3 hitPos = result.getLocation();
+            AntiRaidWeapons.LOGGER.info("{} hit block '{}' at ({}, {}, {}) [BlockPos: {}]",
+                    this.getType().getDescription().getString(),
+                    blockState.getBlock().getName().getString(),
+                    hitPos.x, hitPos.y, hitPos.z,
+                    result.getBlockPos());
+        }
     }
 
     @Override
@@ -280,10 +335,82 @@ public abstract class AbstractMissileEntity extends ThrowableProjectile {
     }
 
     /**
+     * ミサイル周辺および進行方向先読みチャンクの動的チケット管理（未ロード領域突入によるフリーズ防止）
+     */
+    protected void updateChunkLoading() {
+        if (!this.chunkLoadingEnabled || !(this.level() instanceof ServerLevel serverLevel)) {
+            return;
+        }
+
+        ChunkPos currentChunk = new ChunkPos(this.blockPosition());
+        Vec3 motion = this.getDeltaMovement();
+        // 飛翔方向の先読みチャンク（高速飛行時に突入先を事前ロード）
+        ChunkPos leadChunk = new ChunkPos(BlockPos.containing(this.position().add(motion.scale(8.0))));
+
+        Set<ChunkPos> desiredChunks = new HashSet<>();
+        desiredChunks.add(currentChunk);
+        desiredChunks.add(leadChunk);
+
+        // 不要になった過去のチャンクチケットを解除
+        Iterator<ChunkPos> it = this.activeChunkTickets.iterator();
+        while (it.hasNext()) {
+            ChunkPos pos = it.next();
+            if (!desiredChunks.contains(pos)) {
+                serverLevel.getChunkSource().removeRegionTicket(MISSILE_CHUNK_TICKET, pos, CHUNK_LOAD_RADIUS, this.getUUID());
+                it.remove();
+            }
+        }
+
+        // 必要なチャンクにチケットを追加・更新（20tickごと、または新規チャンク突入時）
+        boolean periodicRefresh = (this.lifeTicks % 20 == 0);
+        for (ChunkPos pos : desiredChunks) {
+            if (periodicRefresh || !this.activeChunkTickets.contains(pos)) {
+                serverLevel.getChunkSource().addRegionTicket(MISSILE_CHUNK_TICKET, pos, CHUNK_LOAD_RADIUS, this.getUUID());
+                this.activeChunkTickets.add(pos);
+            }
+        }
+    }
+
+    /**
+     * 付与した全てのチャンクチケットを確実に解放・クリーンアップします。
+     */
+    protected void clearChunkTickets() {
+        if (!this.activeChunkTickets.isEmpty() && this.level() instanceof ServerLevel serverLevel) {
+            for (ChunkPos pos : this.activeChunkTickets) {
+                serverLevel.getChunkSource().removeRegionTicket(MISSILE_CHUNK_TICKET, pos, CHUNK_LOAD_RADIUS, this.getUUID());
+            }
+            this.activeChunkTickets.clear();
+        }
+    }
+
+    public boolean isChunkLoadingEnabled() {
+        return this.chunkLoadingEnabled;
+    }
+
+    public void setChunkLoadingEnabled(boolean enabled) {
+        this.chunkLoadingEnabled = enabled;
+        if (!enabled) {
+            clearChunkTickets();
+        }
+    }
+
+    @Override
+    public void onRemovedFromWorld() {
+        clearChunkTickets();
+        super.onRemovedFromWorld();
+    }
+
+    @Override
+    public void remove(RemovalReason reason) {
+        clearChunkTickets();
+        super.remove(reason);
+    }
+    /**
      * 起爆処理（爆発の発生およびエンティティ消滅）
      */
     public void explode() {
         if (!this.level().isClientSide) {
+            clearChunkTickets();
             this.level().explode(
                     this,
                     this.getX(), this.getY(), this.getZ(),
@@ -304,6 +431,7 @@ public abstract class AbstractMissileEntity extends ThrowableProjectile {
     protected void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
         tag.putInt("LifeTicks", this.lifeTicks);
+        tag.putBoolean("ChunkLoadingEnabled", this.chunkLoadingEnabled);
         tag.putBoolean("MotorBurning", isMotorBurning());
         tag.putFloat("ExplosionPower", this.explosionPower);
         tag.putFloat("DirectDamage", this.directDamage);
@@ -321,6 +449,9 @@ public abstract class AbstractMissileEntity extends ThrowableProjectile {
     protected void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
         this.lifeTicks = tag.getInt("LifeTicks");
+        if (tag.contains("ChunkLoadingEnabled")) {
+            this.chunkLoadingEnabled = tag.getBoolean("ChunkLoadingEnabled");
+        }
         if (tag.contains("MotorBurning")) {
             setMotorBurning(tag.getBoolean("MotorBurning"));
         }

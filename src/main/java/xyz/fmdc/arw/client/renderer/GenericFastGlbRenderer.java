@@ -24,6 +24,12 @@ public class GenericFastGlbRenderer {
         void apply(String nodeName, PoseStack poseStack, float partialTick);
     }
 
+    @FunctionalInterface
+    public interface NodePostRenderCallback {
+        void render(String nodeName, PoseStack poseStack, MultiBufferSource bufferSource,
+                    int packedLight, int packedOverlay, float partialTick);
+    }
+
     public record ActiveAnimation(String name, float timeSeconds, boolean loop) {
         public ActiveAnimation(String name, float timeSeconds) {
             this(name, timeSeconds, false);
@@ -43,14 +49,33 @@ public class GenericFastGlbRenderer {
                        int packedLight, int packedOverlay, float partialTick,
                        List<ActiveAnimation> activeAnimations,
                        @Nullable NodeTransformCallback callback) {
+        render(fastModel, poseStack, bufferSource, packedLight, packedOverlay, partialTick, activeAnimations, callback, null, true);
+    }
+
+    public void render(FastGlbModel fastModel, PoseStack poseStack, MultiBufferSource bufferSource,
+                       int packedLight, int packedOverlay, float partialTick,
+                       List<ActiveAnimation> activeAnimations,
+                       @Nullable NodeTransformCallback callback,
+                       boolean centerBlockOffset) {
+        render(fastModel, poseStack, bufferSource, packedLight, packedOverlay, partialTick, activeAnimations, callback, null, centerBlockOffset);
+    }
+
+    public void render(FastGlbModel fastModel, PoseStack poseStack, MultiBufferSource bufferSource,
+                       int packedLight, int packedOverlay, float partialTick,
+                       List<ActiveAnimation> activeAnimations,
+                       @Nullable NodeTransformCallback callback,
+                       @Nullable NodePostRenderCallback postRenderCallback,
+                       boolean centerBlockOffset) {
 
         if (fastModel == null || fastModel.rootNode == null) return;
 
         poseStack.pushPose();
-        poseStack.translate(0.5, 0.0, 0.5);
+        if (centerBlockOffset) {
+            poseStack.translate(0.5, 0.0, 0.5);
+        }
 
         renderNode(fastModel.rootNode, fastModel.rawData, poseStack, bufferSource,
-                packedLight, packedOverlay, partialTick, activeAnimations, callback);
+                packedLight, packedOverlay, partialTick, activeAnimations, callback, postRenderCallback);
 
         poseStack.popPose();
 
@@ -61,7 +86,8 @@ public class GenericFastGlbRenderer {
     private void renderNode(FastGlbModel.FastNode node, GlbLoader.GlbModelData rawData, PoseStack poseStack,
                             MultiBufferSource bufferSource, int packedLight, int packedOverlay,
                             float partialTick, List<ActiveAnimation> activeAnimations,
-                            @Nullable NodeTransformCallback callback) {
+                            @Nullable NodeTransformCallback callback,
+                            @Nullable NodePostRenderCallback postRenderCallback) {
 
         poseStack.pushPose();
 
@@ -88,15 +114,20 @@ public class GenericFastGlbRenderer {
 
         poseStack.scale(animScale.x(), animScale.y(), animScale.z());
 
-// メッシュパーツ描画
+        // メッシュパーツ描画
         for (FastGlbModel.FastMeshPart part : node.meshParts()) {
             renderMeshPartVbo(part, poseStack, packedLight, packedOverlay);
         }
 
-// 子ノードの再帰
+        // ノード描画後の追加処理（アタッチメントパーツやミサイル等の描画）
+        if (postRenderCallback != null) {
+            postRenderCallback.render(node.name(), poseStack, bufferSource, packedLight, packedOverlay, partialTick);
+        }
+
+        // 子ノードの再帰
         for (FastGlbModel.FastNode child : node.children()) {
             renderNode(child, rawData, poseStack, bufferSource, packedLight, packedOverlay,
-                    partialTick, activeAnimations, callback);
+                    partialTick, activeAnimations, callback, postRenderCallback);
         }
 
         poseStack.popPose();
@@ -128,7 +159,6 @@ public class GenericFastGlbRenderer {
     private void applyAnimationToNode(String nodeName, GlbLoader.GlbAnimation anim, float time, boolean loop) {
         float animTime = (loop && anim.maxTime > 0.0f) ? (time % anim.maxTime) : Math.min(time, anim.maxTime);
 
-        // 拡張ポイント: 事前に nodeName -> channels の Map を構築しておけば検索をさらに高速化可能
         List<GlbLoader.AnimationChannel> channels = anim.channels;
         for (int i = 0; i < channels.size(); i++) {
             GlbLoader.AnimationChannel ch = channels.get(i);
