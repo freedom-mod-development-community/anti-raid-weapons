@@ -1,4 +1,4 @@
-package xyz.fmdc.arw.emmi;
+package xyz.fmdc.arw.common.blockentity.decoration;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;

@@ -1,4 +1,4 @@
-package xyz.fmdc.arw.emmi;
+package xyz.fmdc.arw.common.block.decoration;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.BaseEntityBlock;
@@ -7,6 +7,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import xyz.fmdc.arw.common.blockentity.decoration.EmmiBlockEntity;
 
 public class EmmiBlock extends BaseEntityBlock {
 
