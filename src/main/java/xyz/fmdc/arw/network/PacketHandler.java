@@ -51,6 +51,11 @@ public class PacketHandler {
                 .decoder(ServerboundFcsCoreUnregisterPacket::new)
                 .consumerMainThread(ServerboundFcsCoreUnregisterPacket::handle)
                 .add();
+        INSTANCE.messageBuilder(ServerboundRemoteControlSessionPacket.class, id())
+                .encoder(ServerboundRemoteControlSessionPacket::toBytes)
+                .decoder(ServerboundRemoteControlSessionPacket::new)
+                .consumerMainThread(ServerboundRemoteControlSessionPacket::handle)
+                .add();
     }
 
     // クライアントからのパケット送信ヘルパー

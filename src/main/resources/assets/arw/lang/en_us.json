@@ -6,7 +6,8 @@
   "block.arw.atago": "RealScale DDG-177 Atago",
   "block.arw.radar_display": "Radar Display Block",
   "block.arw.fcs_core": "FCS Core",
-  "block.arw.mk13_gmls": "Mk.13 Missile Launcher",
+  "block.arw.mk13-gmls": "Mk.13 Missile Launcher",
+  "block.arw.test_console": "Test Console",
   "item.arw.fcs_connector": "FCS Connector",
 
   "entity.arw.rim_66m2": "RIM-66M-2 (SM-2MR Block III)",
@@ -44,7 +45,17 @@
   "message.arw.fcs_connector.already_linked_to_other_core": "[ARW] This device is already linked to another FCS Core (UUID: %s). Unlink it first from the registered core or its connector.",
   "message.arw.fcs_connector.cannot_unlink_other_core": "[ARW] This device is linked to a different FCS Core (UUID: %s) and cannot be unlinked with this connector.",
 
+  "message.arw.test_console.linked_info": "[Console] Connected to FCS Core (%s) (Weapons: %s, Launchers: %s)",
+  "message.arw.test_console.not_linked": "[Console] Not connected to any FCS Core. Use FCS Connector to link to an FCS Core.",
+
   "gui.arw.radar_display.title": "Radar Display",
   "gui.arw.fcs_core.title": "FCS Core Network Manager",
+  "gui.arw.test_console.title": "Test Console",
+  "gui.arw.test_console.back": "◀ Back",
+  "gui.arw.test_console.control": "▶ Engage Remote Control",
+  "gui.arw.test_console.fire": "● Fire / Launch",
+  "gui.arw.test_console.safe": "SAFE",
+  "gui.arw.test_console.armed": "ARMED",
+
   "subtitles.arw.oto127_fire": "OTO 127mm Gun fires"
 }
