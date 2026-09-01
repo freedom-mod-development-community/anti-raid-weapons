@@ -30,5 +30,3 @@ public class ManualRwsGunBlock extends BaseEntityBlock {
         };
     }
 }
-
-// ManualRwsGunBlock, VlsBlock, MannedTankTurretBlock も同様の構造で定義します。

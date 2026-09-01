@@ -33,7 +33,7 @@ public class Ops39Block extends BaseEntityBlock {
         return createTickerHelper(type, ModBlocks.OPS39.getBEType(), Ops39BlockEntity::tick);
     }
 
-    // バニラのブロックレンダラー（キューブ描画）を無効化し、BER (Ops39Renderer) のみで描画させる
+    // バニラのブロックレンダラー（キューブ描画）を無効化し、BERのみで描画させる
     @Override
     public @NotNull RenderShape getRenderShape(@NotNull BlockState state) {
         return RenderShape.ENTITYBLOCK_ANIMATED;

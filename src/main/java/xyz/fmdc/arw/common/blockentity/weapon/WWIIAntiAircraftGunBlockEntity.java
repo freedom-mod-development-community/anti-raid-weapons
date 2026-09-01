@@ -7,7 +7,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import xyz.fmdc.arw.api.control.IDirectMannedWeapon;
-import xyz.fmdc.arw.client.renderer.GenericGlbRenderer;
+import xyz.fmdc.arw.client.renderer.GenericFastGlbRenderer;
 import xyz.fmdc.arw.client.util.IYawPitchAnimatableModel;
 import xyz.fmdc.arw.common.entity.projectile.FiveInchAmmoType;
 import xyz.fmdc.arw.common.entity.projectile.FiveInchShellEntity;
@@ -83,8 +83,8 @@ public class WWIIAntiAircraftGunBlockEntity extends StandaloneManualWeaponBlockE
     }
 
     @Override
-    public List<GenericGlbRenderer.ActiveAnimation> getActiveAnimations(float partialTick) {
-        List<GenericGlbRenderer.ActiveAnimation> list = new ArrayList<>();
+    public List<GenericFastGlbRenderer.ActiveAnimation> getActiveAnimations(float partialTick) {
+        List<GenericFastGlbRenderer.ActiveAnimation> list = new ArrayList<>();
         if (this.level == null) return list;
 
         long currentGameTime = this.level.getGameTime();
@@ -93,7 +93,7 @@ public class WWIIAntiAircraftGunBlockEntity extends StandaloneManualWeaponBlockE
             long startTime = entry.getValue();
             float elapsedTicks = (float) (currentGameTime - startTime) + partialTick;
             float elapsedSeconds = Math.max(0.0f, elapsedTicks / 20.0f);
-            list.add(new GenericGlbRenderer.ActiveAnimation(name, elapsedSeconds));
+            list.add(new GenericFastGlbRenderer.ActiveAnimation(name, elapsedSeconds));
         }
         return list;
     }
