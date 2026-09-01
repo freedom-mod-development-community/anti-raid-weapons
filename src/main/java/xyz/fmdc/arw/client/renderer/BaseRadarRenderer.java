@@ -17,11 +17,6 @@ public class BaseRadarRenderer<T extends BlockEntity & IYawModel> implements Blo
     protected final GenericFastGlbRenderer glbRenderer = new GenericFastGlbRenderer();
     private final Function<T, FastGlbModel> modelProvider;
 
-    // 従来の抽象クラス用コンストラクタ（互換性維持）
-    public BaseRadarRenderer(BlockEntityRendererProvider.Context context) {
-        this.modelProvider = this::getModelData;
-    }
-
     // 1行登録用のコンストラクタ
     public BaseRadarRenderer(BlockEntityRendererProvider.Context context, Function<T, FastGlbModel> modelProvider) {
         this.modelProvider = modelProvider;

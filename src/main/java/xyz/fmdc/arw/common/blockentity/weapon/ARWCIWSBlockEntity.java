@@ -12,6 +12,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.NotNull;
 import xyz.fmdc.arw.client.renderer.GenericFastGlbRenderer;
 import xyz.fmdc.arw.client.util.IYawPitchAnimatableModel;
 import xyz.fmdc.arw.common.blockentity.AbstractARWBlockEntity;
@@ -249,7 +250,7 @@ public abstract class ARWCIWSBlockEntity extends AbstractARWBlockEntity implemen
     // --- NBT 保存・同期 ---
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
+    protected void saveAdditional(@NotNull CompoundTag tag) {
         super.saveAdditional(tag);
         tag.putBoolean("IsFiringTarget", this.isFiringTarget);
         tag.putInt("FiringState", this.currentState.ordinal());
@@ -258,7 +259,7 @@ public abstract class ARWCIWSBlockEntity extends AbstractARWBlockEntity implemen
     }
 
     @Override
-    public void load(CompoundTag tag) {
+    public void load(@NotNull CompoundTag tag) {
         super.load(tag);
         this.isFiringTarget = tag.getBoolean("IsFiringTarget");
         this.currentState = FiringState.values()[tag.getInt("FiringState")];

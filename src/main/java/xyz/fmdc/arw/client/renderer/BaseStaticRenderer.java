@@ -18,10 +18,6 @@ public class BaseStaticRenderer<T extends BlockEntity> implements BlockEntityRen
     protected final GenericFastGlbRenderer glbRenderer = new GenericFastGlbRenderer();
     private final Function<T, FastGlbModel> modelProvider;
 
-    public BaseStaticRenderer(BlockEntityRendererProvider.Context context) {
-        this.modelProvider = this::getModelData;
-    }
-
     // 1行登録用のコンストラクタ
     public BaseStaticRenderer(BlockEntityRendererProvider.Context context, Function<T, FastGlbModel> modelProvider) {
         this.modelProvider = modelProvider;

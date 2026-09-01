@@ -18,12 +18,7 @@ public class BaseNavalGunRenderer<T extends BlockEntity & IYawPitchAnimatableMod
     protected final GenericFastGlbRenderer glbRenderer = new GenericFastGlbRenderer();
     private final Function<T, FastGlbModel> modelProvider;
 
-    // 1. 従来通りの抽象メソッドを使う場合のコンストラクタ（後換性維持）
-    public BaseNavalGunRenderer(BlockEntityRendererProvider.Context context) {
-        this.modelProvider = this::getModelData;
-    }
-
-    // 2. 1行でモデル指定したい場合に使用するコンストラクタ（追加）
+    // 1行でモデル指定したい場合に使用するコンストラクタ（追加）
     public BaseNavalGunRenderer(BlockEntityRendererProvider.Context context, Function<T, FastGlbModel> modelProvider) {
         this.modelProvider = modelProvider;
     }

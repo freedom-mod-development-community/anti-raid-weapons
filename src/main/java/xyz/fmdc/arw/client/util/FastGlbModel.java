@@ -92,14 +92,14 @@ public class FastGlbModel implements AutoCloseable {
         }
     }
 
-    public static record FastMeshPart(VertexBuffer vbo, RenderType renderType, GlbLoader.MaterialInfo material) implements AutoCloseable {
+    public record FastMeshPart(VertexBuffer vbo, RenderType renderType, GlbLoader.MaterialInfo material) implements AutoCloseable {
         @Override
         public void close() {
             vbo.close();
         }
     }
 
-    public static record FastNode(
+    public record FastNode(
             String name,
             org.joml.Vector3f defaultTranslation,
             org.joml.Quaternionf defaultRotation,
