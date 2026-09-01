@@ -25,12 +25,6 @@ public class GenericFastGlbRenderer {
         void apply(String nodeName, PoseStack poseStack, float partialTick);
     }
 
-    @FunctionalInterface
-    public interface NodePostRenderCallback {
-        void render(String nodeName, PoseStack poseStack, MultiBufferSource bufferSource,
-                    int packedLight, int packedOverlay, float partialTick);
-    }
-
     public record ActiveAnimation(String name, float timeSeconds, boolean loop) {
         public ActiveAnimation(String name, float timeSeconds) {
             this(name, timeSeconds, false);
@@ -50,33 +44,14 @@ public class GenericFastGlbRenderer {
                        int packedLight, int packedOverlay, float partialTick,
                        List<ActiveAnimation> activeAnimations,
                        @Nullable NodeTransformCallback callback) {
-        render(fastModel, poseStack, bufferSource, packedLight, packedOverlay, partialTick, activeAnimations, callback, null, true);
-    }
-
-    public void render(FastGlbModel fastModel, PoseStack poseStack, MultiBufferSource bufferSource,
-                       int packedLight, int packedOverlay, float partialTick,
-                       List<ActiveAnimation> activeAnimations,
-                       @Nullable NodeTransformCallback callback,
-                       boolean centerBlockOffset) {
-        render(fastModel, poseStack, bufferSource, packedLight, packedOverlay, partialTick, activeAnimations, callback, null, centerBlockOffset);
-    }
-
-    public void render(FastGlbModel fastModel, PoseStack poseStack, MultiBufferSource bufferSource,
-                       int packedLight, int packedOverlay, float partialTick,
-                       List<ActiveAnimation> activeAnimations,
-                       @Nullable NodeTransformCallback callback,
-                       @Nullable NodePostRenderCallback postRenderCallback,
-                       boolean centerBlockOffset) {
 
         if (fastModel == null || fastModel.rootNode == null) return;
 
         poseStack.pushPose();
-        if (centerBlockOffset) {
-            poseStack.translate(0.5, 0.0, 0.5);
-        }
+        //poseStack.translate(0.5, 0.0, 0.5);
 
         renderNode(fastModel.rootNode, fastModel.rawData, poseStack, bufferSource,
-                packedLight, packedOverlay, partialTick, activeAnimations, callback, postRenderCallback);
+                packedLight, packedOverlay, partialTick, activeAnimations, callback);
 
         poseStack.popPose();
 
@@ -87,8 +62,7 @@ public class GenericFastGlbRenderer {
     private void renderNode(FastGlbModel.FastNode node, GlbLoader.GlbModelData rawData, PoseStack poseStack,
                             MultiBufferSource bufferSource, int packedLight, int packedOverlay,
                             float partialTick, List<ActiveAnimation> activeAnimations,
-                            @Nullable NodeTransformCallback callback,
-                            @Nullable NodePostRenderCallback postRenderCallback) {
+                            @Nullable NodeTransformCallback callback) {
 
         poseStack.pushPose();
 
@@ -96,7 +70,6 @@ public class GenericFastGlbRenderer {
         animRotation.set(node.defaultRotation());
         animScale.set(node.defaultScale());
 
-        // アニメーションの合成
         if (activeAnimations != null && !activeAnimations.isEmpty()) {
             for (int i = 0; i < activeAnimations.size(); i++) {
                 ActiveAnimation activeAnim = activeAnimations.get(i);
@@ -110,27 +83,21 @@ public class GenericFastGlbRenderer {
         poseStack.translate(animTranslation.x(), animTranslation.y(), animTranslation.z());
         poseStack.mulPose(animRotation);
 
-        // Yaw / Pitch 旋回等のコールバック
         if (callback != null) {
             callback.apply(node.name(), poseStack, partialTick);
         }
 
         poseStack.scale(animScale.x(), animScale.y(), animScale.z());
 
-        // VBO の超高速描画処理
+// メッシュパーツ描画
         for (FastGlbModel.FastMeshPart part : node.meshParts()) {
             renderMeshPartVbo(part, poseStack, packedLight, packedOverlay);
         }
 
-        // ノード描画後の追加処理（アタッチメントパーツやミサイル等の描画）
-        if (postRenderCallback != null) {
-            postRenderCallback.render(node.name(), poseStack, bufferSource, packedLight, packedOverlay, partialTick);
-        }
-
-        // 子ノードの再帰
+// 子ノードの再帰
         for (FastGlbModel.FastNode child : node.children()) {
             renderNode(child, rawData, poseStack, bufferSource, packedLight, packedOverlay,
-                    partialTick, activeAnimations, callback, postRenderCallback);
+                    partialTick, activeAnimations, callback);
         }
 
         poseStack.popPose();
