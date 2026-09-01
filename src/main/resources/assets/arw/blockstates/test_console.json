@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "arw:block/test_console"
+    }
+  }
+}

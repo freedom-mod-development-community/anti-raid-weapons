@@ -18,6 +18,7 @@ import xyz.fmdc.arw.api.fcs.IFcsNetworkNode;
 import xyz.fmdc.arw.api.fcs.IFcsSensorNode;
 import xyz.fmdc.arw.common.blockentity.AbstractARWBlockEntity;
 import xyz.fmdc.arw.common.blockentity.AbstractSingleGunBlockEntity;
+import xyz.fmdc.arw.common.blockentity.console.TestConsoleBlockEntity;
 import xyz.fmdc.arw.common.blockentity.fcs.AbstractFcsCoreBlockEntity;
 import xyz.fmdc.arw.common.blockentity.sensor.HorizontalRadarBlockEntity;
 import xyz.fmdc.arw.common.blockentity.sensor.Spq9bBlockEntity;
@@ -430,6 +431,15 @@ public class FcsCoreScreen extends Screen {
             textY += lineGap;
 
             drawDetailRow(guiGraphics, "STATUS:", singleGun.isConnectedToFcs() ? "ONLINE / LINKED" : "OFFLINE", x + 10, textY, 0xFF6C8EA4, 0xFF00FF88);
+
+        } else if (be instanceof TestConsoleBlockEntity console) {
+            drawDetailRow(guiGraphics, "CATEGORY:", "Console", x + 10, textY, 0xFF4DEEEA, 0xFFFFFFFF);
+            textY += lineGap;
+
+            drawDetailRow(guiGraphics, "STATUS:", console.isConnectedToFcs() ? "ONLINE / LINKED" : "OFFLINE", x + 10, textY, 0xFF6C8EA4, 0xFF00FF88);
+            textY += lineGap;
+
+            drawDetailRow(guiGraphics, "DETECTED WEAPONS:", console.getConnectedWeapons().size() + " units", x + 10, textY, 0xFF6C8EA4, 0xFFCCDDEE);
 
         } else if (be instanceof IFcsSensorNode sensorNode) {
             drawDetailRow(guiGraphics, "CATEGORY:", "Radar", x + 10, textY, 0xFF4DEEEA, 0xFFFFFFFF);

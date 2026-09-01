@@ -11,6 +11,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import xyz.fmdc.arw.AntiRaidWeapons;
 import xyz.fmdc.arw.common.block.*;
 import xyz.fmdc.arw.common.block.decoration.AtagoBlock;
+import xyz.fmdc.arw.common.blockentity.console.TestConsoleBlockEntity;
 import xyz.fmdc.arw.common.blockentity.decoration.AtagoBlockEntity;
 import xyz.fmdc.arw.common.blockentity.fcs.FcsCoreBlockEntity;
 import xyz.fmdc.arw.common.blockentity.sensor.OpticalSightBlockEntity;
@@ -41,6 +42,10 @@ public class ModBlocks {
 
     public static BlockBehaviour.Properties stoneProps() {
         return BlockBehaviour.Properties.copy(Blocks.STONE);
+    }
+
+    public static BlockBehaviour.Properties emeraldProps() {
+        return BlockBehaviour.Properties.copy(Blocks.EMERALD_BLOCK);
     }
 
     // Block + Item + BlockEntity を1行で一括登録
@@ -91,6 +96,10 @@ public class ModBlocks {
 
     public static final BlockEntry<Mk13GmlsBlock, Mk13GmlsBlockEntity> MK13_GMLS_BLOCK =
             new BlockEntry<>("mk13-gmls", () -> new Mk13GmlsBlock(defaultProps()), Mk13GmlsBlockEntity::new);
+
+    // --- Consoles ---
+    public static final BlockEntry<TestConsoleBlock, TestConsoleBlockEntity> TEST_CONSOLE =
+            new BlockEntry<>("test_console", () -> new TestConsoleBlock(emeraldProps()), TestConsoleBlockEntity::new);
 
     public static void register(IEventBus eventBus) {
         BLOCKS.register(eventBus);
