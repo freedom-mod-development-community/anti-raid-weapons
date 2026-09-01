@@ -96,6 +96,7 @@ public class GenericFastGlbRenderer {
         animRotation.set(node.defaultRotation());
         animScale.set(node.defaultScale());
 
+        // アニメーションの合成
         if (activeAnimations != null && !activeAnimations.isEmpty()) {
             for (int i = 0; i < activeAnimations.size(); i++) {
                 ActiveAnimation activeAnim = activeAnimations.get(i);
@@ -109,13 +110,14 @@ public class GenericFastGlbRenderer {
         poseStack.translate(animTranslation.x(), animTranslation.y(), animTranslation.z());
         poseStack.mulPose(animRotation);
 
+        // Yaw / Pitch 旋回等のコールバック
         if (callback != null) {
             callback.apply(node.name(), poseStack, partialTick);
         }
 
         poseStack.scale(animScale.x(), animScale.y(), animScale.z());
 
-        // メッシュパーツ描画
+        // VBO の超高速描画処理
         for (FastGlbModel.FastMeshPart part : node.meshParts()) {
             renderMeshPartVbo(part, poseStack, packedLight, packedOverlay);
         }

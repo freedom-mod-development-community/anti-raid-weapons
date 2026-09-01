@@ -47,7 +47,7 @@ public class GlbModelManager implements ResourceManagerReloadListener {
             AntiRaidWeapons.LOGGER.info("[ARW-DEBUG] GLBモデル(VBO)の一括ロードを開始します...");
 
             ResourceLocation[] targets = new ResourceLocation[] {
-                    OTO127MM_ID, MK45MOD4_ID, OPS39_ID, SPQ9B_ID, EMMI_ID, ATAGO_ID, MK13GMLS_ID, PHALANX_ID, RIM66M2_ID
+                    OTO127MM_ID, MK45MOD4_ID, OPS39_ID, SPQ9B_ID, EMMI_ID, ATAGO_ID, PHALANX_ID, RIM66M2_ID
             };
 
             for (ResourceLocation location : targets) {
