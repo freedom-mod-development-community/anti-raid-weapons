@@ -3,6 +3,7 @@ package xyz.fmdc.arw.common.blockentity.weapon;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import xyz.fmdc.arw.client.util.IDirectionalBlockEntity;
 import xyz.fmdc.arw.common.entity.projectile.FiveInchAmmoType;
 import xyz.fmdc.arw.common.entity.projectile.FiveInchShellEntity;
 import xyz.fmdc.arw.registry.ModBlocks;
@@ -12,7 +13,7 @@ import xyz.fmdc.arw.registry.ModEntities;
  * Phalanx (CIWS) 専用の BlockEntity。
  * ARWCIWSBlockEntity を継承し、ファランクス特有のパラメーターや動作を定義します。
  */
-public class PhalanxBlockEntity extends ARWCIWSBlockEntity {
+public class PhalanxBlockEntity extends ARWCIWSBlockEntity  implements IDirectionalBlockEntity {
 
     public PhalanxBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlocks.PHALANX.getBEType(), pos, state);
@@ -35,7 +36,7 @@ public class PhalanxBlockEntity extends ARWCIWSBlockEntity {
 
     @Override
     public FiveInchAmmoType getSelectedAmmoType() {
-        return FiveInchAmmoType.MK80_HE_PD;
+        return FiveInchAmmoType.MK91_ILLUM_MT;
     }
 
     @Override
@@ -56,5 +57,10 @@ public class PhalanxBlockEntity extends ARWCIWSBlockEntity {
     @Override
     public float getRenderTargetPitch(float partialTick) {
         return currentPitch;
+    }
+
+    @Override
+    public float getRenderBarrelAng(float partialTick) {
+        return this.barrelAngle;
     }
 }

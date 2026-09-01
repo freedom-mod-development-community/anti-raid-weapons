@@ -15,6 +15,7 @@ import xyz.fmdc.arw.client.gui.Oto127mmScreen;
 import xyz.fmdc.arw.client.renderer.*;
 import xyz.fmdc.arw.client.util.IYawModel;
 import xyz.fmdc.arw.client.util.IYawPitchAnimatableModel;
+import xyz.fmdc.arw.client.util.IYawPitchBarrelAnimatableModel;
 import xyz.fmdc.arw.registry.ModBlocks;
 import xyz.fmdc.arw.registry.ModEntities;
 import xyz.fmdc.arw.registry.ModMenuTypes;
@@ -45,7 +46,7 @@ public class ClientModEvents {
         registerNavalGun(event, ModBlocks.MK45_MOD4, GlbModelManager.MK45MOD4_ID);
         registerNavalGun(event, ModBlocks.WW2_AA_GUN_BLOCK, GlbModelManager.MK45MOD4_ID);
         registerNavalGun(event, ModBlocks.MANNED_TANK_TURRET_BLOCK, GlbModelManager.MK45MOD4_ID);
-        registerNavalGun(event, ModBlocks.PHALANX, GlbModelManager.PHALANX_ID);
+        registerCIWS(event, ModBlocks.PHALANX, GlbModelManager.PHALANX_ID);
 
         //entity
         event.registerEntityRenderer(ModEntities.FIVE_INCH_SHELL.get(), ThrownItemRenderer::new);
@@ -65,6 +66,16 @@ public class ClientModEvents {
         event.registerBlockEntityRenderer(
                 blockEntry.getBEType(), // または getBEType()
                 ctx -> new BaseNavalGunRenderer<>(ctx, be -> GlbModelManager.INSTANCE.getFastModel(resourceLocation))
+        );
+    }
+    private static <BE extends BlockEntity & IYawPitchBarrelAnimatableModel> void registerCIWS(
+            EntityRenderersEvent.RegisterRenderers event,
+            BlockEntry<?, BE> blockEntry,
+            ResourceLocation resourceLocation) {
+
+        event.registerBlockEntityRenderer(
+                blockEntry.getBEType(), // または getBEType()
+                ctx -> new BaseCIWSRenderer<>(ctx, be -> GlbModelManager.INSTANCE.getFastModel(resourceLocation))
         );
     }
     private static <BE extends BlockEntity & IYawModel> void registerRadar(

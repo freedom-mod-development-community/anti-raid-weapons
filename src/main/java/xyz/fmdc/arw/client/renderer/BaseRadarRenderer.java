@@ -5,9 +5,11 @@ import com.mojang.math.Axis;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import org.jetbrains.annotations.NotNull;
 import xyz.fmdc.arw.client.util.FastGlbModel;
+import xyz.fmdc.arw.client.util.IDirectionalBlockEntity;
 import xyz.fmdc.arw.client.util.IYawModel;
 
 import java.util.function.Function;
@@ -29,6 +31,12 @@ public class BaseRadarRenderer<T extends BlockEntity & IYawModel> implements Blo
         FastGlbModel modelData = this.modelProvider.apply(blockEntity);
         if (modelData == null) { return; }
 
+        poseStack.pushPose();
+        poseStack.translate(0.5, 0.0, 0.5);
+        Direction facing = getDirectionFromBlockEntity(blockEntity);
+        poseStack.mulPose(Axis.YP.rotationDegrees(-facing.toYRot()));
+        //poseStack.translate(-0.5, 0.0, -0.5);
+
         glbRenderer.render(
                 modelData, poseStack, bufferSource, packedLight, packedOverlay, partialTick,
                 java.util.Collections.emptyList(),
@@ -41,6 +49,7 @@ public class BaseRadarRenderer<T extends BlockEntity & IYawModel> implements Blo
                     }
                 }
         );
+        poseStack.popPose();
     }
 
     protected FastGlbModel getModelData(T blockEntity) {
@@ -50,5 +59,13 @@ public class BaseRadarRenderer<T extends BlockEntity & IYawModel> implements Blo
     @Override
     public int getViewDistance() {
         return 256;
+    }
+
+    public Direction getDirectionFromBlockEntity(BlockEntity blockEntity) {
+        if (blockEntity instanceof IDirectionalBlockEntity directional) {
+            return directional.getFacing();
+        }
+        // インターフェースを実装していない一般ブロック用のフォールバック
+        return Direction.NORTH;
     }
 }
