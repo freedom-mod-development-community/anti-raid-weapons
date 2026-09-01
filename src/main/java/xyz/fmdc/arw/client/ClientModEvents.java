@@ -83,7 +83,7 @@ public class ClientModEvents {
 
         event.registerBlockEntityRenderer(
                 blockEntry.getBEType(), // または getBEType()
-                ctx -> new BaseStaticRenderer<>(ctx, be -> GlbModelManager.INSTANCE.getModel(resourceLocation))
+                ctx -> new BaseStaticFastRenderer<>(ctx, be -> GlbModelManager.INSTANCE.getFastModel(resourceLocation))
         );
     }
 }
