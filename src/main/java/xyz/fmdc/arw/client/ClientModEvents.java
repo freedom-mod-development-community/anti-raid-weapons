@@ -12,6 +12,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import xyz.fmdc.arw.AntiRaidWeapons;
+import xyz.fmdc.arw.client.gui.Mk13GmlsScreen;
 import xyz.fmdc.arw.client.gui.Oto127mmScreen;
 import xyz.fmdc.arw.client.renderer.*;
 import xyz.fmdc.arw.client.util.IYawModel;
@@ -28,6 +29,7 @@ public class ClientModEvents {
     public static void onClientSetup(FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
             MenuScreens.register(ModMenuTypes.OTO127MM_MENU.get(), Oto127mmScreen::new);
+            MenuScreens.register(ModMenuTypes.MK13_GMLS_MENU.get(), Mk13GmlsScreen::new);
         });
     }
 

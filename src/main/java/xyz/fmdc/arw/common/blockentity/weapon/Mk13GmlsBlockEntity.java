@@ -25,7 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xyz.fmdc.arw.common.blockentity.AbstractMissileLauncherBlockEntity;
 import xyz.fmdc.arw.common.entity.AbstractMissileEntity;
-import xyz.fmdc.arw.common.menu.Oto127mmMenu;
+import xyz.fmdc.arw.common.menu.Mk13GmlsMenu;
 import xyz.fmdc.arw.registry.ModBlocks;
 import xyz.fmdc.arw.registry.ModEntities;
 
@@ -45,6 +45,9 @@ public class Mk13GmlsBlockEntity extends AbstractMissileLauncherBlockEntity impl
     private static final float MAX_YAW = 180.0f;
     private static final float MIN_PITCH = -65.0f; // 仰角（上向き）
     private static final float MAX_PITCH = 15.0f;  // 俯角（下向き）
+
+    /** 渡された目標角度への到達判定許容誤差（度） */
+    private static final float AIM_TOLERANCE = 1.0f;
 
     public static final float FIRE_ANIM_DURATION = 1.0f;
     public static final float RELOAD_ANIM_DURATION = 2.33f;
@@ -114,7 +117,8 @@ public class Mk13GmlsBlockEntity extends AbstractMissileLauncherBlockEntity impl
 
     @Override
     protected boolean canFire() {
-        return this.cooldownTicks <= 0;
+        // クールダウン完了かつ、指示された目標角度への旋回・俯仰が完了している（誤差許容範囲内）場合のみ発射可能
+        return this.cooldownTicks <= 0 && isAimAligned(AIM_TOLERANCE);
     }
 
     @Override
@@ -129,6 +133,11 @@ public class Mk13GmlsBlockEntity extends AbstractMissileLauncherBlockEntity impl
     @Override protected float getMaxYaw() { return MAX_YAW; }
     @Override protected float getMinPitch() { return MIN_PITCH; }
     @Override protected float getMaxPitch() { return MAX_PITCH; }
+
+    @Override
+    public float getPitchModelOffset() {
+        return 90.0f; // 設置時・初期姿勢で直立しているpitchモデルを90度下げる補正
+    }
 
     // --- インベントリ & Capability ---
     public ItemStackHandler getInventory() {
@@ -182,6 +191,6 @@ public class Mk13GmlsBlockEntity extends AbstractMissileLauncherBlockEntity impl
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory playerInventory, Player player) {
-        return new Oto127mmMenu(id, playerInventory, this);
+        return new Mk13GmlsMenu(id, playerInventory, this);
     }
 }

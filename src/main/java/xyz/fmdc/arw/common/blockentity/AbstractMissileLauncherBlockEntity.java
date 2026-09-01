@@ -76,6 +76,14 @@ public abstract class AbstractMissileLauncherBlockEntity extends AbstractARWBloc
     /** 最大Pitch角度（度、正の値が俯角/下向き） */
     protected abstract float getMaxPitch();
 
+    /**
+     * モデル描画時のPitchオフセット（度単位）。
+     * 例えばGLBモデルの初期姿勢が直立（上向き）している場合、正の値を返して水平方向へ下げる補正を行います。
+     */
+    public float getPitchModelOffset() {
+        return 0.0f;
+    }
+
     // --- クールダウン & 発射定義（子クラスで実装） ---
 
     /** 再装填/発射間隔時間（Tick単位 / 20ticks = 1秒） */
@@ -174,6 +182,22 @@ public abstract class AbstractMissileLauncherBlockEntity extends AbstractARWBloc
 
     public float getTargetPitch() {
         return this.targetPitch;
+    }
+
+    /**
+     * 現在の旋回・俯仰角が目標角度に到達しているか判定します。
+     *
+     * @param tolerance 許容角度誤差（度）
+     * @return 許容範囲内であれば true
+     */
+    public boolean isAimAligned(float tolerance) {
+        float yawDiff = Math.abs(Mth.wrapDegrees(this.targetYaw - this.currentYaw));
+        float pitchDiff = Math.abs(Mth.wrapDegrees(this.targetPitch - this.currentPitch));
+        return yawDiff <= tolerance && pitchDiff <= tolerance;
+    }
+
+    public boolean isAimAligned() {
+        return isAimAligned(1.0f);
     }
 
     public int getCooldownTicks() {
@@ -276,7 +300,7 @@ public abstract class AbstractMissileLauncherBlockEntity extends AbstractARWBloc
      * ミサイル発射特有のエフェクト（ロケット点火の炎・バックブラスト煙）
      */
     protected void spawnLaunchEffects(ServerLevel serverLevel, Vec3 launchPos, Vec3 direction) {
-        // 発射点周辺のロケット炎
+        // 発射点周囲のロケット炎
         serverLevel.sendParticles(
                 ParticleTypes.FLAME,
                 launchPos.x, launchPos.y, launchPos.z,
@@ -313,7 +337,7 @@ public abstract class AbstractMissileLauncherBlockEntity extends AbstractARWBloc
 
     @Override
     public float getRenderTargetPitch(float partialTick) {
-        return Mth.rotLerp(partialTick, this.prevPitch, this.currentPitch);
+        return Mth.rotLerp(partialTick, this.prevPitch, this.currentPitch) + getPitchModelOffset();
     }
 
     @Override

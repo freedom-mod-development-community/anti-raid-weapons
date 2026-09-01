@@ -7,6 +7,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import xyz.fmdc.arw.AntiRaidWeapons;
+import xyz.fmdc.arw.common.menu.Mk13GmlsMenu;
 import xyz.fmdc.arw.common.menu.Oto127mmMenu;
 
 public class ModMenuTypes {
@@ -15,6 +16,9 @@ public class ModMenuTypes {
 
     public static final RegistryObject<MenuType<Oto127mmMenu>> OTO127MM_MENU =
             MENUS.register("oto127mm_menu", () -> IForgeMenuType.create(Oto127mmMenu::new));
+
+    public static final RegistryObject<MenuType<Mk13GmlsMenu>> MK13_GMLS_MENU =
+            MENUS.register("mk13_gmls_menu", () -> IForgeMenuType.create(Mk13GmlsMenu::new));
 
     public static void register(IEventBus eventBus) {
         MENUS.register(eventBus);
