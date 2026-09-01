@@ -89,6 +89,9 @@ public class ModBlocks {
     public static final BlockEntry<MannedTankTurretBlock, MannedTankTurretBlockEntity> MANNED_TANK_TURRET_BLOCK =
             new BlockEntry<>("manned_tank_turret", () -> new MannedTankTurretBlock(defaultProps()), MannedTankTurretBlockEntity::new);
 
+    public static final BlockEntry<Mk13GmlsBlock, Mk13GmlsBlockEntity> MK13_GMLS_BLOCK =
+            new BlockEntry<>("mk13-gmls", () -> new Mk13GmlsBlock(defaultProps()), Mk13GmlsBlockEntity::new);
+
     public static void register(IEventBus eventBus) {
         BLOCKS.register(eventBus);
     }
