@@ -94,7 +94,7 @@ public class Mk45Mod4BlockEntity extends AbstractSingleGunBlockEntity implements
     @Override
     public Vec3 getMuzzleOffset() {
         float barrelLength = 7.7f; // 砲身の長さ
-        double pivotHeight = 2.1749 - 0.5; // 旋回軸の高さ（ブロック底部または中心からのYオフセット）
+        double pivotHeight = 2.1749; // 旋回軸の高さ（ブロック底部または中心からのYオフセット）
 
         Vec3 dir = getFiringDirection();
 
