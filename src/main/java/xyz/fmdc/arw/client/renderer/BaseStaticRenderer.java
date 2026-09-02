@@ -45,7 +45,7 @@ public class BaseStaticRenderer<T extends BlockEntity> implements BlockEntityRen
 
         glbRenderer.render(
                 modelData, poseStack, bufferSource, packedLight, packedOverlay, partialTick,
-                java.util.Collections.emptyList(),null
+                java.util.Collections.emptyList(),null, false
         );
         poseStack.popPose();
 
@@ -79,7 +79,7 @@ public class BaseStaticRenderer<T extends BlockEntity> implements BlockEntityRen
             return directional.getFacing();
         }
         // インターフェースを実装していない一般ブロック用のフォールバック
-        return Direction.NORTH;
+        return Direction.SOUTH;
     }
 
     @Override

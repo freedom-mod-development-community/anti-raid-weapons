@@ -1,4 +1,4 @@
-package xyz.fmdc.arw.common.block;
+package xyz.fmdc.arw.common.block.weapon.singlegun;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
@@ -7,7 +7,6 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
@@ -17,11 +16,12 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import xyz.fmdc.arw.common.blockentity.weapon.Oto127mmBlockEntity;
+import xyz.fmdc.arw.common.block.ARWBaseEntityBlock;
+import xyz.fmdc.arw.common.blockentity.weapon.singlegun.Oto127mmBlockEntity;
 import xyz.fmdc.arw.common.item.FcsConnectorItem;
 import xyz.fmdc.arw.registry.ModBlocks;
 
-public class Oto127mmBlock extends BaseEntityBlock {
+public class Oto127mmBlock extends ARWBaseEntityBlock {
 
     public Oto127mmBlock(Properties properties) {
         super(properties);

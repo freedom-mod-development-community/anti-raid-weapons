@@ -1,4 +1,4 @@
-package xyz.fmdc.arw.common.blockentity.weapon;
+package xyz.fmdc.arw.common.blockentity.weapon.singlegun;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -109,7 +109,7 @@ public class Oto127mmBlockEntity extends AbstractSingleGunBlockEntity implements
 
     @Override
     public Vec3 getFiringDirection() {
-        return Vec3.directionFromRotation(this.currentPitch, this.currentYaw);
+        return Vec3.directionFromRotation(this.currentPitch, this.currentYaw + this.getFacing().toYRot()).normalize();
     }
 
     @Override

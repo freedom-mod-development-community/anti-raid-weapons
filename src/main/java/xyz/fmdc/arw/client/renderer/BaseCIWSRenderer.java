@@ -50,7 +50,8 @@ public class BaseCIWSRenderer<T extends BlockEntity & IYawPitchBarrelAnimatableM
                     }else if ("barrel".equalsIgnoreCase(nodeName)) {
                         stack.mulPose(Axis.ZP.rotationDegrees(blockEntity.getRenderBarrelAng(pTick)));
                     }
-                }
+                },
+                false
         );
         poseStack.popPose();
     }

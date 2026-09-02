@@ -3,7 +3,7 @@ package xyz.fmdc.arw.common.menu;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import xyz.fmdc.arw.common.blockentity.weapon.Oto127mmBlockEntity;
+import xyz.fmdc.arw.common.blockentity.weapon.singlegun.Oto127mmBlockEntity;
 import xyz.fmdc.arw.registry.ModMenuTypes;
 
 public class Oto127mmMenu extends AbstractWeaponMenu<Oto127mmBlockEntity> {

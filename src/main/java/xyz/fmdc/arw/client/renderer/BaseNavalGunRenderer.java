@@ -49,7 +49,8 @@ public class BaseNavalGunRenderer<T extends BlockEntity & IYawPitchAnimatableMod
                     } else if ("pitch".equalsIgnoreCase(nodeName)) {
                         stack.mulPose(Axis.XP.rotationDegrees(blockEntity.getRenderTargetPitch(pTick)));
                     }
-                }
+                },
+                false
         );
         poseStack.popPose();
     }

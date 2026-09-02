@@ -1,4 +1,4 @@
-package xyz.fmdc.arw.common.blockentity.weapon;
+package xyz.fmdc.arw.common.blockentity.weapon.singlegun;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.EntityType;
@@ -88,7 +88,7 @@ public class Mk45Mod4BlockEntity extends AbstractSingleGunBlockEntity implements
 
     @Override
     public Vec3 getFiringDirection() {
-        return Vec3.directionFromRotation(this.currentPitch, this.currentYaw);
+        return Vec3.directionFromRotation(this.currentPitch, this.currentYaw + this.getFacing().toYRot()).normalize();
     }
 
     @Override
