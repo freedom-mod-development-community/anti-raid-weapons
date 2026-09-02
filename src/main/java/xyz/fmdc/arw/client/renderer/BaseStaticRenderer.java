@@ -65,10 +65,6 @@ public class BaseStaticRenderer<T extends BlockEntity> implements BlockEntityRen
         );
     }
 
-    protected FastGlbModel getModelData(T blockEntity) {
-        return null;
-    }
-
     @Override
     public int getViewDistance() {
         return 256;
@@ -83,7 +79,7 @@ public class BaseStaticRenderer<T extends BlockEntity> implements BlockEntityRen
     }
 
     @Override
-    public boolean shouldRenderOffScreen(T blockEntity) {
+    public boolean shouldRenderOffScreen(@NotNull T blockEntity) {
         // 中心ブロックが画面外（背後など）にあっても、
         // AABBが視界内に入っていれば描画処理を続行させる
         return true;

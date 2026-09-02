@@ -45,7 +45,7 @@ public class Oto127mmBlock extends ARWBaseEntityBlock {
     }
 
     @Override
-    public @NotNull InteractionResult use(@NotNull BlockState state, Level level, @NotNull BlockPos pos, @NotNull Player player,
+    public @NotNull InteractionResult use(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Player player,
                                           @NotNull InteractionHand hand, @NotNull BlockHitResult hit) {
         if (player.getItemInHand(hand).getItem() instanceof FcsConnectorItem) {
             return InteractionResult.PASS;
@@ -60,7 +60,7 @@ public class Oto127mmBlock extends ARWBaseEntityBlock {
     }
 
     @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
+    public void onRemove(BlockState state, @NotNull Level level, @NotNull BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock())) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof Oto127mmBlockEntity otoBE) {

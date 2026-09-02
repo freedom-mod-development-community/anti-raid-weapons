@@ -56,11 +56,6 @@ public class BaseCIWSRenderer<T extends BlockEntity & IYawPitchBarrelAnimatableM
         poseStack.popPose();
     }
 
-    // デフォルト実装を返し、overrideは任意にする
-    protected FastGlbModel getModelData(T blockEntity) {
-        return null;
-    }
-
     @Override
     public int getViewDistance() {
         return 256;

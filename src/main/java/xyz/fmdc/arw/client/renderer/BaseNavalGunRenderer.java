@@ -55,11 +55,6 @@ public class BaseNavalGunRenderer<T extends BlockEntity & IYawPitchAnimatableMod
         poseStack.popPose();
     }
 
-    // デフォルト実装を返し、overrideは任意にする
-    protected FastGlbModel getModelData(T blockEntity) {
-        return null;
-    }
-
     @Override
     public int getViewDistance() {
         return 256;
