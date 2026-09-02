@@ -74,6 +74,7 @@ public class Oto127mmBlockEntity extends AbstractSingleGunBlockEntity implements
     public static void tick(Level level, BlockPos pos, BlockState state, Oto127mmBlockEntity be) {
         // 共通の武器旋回・アニメーション・クールダウン処理を実行
         be.tickSingleGun();
+        //be.currentPitch = -((float) be.tickCounter / 10) % 30;
 
         // テスト用：発射処理
         if (!level.isClientSide) {
@@ -88,7 +89,6 @@ public class Oto127mmBlockEntity extends AbstractSingleGunBlockEntity implements
     public void fire() {
         if (!canFire()) return;
         playAnimation("fire", FIRE_ANIM_DURATION);
-        playAnimation("reload", RELOAD_ANIM_DURATION);
         fireProcess();
     }
 
@@ -114,8 +114,8 @@ public class Oto127mmBlockEntity extends AbstractSingleGunBlockEntity implements
 
     @Override
     public Vec3 getMuzzleOffset() {
-        float barrelLength = 8.0f;
-        double pivotHeight = 1.8;
+        float barrelLength = 3.5f;
+        float pivotHeight = 1.64f;
         Vec3 dir = getFiringDirection();
         return new Vec3(
                 dir.x * barrelLength,

@@ -17,7 +17,7 @@ import xyz.fmdc.arw.common.menu.AbstractWeaponMenu;
 public abstract class AbstractWeaponScreen<T extends AbstractWeaponMenu<?>> extends AbstractContainerScreen<T> {
 
     protected static final ResourceLocation DEFAULT_TEXTURE =
-            new ResourceLocation("minecraft", "textures/gui/container/dispenser.png");
+            ResourceLocation.fromNamespaceAndPath("minecraft", "textures/gui/container/dispenser.png");
 
     public AbstractWeaponScreen(T menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
