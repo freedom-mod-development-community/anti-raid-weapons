@@ -141,7 +141,8 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
         this.cooldownTicks = getMaxCooldownTicks();
 
         Vec3 direction = getFiringDirection().normalize();
-        Vec3 muzzlePos = Vec3.atCenterOf(this.worldPosition).add(getMuzzleOffset());
+        Vec3 muzzlePos = Vec3.atBottomCenterOf(this.worldPosition).add(getMuzzleOffset());
+        System.out.println(muzzlePos);
 
         // 1. サウンド再生
         this.level.playSound(
