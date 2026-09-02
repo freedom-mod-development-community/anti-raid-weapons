@@ -3,6 +3,7 @@ package xyz.fmdc.arw.client.renderer;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexBuffer;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
@@ -47,7 +48,7 @@ public class GenericFastGlbRenderer {
         if (fastModel == null || fastModel.rootNode == null) return;
 
         poseStack.pushPose();
-        poseStack.translate(0.5, 0.0, 0.5);
+        //poseStack.translate(0.5, 0.0, 0.5);
 
         renderNode(fastModel.rootNode, fastModel.rawData, poseStack, bufferSource,
                 packedLight, packedOverlay, partialTick, activeAnimations, callback);
@@ -106,6 +107,15 @@ public class GenericFastGlbRenderer {
         if (part.vbo() == null) return;
 
         RenderType renderType = part.renderType();
+
+        // 深度テストと深度書き込みの有効化
+        RenderSystem.enableDepthTest();
+        RenderSystem.depthMask(true);
+
+        // フォグの距離を上書きするコードを削除する（水中のフォグ効果を生かす）
+        // RenderSystem.setShaderFogStart(10000.0f); <-- 削除
+        // RenderSystem.setShaderFogEnd(20000.0f);   <-- 削除
+
         renderType.setupRenderState();
 
         Matrix4f modelViewMatrix = poseStack.last().pose();
@@ -116,12 +126,32 @@ public class GenericFastGlbRenderer {
             if (shader.COLOR_MODULATOR != null) {
                 shader.COLOR_MODULATOR.set(1.0f, 1.0f, 1.0f, 1.0f);
             }
+
+            int light = (part.material() != null && part.material().isEmissive)
+                    ? net.minecraft.client.renderer.LightTexture.FULL_BRIGHT
+                    : packedLight;
+
+            // 【修正2】PackedLight（明暗情報）および Overlay をシェーダーに設定
+            // バニラシェーダーの Sampler / Uniform にライトマップテクスチャをバインドします
+            if (shader.LIGHT0_DIRECTION != null) {
+                RenderSystem.setShaderLights(
+                        new Vector3f(0.2F, 1.0F, -0.7F).normalize(),
+                        new Vector3f(-0.2F, -1.0F, 0.7F).normalize()
+                );
+            }
+
+            // 1.20.1 等の標準シェーダーに対してライトテクスチャを有効化する
+            Minecraft.getInstance().gameRenderer.lightTexture().turnOnLightLayer();
+
             shader.apply();
         }
 
+        // VBO の描画
         part.vbo().bind();
         part.vbo().drawWithShader(modelViewMatrix, projectionMatrix, shader);
 
+        // 【修正3】描画完了後にライトレイヤーを消去・ステートクリア
+        Minecraft.getInstance().gameRenderer.lightTexture().turnOffLightLayer();
         renderType.clearRenderState();
     }
 

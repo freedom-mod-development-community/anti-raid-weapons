@@ -1,6 +1,7 @@
 package xyz.fmdc.arw.common.blockentity.weapon;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
@@ -11,10 +12,12 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import xyz.fmdc.arw.client.renderer.GenericFastGlbRenderer;
-import xyz.fmdc.arw.client.util.IYawPitchAnimatableModel;
+import xyz.fmdc.arw.client.util.IDirectionalBlockEntity;
+import xyz.fmdc.arw.client.util.IYawPitchBarrelAnimatableModel;
 import xyz.fmdc.arw.common.blockentity.AbstractARWBlockEntity;
 import xyz.fmdc.arw.common.entity.projectile.FiveInchAmmoType;
 import xyz.fmdc.arw.common.entity.projectile.FiveInchShellEntity;
@@ -22,7 +25,7 @@ import xyz.fmdc.arw.common.entity.projectile.FiveInchShellEntity;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class ARWCIWSBlockEntity extends AbstractARWBlockEntity implements IYawPitchAnimatableModel {
+public abstract class ARWCIWSBlockEntity extends AbstractARWBlockEntity implements IYawPitchBarrelAnimatableModel, IDirectionalBlockEntity {
 
     // CIWS アニメーションステート
     public enum FiringState {
@@ -35,6 +38,13 @@ public abstract class ARWCIWSBlockEntity extends AbstractARWBlockEntity implemen
     private FiringState currentState = FiringState.IDLE;
     private long stateStartTime = 0;
     private boolean isFiringTarget = false; // 発射フラグ（外部/サーバーから切り替え）
+
+    private float currentSpinSpeed = 0.0f; // 現在の回転速度 (deg/sec)
+    protected float barrelAngle = 0.0f;       // 現在の回転角度 (deg)
+
+    private final float MAX_SPIN_SPEED = 3600.0f; // 最高回転速度 (例: 1秒間に10回転)
+    private final float ACCEL = 1800.0f;          // 加速度 (deg/s^2)
+    private final float DECEL = 1200.0f;          // 減速加速度 (deg/s^2)
 
     // 角度（Yaw / Pitch）
     protected float currentYaw = 0.0f;
@@ -80,8 +90,15 @@ public abstract class ARWCIWSBlockEntity extends AbstractARWBlockEntity implemen
 
     // --- 角度・位置ベクトルの計算 ---
 
+    @Override
+    public Direction getFacing(){
+        return this.getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING);
+    }
+
     public Vec3 getFiringDirection() {
-        return Vec3.directionFromRotation(this.currentPitch, this.currentYaw);
+        // ブロックの回転オフセットを加算
+        float effectiveYaw = this.currentYaw + getFacing().toYRot();
+        return Vec3.directionFromRotation(this.currentPitch, effectiveYaw);
     }
 
     public Vec3 getMuzzleOffset() {
@@ -112,7 +129,6 @@ public abstract class ARWCIWSBlockEntity extends AbstractARWBlockEntity implemen
     // --- Tick 処理（ステート遷移 & 毎Tick発射） ---
 
     public static void tick(Level level, BlockPos pos, BlockState state, ARWCIWSBlockEntity be) {
-        long gameTime = level.getGameTime();
 
         if (!level.isClientSide && be.firingTimer > 0) {
             be.firingTimer--;
@@ -121,45 +137,19 @@ public abstract class ARWCIWSBlockEntity extends AbstractARWBlockEntity implemen
             }
         }
 
-        // 1. ステートマシンの更新
-        be.updateFiringState(gameTime);
+        // 射撃中なら加速、止まったら慣性で減速
+        if (be.isFiringTarget) {
+            be.currentSpinSpeed = Math.min(be.MAX_SPIN_SPEED, be.currentSpinSpeed + be.ACCEL);
+        } else {
+            be.currentSpinSpeed = Math.max(0.0f, be.currentSpinSpeed - be.DECEL);
+        }
+
+        // 角度の更新
+        be.barrelAngle = (be.barrelAngle + be.currentSpinSpeed) % 360.0f;
 
         // 2. 実射撃処理（FIRING ステートかつ 毎Tick 発射）
-        if (be.currentState == FiringState.FIRING) {
+        if (be.isFiring()) {
             be.executeTickFire(level);
-        }
-    }
-
-    private void updateFiringState(long gameTime) {
-        float elapsedSeconds = (gameTime - this.stateStartTime) / 20.0f;
-
-        switch (this.currentState) {
-            case IDLE:
-                if (this.isFiringTarget) {
-                    transitionTo(FiringState.START_FIRE, gameTime);
-                }
-                break;
-
-            case START_FIRE:
-                // start_fire アニメーションが完了したら FIRING へ移行
-                if (elapsedSeconds >= getAnimationDuration("start_fire")) {
-                    transitionTo(FiringState.FIRING, gameTime);
-                }
-                break;
-
-            case FIRING:
-                // トリガーが離されたら end_fire へ移行
-                if (!this.isFiringTarget) {
-                    transitionTo(FiringState.END_FIRE, gameTime);
-                }
-                break;
-
-            case END_FIRE:
-                // end_fire アニメーションが完了したら IDLE へ戻る
-                if (elapsedSeconds >= getAnimationDuration("end_fire")) {
-                    transitionTo(FiringState.IDLE, gameTime);
-                }
-                break;
         }
     }
 
