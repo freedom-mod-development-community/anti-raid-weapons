@@ -192,13 +192,13 @@ public class Oto127mmBlockEntity extends AbstractSingleGunBlockEntity implements
 
     // --- MenuProvider の実装 ---
     @Override
-    public Component getDisplayName() {
+    public @NotNull Component getDisplayName() {
         return Component.translatable("block.arw.oto127mm");
     }
 
     @Nullable
     @Override
-    public AbstractContainerMenu createMenu(int id, Inventory playerInventory, Player player) {
+    public AbstractContainerMenu createMenu(int id, @NotNull Inventory playerInventory, @NotNull Player player) {
         return new Oto127mmMenu(id, playerInventory, this);
     }
 
