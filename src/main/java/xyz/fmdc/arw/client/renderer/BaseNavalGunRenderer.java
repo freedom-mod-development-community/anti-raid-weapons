@@ -49,14 +49,10 @@ public class BaseNavalGunRenderer<T extends BlockEntity & IYawPitchAnimatableMod
                     } else if ("pitch".equalsIgnoreCase(nodeName)) {
                         stack.mulPose(Axis.XP.rotationDegrees(blockEntity.getRenderTargetPitch(pTick)));
                     }
-                }
+                },
+                false
         );
         poseStack.popPose();
-    }
-
-    // デフォルト実装を返し、overrideは任意にする
-    protected FastGlbModel getModelData(T blockEntity) {
-        return null;
     }
 
     @Override

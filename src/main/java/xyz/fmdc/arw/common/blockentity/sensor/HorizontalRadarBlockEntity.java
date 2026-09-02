@@ -1,13 +1,16 @@
 package xyz.fmdc.arw.common.blockentity.sensor;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import org.jetbrains.annotations.NotNull;
 import xyz.fmdc.arw.api.fcs.IFcsSensorNode;
 import xyz.fmdc.arw.api.fcs.TargetTrack;
+import xyz.fmdc.arw.client.util.IDirectionalBlockEntity;
 import xyz.fmdc.arw.client.util.IYawModel;
 import xyz.fmdc.arw.common.blockentity.AbstractARWBlockEntity;
 
@@ -18,7 +21,8 @@ import java.util.UUID;
 /**
  * ターゲットスキャンと方位計算を行う全センサーの基底クラス
  */
-public abstract class HorizontalRadarBlockEntity extends AbstractARWBlockEntity implements IYawModel, IFcsSensorNode {
+public abstract class HorizontalRadarBlockEntity extends AbstractARWBlockEntity
+        implements IYawModel, IFcsSensorNode, IDirectionalBlockEntity {
 
     protected boolean isFcsConnected = false;
     protected final List<TargetTrack> detectedTargets = new ArrayList<>();
@@ -40,6 +44,10 @@ public abstract class HorizontalRadarBlockEntity extends AbstractARWBlockEntity 
         if (this.level != null && !this.level.isClientSide) {
             performScan();
         }
+    }
+    @Override
+    public Direction getFacing(){
+        return this.getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING);
     }
 
     @Override

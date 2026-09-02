@@ -2,7 +2,7 @@ package xyz.fmdc.arw.common.blockentity.sensor;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
-import xyz.fmdc.arw.common.blockentity.weapon.StandaloneManualWeaponBlockEntity;
+import xyz.fmdc.arw.common.blockentity.weapon.singlegun.StandaloneManualWeaponBlockEntity;
 import xyz.fmdc.arw.registry.ModBlocks;
 
 /**

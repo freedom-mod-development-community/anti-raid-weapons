@@ -1,8 +1,7 @@
-package xyz.fmdc.arw.common.block;
+package xyz.fmdc.arw.common.block.sensor;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
@@ -10,12 +9,13 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import xyz.fmdc.arw.common.blockentity.weapon.Ops39BlockEntity;
+import xyz.fmdc.arw.common.block.ARWBaseEntityBlock;
+import xyz.fmdc.arw.common.blockentity.sensor.Spq9bBlockEntity;
 import xyz.fmdc.arw.registry.ModBlocks;
 
-public class Ops39Block extends BaseEntityBlock {
+public class Spq9bBlock extends ARWBaseEntityBlock {
 
-    public Ops39Block(Properties properties) {
+    public Spq9bBlock(Properties properties) {
         super(properties);
     }
 
@@ -23,17 +23,17 @@ public class Ops39Block extends BaseEntityBlock {
     @Nullable
     @Override
     public BlockEntity newBlockEntity(@NotNull BlockPos pos, @NotNull BlockState state) {
-        return new Ops39BlockEntity(pos, state);
+        return new Spq9bBlockEntity(pos, state);
     }
 
     // 毎Tickの回転処理（tickメソッド）を呼ぶための設定
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(@NotNull Level level, @NotNull BlockState state, @NotNull BlockEntityType<T> type) {
-        return createTickerHelper(type, ModBlocks.OPS39.getBEType(), Ops39BlockEntity::tick);
+        return createTickerHelper(type, ModBlocks.SPQ9B.getBEType(), Spq9bBlockEntity::tick);
     }
 
-    // バニラのブロックレンダラー（キューブ描画）を無効化し、BERのみで描画させる
+    // バニラのブロックレンダラー（キューブ描画）を無効化し、BER (Ops39Renderer) のみで描画させる
     @Override
     public @NotNull RenderShape getRenderShape(@NotNull BlockState state) {
         return RenderShape.ENTITYBLOCK_ANIMATED;

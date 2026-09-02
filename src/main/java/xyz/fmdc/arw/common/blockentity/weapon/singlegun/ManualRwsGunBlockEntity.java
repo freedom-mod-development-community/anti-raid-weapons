@@ -1,4 +1,4 @@
-package xyz.fmdc.arw.common.blockentity.weapon;
+package xyz.fmdc.arw.common.blockentity.weapon.singlegun;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.EntityType;

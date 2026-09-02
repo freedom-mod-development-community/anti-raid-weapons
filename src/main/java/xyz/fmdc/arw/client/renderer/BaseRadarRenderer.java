@@ -47,7 +47,8 @@ public class BaseRadarRenderer<T extends BlockEntity & IYawModel> implements Blo
 
                         stack.mulPose(Axis.YP.rotationDegrees(-blockEntity.getTargetYaw(pTick)));
                     }
-                }
+                },
+                false
         );
         poseStack.popPose();
     }
@@ -66,6 +67,6 @@ public class BaseRadarRenderer<T extends BlockEntity & IYawModel> implements Blo
             return directional.getFacing();
         }
         // インターフェースを実装していない一般ブロック用のフォールバック
-        return Direction.NORTH;
+        return Direction.SOUTH;
     }
 }

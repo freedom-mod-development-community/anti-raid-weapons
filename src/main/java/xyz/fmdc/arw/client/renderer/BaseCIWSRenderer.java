@@ -50,14 +50,10 @@ public class BaseCIWSRenderer<T extends BlockEntity & IYawPitchBarrelAnimatableM
                     }else if ("barrel".equalsIgnoreCase(nodeName)) {
                         stack.mulPose(Axis.ZP.rotationDegrees(blockEntity.getRenderBarrelAng(pTick)));
                     }
-                }
+                },
+                false
         );
         poseStack.popPose();
-    }
-
-    // デフォルト実装を返し、overrideは任意にする
-    protected FastGlbModel getModelData(T blockEntity) {
-        return null;
     }
 
     @Override

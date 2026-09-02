@@ -6,11 +6,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import org.jetbrains.annotations.NotNull;
-import xyz.fmdc.arw.client.util.IYawModel;
-import xyz.fmdc.arw.common.blockentity.AbstractARWBlockEntity;
 import xyz.fmdc.arw.registry.ModBlocks;
 
-public class Spq9bBlockEntity extends AbstractARWBlockEntity implements IYawModel {
+public class Spq9bBlockEntity extends HorizontalRadarBlockEntity{
 
     private float currentYaw = 0.0f;
     private float prevYaw = 0.0f;
@@ -24,6 +22,15 @@ public class Spq9bBlockEntity extends AbstractARWBlockEntity implements IYawMode
     public static void tick(Level level, BlockPos pos, BlockState state, Spq9bBlockEntity be) {
         be.prevYaw = be.currentYaw;
         be.currentYaw = (be.currentYaw + be.rotationSpeed) % 360.0f;
+    }
+
+    @Override
+    public float getScanRange() {
+        return 500;
+    }
+
+    @Override
+    public void performScan() {
     }
 
     @Override

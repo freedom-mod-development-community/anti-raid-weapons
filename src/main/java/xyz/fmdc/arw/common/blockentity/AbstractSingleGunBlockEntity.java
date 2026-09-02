@@ -1,6 +1,7 @@
 package xyz.fmdc.arw.common.blockentity;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -14,11 +15,13 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import xyz.fmdc.arw.api.fcs.FiringSolution;
 import xyz.fmdc.arw.api.fcs.IFcsControllableWeapon;
 import xyz.fmdc.arw.client.renderer.GenericFastGlbRenderer;
+import xyz.fmdc.arw.client.util.IDirectionalBlockEntity;
 import xyz.fmdc.arw.client.util.IYawPitchAnimatableModel;
 import xyz.fmdc.arw.common.entity.projectile.FiveInchAmmoType;
 import xyz.fmdc.arw.common.entity.projectile.FiveInchShellEntity;
@@ -29,7 +32,8 @@ import java.util.Map;
 import java.util.UUID;
 
 //FCS対応近代兵装の基底.
-public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntity implements IYawPitchAnimatableModel, IFcsControllableWeapon {
+public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntity
+        implements IYawPitchAnimatableModel, IFcsControllableWeapon, IDirectionalBlockEntity {
 
     protected boolean isFcsConnected = false;
     protected float currentYaw = 0.0f;
@@ -140,7 +144,7 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
         // クールダウン開始
         this.cooldownTicks = getMaxCooldownTicks();
 
-        Vec3 direction = getFiringDirection().normalize();
+        Vec3 direction = getFiringDirection();
         Vec3 muzzlePos = Vec3.atBottomCenterOf(this.worldPosition).add(getMuzzleOffset());
         System.out.println(muzzlePos);
 
@@ -203,6 +207,10 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
 
     public AbstractSingleGunBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
+    }
+    @Override
+    public Direction getFacing(){
+        return this.getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING);
     }
 
     @Override
