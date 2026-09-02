@@ -9,6 +9,7 @@ import xyz.fmdc.arw.AntiRaidWeapons;
 import xyz.fmdc.arw.common.entity.projectile.FiveInchAmmoType;
 import xyz.fmdc.arw.common.item.FcsConnectorItem;
 import xyz.fmdc.arw.common.item.FiveInchShellItem;
+import xyz.fmdc.arw.common.item.Rim66m2Item;
 
 import java.util.Collections;
 import java.util.EnumMap;
@@ -21,6 +22,10 @@ public class ModItems {
     // FCS接続用アイテム（木の棒の外見）
     public static final RegistryObject<Item> FCS_CONNECTOR =
             ITEMS.register("fcs_connector", () -> new FcsConnectorItem(new Item.Properties().stacksTo(1)));
+
+    // RIM-66M-2 ミサイルアイテム
+    public static final RegistryObject<Item> RIM_66M2 =
+            ITEMS.register("rim_66m2", () -> new Rim66m2Item(new Item.Properties().stacksTo(16)));
 
     // 5インチ砲弾アイテム（各種）
     public static final RegistryObject<Item> FIVE_INCH_SHELL_MK68_HE_CVT =

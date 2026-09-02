@@ -7,9 +7,11 @@
   "block.arw.radar_display": "Radar Display Block",
   "block.arw.fcs_core": "FCS Core",
   "block.arw.mk13-gmls": "Mk.13 Missile Launcher",
+  "block.arw.mk13_gmls": "Mk.13 Missile Launcher",
   "block.arw.test_console": "Test Console",
   "item.arw.fcs_connector": "FCS Connector",
 
+  "item.arw.rim_66m2": "RIM-66M-2 (SM-2MR Block III)",
   "entity.arw.rim_66m2": "RIM-66M-2 (SM-2MR Block III)",
 
   "item.arw.five_inch_shell_mk68_he_cvt": "5-Inch Shell (Mark 68 HE-CVT)",
@@ -30,6 +32,10 @@
   "tooltip.arw.weight": "Weight: %s kg",
   "tooltip.arw.length": "Length: %s m",
   "tooltip.arw.explosive_filler": "Explosive Filler: %s kg",
+  "tooltip.arw.max_speed": "Max Speed: %s m/tick",
+  "tooltip.arw.warhead": "Warhead: %s",
+  "tooltip.arw.guidance": "Guidance: %s",
+  "tooltip.arw.guidance.sarh": "Semi-Active Radar Homing (SARH)",
 
   "tooltip.arw.fcs_connector.linked_core_uuid": "Linked FCS Core UUID: %s",
   "tooltip.arw.fcs_connector.no_core": "No FCS Core linked. Right-click an FCS Core block to link.",

@@ -1,7 +1,6 @@
 package xyz.fmdc.arw.client;
 
 import net.minecraft.client.gui.screens.MenuScreens;
-import net.minecraft.client.renderer.entity.NoopRenderer;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -15,6 +14,7 @@ import xyz.fmdc.arw.AntiRaidWeapons;
 import xyz.fmdc.arw.client.gui.Mk13GmlsScreen;
 import xyz.fmdc.arw.client.gui.Oto127mmScreen;
 import xyz.fmdc.arw.client.renderer.*;
+import xyz.fmdc.arw.client.renderer.entity.Rim66M2Renderer;
 import xyz.fmdc.arw.client.util.IYawModel;
 import xyz.fmdc.arw.client.util.IYawPitchAnimatableModel;
 import xyz.fmdc.arw.client.util.IYawPitchBarrelAnimatableModel;
@@ -55,28 +55,20 @@ public class ClientModEvents {
         registerCIWS(event, ModBlocks.PHALANX, GlbModelManager.PHALANX_ID);
 
         //missile launcher
-        registerMissileLauncher(event, ModBlocks.MK13_GMLS_BLOCK, GlbModelManager.MK13GMLS_ID);
+        event.registerBlockEntityRenderer(
+                ModBlocks.MK13_GMLS_BLOCK.getBEType(),
+                Mk13GmlsRenderer::new
+        );
 
         //entity
         event.registerEntityRenderer(ModEntities.FIVE_INCH_SHELL.get(), ThrownItemRenderer::new);
-        event.registerEntityRenderer(ModEntities.RIM_66M2.get(), NoopRenderer::new);
+        event.registerEntityRenderer(ModEntities.RIM_66M2.get(), Rim66M2Renderer::new);
     }
 
     @SubscribeEvent
     public static void onRegisterReloadListeners(RegisterClientReloadListenersEvent event) {
         // GLBマネージャーをMinecraftのリソースリロードリスナーに登録
         event.registerReloadListener(GlbModelManager.INSTANCE);
-    }
-
-    private static <BE extends BlockEntity & IYawPitchAnimatableModel> void registerMissileLauncher(
-            EntityRenderersEvent.RegisterRenderers event,
-            BlockEntry<?, BE> blockEntry,
-            ResourceLocation resourceLocation) {
-
-        event.registerBlockEntityRenderer(
-                blockEntry.getBEType(),
-                ctx -> new BaseNavalGunRenderer<>(ctx, be -> GlbModelManager.INSTANCE.getFastModel(resourceLocation))
-        );
     }
 
     private static <BE extends BlockEntity & IYawPitchAnimatableModel> void registerNavalGun(

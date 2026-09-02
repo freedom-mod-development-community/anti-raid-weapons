@@ -32,6 +32,7 @@ public class GlbModelManager implements ResourceManagerReloadListener {
     public static final ResourceLocation EMMI_ID = ResourceLocation.fromNamespaceAndPath(AntiRaidWeapons.MOD_ID, "models/block/emmision-test-old.glb");
     public static final ResourceLocation ATAGO_ID = ResourceLocation.fromNamespaceAndPath(AntiRaidWeapons.MOD_ID, "models/block/atago.glb");
     public static final ResourceLocation MK13GMLS_ID = ResourceLocation.fromNamespaceAndPath(AntiRaidWeapons.MOD_ID, "models/block/mk13-gmls.glb");
+    public static final ResourceLocation RIM66M2_ID = ResourceLocation.fromNamespaceAndPath(AntiRaidWeapons.MOD_ID, "models/entity/rim66m2.glb");
 
     private GlbModelManager() {}
 
@@ -46,7 +47,7 @@ public class GlbModelManager implements ResourceManagerReloadListener {
             AntiRaidWeapons.LOGGER.info("[ARW-DEBUG] GLBモデル(VBO)の一括ロードを開始します...");
 
             ResourceLocation[] targets = new ResourceLocation[] {
-                    OTO127MM_ID, MK45MOD4_ID, OPS39_ID, SPQ9B_ID, EMMI_ID, ATAGO_ID, PHALANX_ID, MK13GMLS_ID
+                    OTO127MM_ID, MK45MOD4_ID, OPS39_ID, SPQ9B_ID, EMMI_ID, ATAGO_ID, MK13GMLS_ID, PHALANX_ID, RIM66M2_ID
             };
 
             for (ResourceLocation location : targets) {
@@ -56,6 +57,20 @@ public class GlbModelManager implements ResourceManagerReloadListener {
                         try (InputStream is = resourceOpt.get().open()) {
                             GlbLoader.GlbModelData rawData = GlbLoader.loadGlb(is);
                             if (rawData.rootNode != null) {
+                                // テクスチャ未設定マテリアルに対して textures/... 以下の同名テクスチャを自動探索・割り当て
+                                String path = location.getPath();
+                                if (path.startsWith("models/") && path.endsWith(".glb")) {
+                                    String texPath = "textures/" + path.substring("models/".length(), path.length() - 4) + ".png";
+                                    ResourceLocation candidateTex = ResourceLocation.fromNamespaceAndPath(location.getNamespace(), texPath);
+                                    if (resourceManager.getResource(candidateTex).isPresent()) {
+                                        for (GlbLoader.MaterialInfo mat : rawData.materials) {
+                                            if (mat.textureLocation == null) {
+                                                mat.textureLocation = candidateTex;
+                                            }
+                                        }
+                                    }
+                                }
+
                                 // VBO化
                                 FastGlbModel fastModel = new FastGlbModel(rawData);
                                 fastModels.put(location, fastModel);

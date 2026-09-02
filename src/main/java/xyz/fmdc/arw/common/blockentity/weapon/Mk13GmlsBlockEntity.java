@@ -4,6 +4,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.Containers;
@@ -13,6 +14,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -25,9 +27,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xyz.fmdc.arw.common.blockentity.AbstractMissileLauncherBlockEntity;
 import xyz.fmdc.arw.common.entity.AbstractMissileEntity;
+import xyz.fmdc.arw.common.item.Rim66m2Item;
 import xyz.fmdc.arw.common.menu.Mk13GmlsMenu;
 import xyz.fmdc.arw.registry.ModBlocks;
 import xyz.fmdc.arw.registry.ModEntities;
+import xyz.fmdc.arw.registry.auto.ModItems;
 
 /**
  * Mk 13 GMLS (Guided Missile Launching System) ブロックエンティティ.
@@ -50,9 +54,19 @@ public class Mk13GmlsBlockEntity extends AbstractMissileLauncherBlockEntity impl
     private static final float AIM_TOLERANCE = 1.0f;
 
     public static final float FIRE_ANIM_DURATION = 1.0f;
-    public static final float RELOAD_ANIM_DURATION = 2.33f;
+    public static final float RELOAD_ANIM_DURATION = 8.0f; // 160 ticks = 8.0秒の再装填サイクル
 
     public static final int INVENTORY_SIZE = 9;
+
+    // ランチャー上のミサイル搭載位置オフセット（GLBのpitchノードローカル座標）
+    public static final double MOUNTED_MISSILE_X = 0.0D;
+    public static final double MOUNTED_MISSILE_Y = 0.5625D; // レール前側へ 0.5625m オフセット (0.625 - 0.0625)
+    public static final double MOUNTED_MISSILE_Z = 0.285D;
+
+    // mk13-gmls.glb の pitch ノード初期平行移動量
+    public static final double PITCH_PIVOT_X = 0.0D;
+    public static final double PITCH_PIVOT_Y = 2.0082097D;
+    public static final double PITCH_PIVOT_Z = -0.56523925D;
 
     private int tickCounter = 0;
 
@@ -61,6 +75,9 @@ public class Mk13GmlsBlockEntity extends AbstractMissileLauncherBlockEntity impl
         @Override
         protected void onContentsChanged(int slot) {
             setChanged();
+            if (level != null && !level.isClientSide) {
+                syncToClient();
+            }
         }
     };
     private final LazyOptional<IItemHandler> itemHandler = LazyOptional.of(() -> this.inventory);
@@ -93,16 +110,44 @@ public class Mk13GmlsBlockEntity extends AbstractMissileLauncherBlockEntity impl
         launchMissile();
     }
 
+    /**
+     * ランチャー上の描画ミサイル位置（Mk13GmlsRenderer）と完全に連動したミサイル発射地点のワールド絶対座標を計算します。
+     */
+    @Override
+    public Vec3 getLaunchPosition() {
+        double pitchRad = Math.toRadians(this.currentPitch + getPitchModelOffset());
+        double cosPitch = Math.cos(pitchRad);
+        double sinPitch = Math.sin(pitchRad);
+
+        // pitch ノード内での回転（Axis.XP: X軸回転）
+        double x1 = MOUNTED_MISSILE_X;
+        double y1 = MOUNTED_MISSILE_Y * cosPitch - MOUNTED_MISSILE_Z * sinPitch;
+        double z1 = MOUNTED_MISSILE_Y * sinPitch + MOUNTED_MISSILE_Z * cosPitch;
+
+        // mk13-gmls.glb の pitch ノード初期平行移動量
+        double x2 = x1 + PITCH_PIVOT_X;
+        double y2 = y1 + PITCH_PIVOT_Y;
+        double z2 = z1 + PITCH_PIVOT_Z;
+
+        // yaw ノードでの回転（Axis.YP: Y軸回転 -currentYaw）
+        double yawRad = Math.toRadians(-this.currentYaw);
+        double cosYaw = Math.cos(yawRad);
+        double sinYaw = Math.sin(yawRad);
+
+        double xRel = x2 * cosYaw + z2 * sinYaw;
+        double yRel = y2;
+        double zRel = -x2 * sinYaw + z2 * cosYaw;
+
+        return new Vec3(
+                this.worldPosition.getX() + 0.5 + xRel,
+                this.worldPosition.getY() + yRel,
+                this.worldPosition.getZ() + 0.5 + zRel
+        );
+    }
+
     @Override
     public Vec3 getLaunchOffset() {
-        float railLength = 3.0f;
-        double pivotHeight = 1.8;
-        Vec3 dir = getFiringDirection();
-        return new Vec3(
-                dir.x * railLength,
-                dir.y * railLength + pivotHeight,
-                dir.z * railLength
-        );
+        return getLaunchPosition().subtract(Vec3.atCenterOf(this.worldPosition));
     }
 
     @Override
@@ -144,6 +189,59 @@ public class Mk13GmlsBlockEntity extends AbstractMissileLauncherBlockEntity impl
         return this.inventory;
     }
 
+    /**
+     * インベントリ内に RIM-66M-2 が装填されているかどうかを判定します。
+     */
+    public boolean hasRim66M2() {
+        return getRim66M2Count() > 0;
+    }
+
+    /**
+     * インベントリ内の RIM-66M-2 アイテムの総数を取得します。
+     */
+    public int getRim66M2Count() {
+        int count = 0;
+        for (int i = 0; i < this.inventory.getSlots(); i++) {
+            ItemStack stack = this.inventory.getStackInSlot(i);
+            if (!stack.isEmpty() && (stack.getItem() instanceof Rim66m2Item || stack.getItem() == ModItems.RIM_66M2.get())) {
+                count += stack.getCount();
+            }
+        }
+        return count;
+    }
+
+    /**
+     * ランチャーが現在リロード中（再装填クールダウン中またはリロード/発射アニメーション再生中）かどうかを判定します。
+     */
+    public boolean isReloading() {
+        if (this.cooldownTicks > 0) {
+            return true;
+        }
+        if (this.level != null && !this.runningAnimations.isEmpty()) {
+            return this.runningAnimations.containsKey("reload") || this.runningAnimations.containsKey("fire");
+        }
+        return false;
+    }
+
+    /**
+     * ランチャー中央レールにミサイルを描画するかどうか（単装ランチャー）
+     * 発射中・リロード中（isReloading()）はミサイルが消失し、
+     * リロード完了時にインベントリ内に RIM-66M-2 が存在する場合に描画されます。
+     */
+    public boolean shouldRenderMissile() {
+        return !isReloading() && hasRim66M2();
+    }
+
+    /** 後方互換用エイリアス */
+    public boolean shouldRenderLeftMissile() {
+        return shouldRenderMissile();
+    }
+
+    /** 後方互換用エイリアス */
+    public boolean shouldRenderRightMissile() {
+        return shouldRenderMissile();
+    }
+
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ForgeCapabilities.ITEM_HANDLER) {
@@ -182,10 +280,27 @@ public class Mk13GmlsBlockEntity extends AbstractMissileLauncherBlockEntity impl
         }
     }
 
+    @Override
+    public void onDataPacket(net.minecraft.network.Connection net, ClientboundBlockEntityDataPacket pkt) {
+        super.onDataPacket(net, pkt);
+        CompoundTag tag = pkt.getTag();
+        if (tag != null && tag.contains("Inventory")) {
+            this.inventory.deserializeNBT(tag.getCompound("Inventory"));
+        }
+    }
+
+    @Override
+    public void handleUpdateTag(CompoundTag tag) {
+        super.handleUpdateTag(tag);
+        if (tag.contains("Inventory")) {
+            this.inventory.deserializeNBT(tag.getCompound("Inventory"));
+        }
+    }
+
     // --- MenuProvider の実装 ---
     @Override
     public Component getDisplayName() {
-        return Component.translatable("block.arw.mk13_gmls");
+        return Component.translatable("block.arw.mk13-gmls");
     }
 
     @Nullable
