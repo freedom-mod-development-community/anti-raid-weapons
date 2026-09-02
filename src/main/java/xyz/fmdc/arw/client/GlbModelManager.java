@@ -24,7 +24,7 @@ public class GlbModelManager implements ResourceManagerReloadListener {
     // ID -> VBO化されたモデルデータ
     private final Map<ResourceLocation, FastGlbModel> fastModels = new HashMap<>();
 
-    public static final ResourceLocation OTO127MM_ID = ResourceLocation.fromNamespaceAndPath(AntiRaidWeapons.MOD_ID, "models/block/mk45mod4nla.glb");
+    public static final ResourceLocation OTO127MM_ID = ResourceLocation.fromNamespaceAndPath(AntiRaidWeapons.MOD_ID, "models/block/oto127mm_stealth.glb");
     public static final ResourceLocation MK45MOD4_ID = ResourceLocation.fromNamespaceAndPath(AntiRaidWeapons.MOD_ID, "models/block/mk45mod4nla.glb");
     public static final ResourceLocation PHALANX_ID = ResourceLocation.fromNamespaceAndPath(AntiRaidWeapons.MOD_ID, "models/block/phalanx.glb");
     public static final ResourceLocation OPS39_ID = ResourceLocation.fromNamespaceAndPath(AntiRaidWeapons.MOD_ID, "models/block/ops-39-2mat.glb");
