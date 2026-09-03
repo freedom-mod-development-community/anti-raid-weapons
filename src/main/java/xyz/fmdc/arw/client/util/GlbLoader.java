@@ -8,6 +8,7 @@ import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.resources.ResourceLocation;
+import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import xyz.fmdc.arw.AntiRaidWeapons;
@@ -39,6 +40,12 @@ public class GlbLoader {
         public boolean isEmissive = false; // 発光（自体発光）フラグ
     }
 
+    // スキン（ボーン構成および Inverse Bind Matrices）
+    public static class GlbSkin {
+        public List<String> jointNodeNames = new ArrayList<>();
+        public List<Matrix4f> inverseBindMatrices = new ArrayList<>();
+    }
+
     public static class AnimationChannel {
         public String targetNodeName;
         public String path; // "translation", "rotation", "scale"
@@ -59,6 +66,7 @@ public class GlbLoader {
         public Vector3f scale = new Vector3f(1, 1, 1);
         public List<GlbNode> children = new ArrayList<>();
         public List<MeshPart> meshParts = new ArrayList<>();
+        public int skinIndex = -1;
     }
 
     public static class MeshPart {
@@ -66,14 +74,18 @@ public class GlbLoader {
         public float[] normals;
         public float[] uvs;
         public int[] indices;
+        public int[] joints;     // JOINTS_0 (1頂点あたり4要素: int)
+        public float[] weights;  // WEIGHTS_0 (1頂点あたり4要素: float)
         public MaterialInfo material;
         public float[] baseColorFactor = new float[]{1.0f, 1.0f, 1.0f, 1.0f}; // RGB+Alpha マテリアル色
+        public GlbSkin skin;     // 適用されるスキン参照
     }
 
     public static class GlbModelData {
         public GlbNode rootNode;
         public Map<String, GlbAnimation> animations = new HashMap<>();
         public List<MaterialInfo> materials = new ArrayList<>();
+        public List<GlbSkin> skins = new ArrayList<>();
     }
 
     public static GlbModelData loadGlb(InputStream stream) throws Exception {
@@ -99,7 +111,7 @@ public class GlbLoader {
         byte[] binBytes = readBytes(stream, chunk1Length);
         ByteBuffer binBuffer = ByteBuffer.wrap(binBytes).order(ByteOrder.LITTLE_ENDIAN);
 
-        // 2. テクスチャ画像のロードと DynamicTexture 登録 (images チャンクの解析)
+        // 2. テクスチャ画像のロードと DynamicTexture 登録
         List<ResourceLocation> imagesList = parseAndRegisterImages(json, binBuffer);
 
         // 3. マテリアル構造の解析
@@ -109,30 +121,29 @@ public class GlbLoader {
                 JsonObject matObj = elem.getAsJsonObject();
                 MaterialInfo mat = new MaterialInfo();
 
-                // アルファモードの取得
                 if (matObj.has("alphaMode")) {
                     String mode = matObj.get("alphaMode").getAsString();
                     if ("BLEND".equalsIgnoreCase(mode)) mat.alphaMode = AlphaMode.BLEND;
                     else if ("MASK".equalsIgnoreCase(mode)) mat.alphaMode = AlphaMode.MASK;
                 }
 
-                // 発光（Emissive）判定
                 if (matObj.has("emissiveTexture") ||
                         (matObj.has("emissiveFactor") && !matObj.getAsJsonArray("emissiveFactor").isEmpty())) {
                     mat.isEmissive = true;
                 }
 
-                // ベースカラーテクスチャの ResourceLocation 解決
                 mat.textureLocation = resolveTextureLocation(json, matObj, imagesList);
-
                 modelData.materials.add(mat);
             }
         }
 
-        // 4. メッシュ・ノード構築 (マテリアル情報を伝達できるように修正)
-        modelData.rootNode = parseNodeHierarchy(json, binBuffer, modelData.materials);
+        // 4. スキン（ボーン構造・Inverse Bind Matrices）の解析
+        modelData.skins = parseSkins(json, binBuffer);
 
-        // 5. アニメーション構造の解析
+        // 5. メッシュ・ノード構築 (スキニング情報・マテリアル情報を伝達)
+        modelData.rootNode = parseNodeHierarchy(json, binBuffer, modelData.materials, modelData.skins);
+
+        // 6. アニメーション構造の解析
         if (json.has("animations")) {
             JsonArray animsArray = json.getAsJsonArray("animations");
             for (int i = 0; i < animsArray.size(); i++) {
@@ -174,8 +185,48 @@ public class GlbLoader {
     }
 
     /**
-     * GLB内の images 配列を解析し、バイナリから NativeImage を作成して DynamicTexture として登録・リスト化する
+     * glTF の skins 配列から Joint ノード名リストおよび Inverse Bind Matrices を解析
      */
+    private static List<GlbSkin> parseSkins(JsonObject json, ByteBuffer binBuffer) {
+        List<GlbSkin> skins = new ArrayList<>();
+        if (!json.has("skins")) return skins;
+
+        JsonArray skinsArray = json.getAsJsonArray("skins");
+        JsonArray nodesArray = json.getAsJsonArray("nodes");
+
+        for (JsonElement sElem : skinsArray) {
+            JsonObject sObj = sElem.getAsJsonObject();
+            GlbSkin skin = new GlbSkin();
+
+            if (sObj.has("joints")) {
+                for (JsonElement jElem : sObj.getAsJsonArray("joints")) {
+                    int jNodeIdx = jElem.getAsInt();
+                    JsonObject jNodeObj = nodesArray.get(jNodeIdx).getAsJsonObject();
+                    String nodeName = jNodeObj.has("name") ? jNodeObj.get("name").getAsString() : "node_" + jNodeIdx;
+                    skin.jointNodeNames.add(nodeName);
+                }
+            }
+
+            if (sObj.has("inverseBindMatrices")) {
+                int accIdx = sObj.get("inverseBindMatrices").getAsInt();
+                float[] matricesData = readAccessorFloats(json, binBuffer, accIdx);
+                for (int i = 0; i < skin.jointNodeNames.size(); i++) {
+                    Matrix4f mat = new Matrix4f();
+                    if ((i + 1) * 16 <= matricesData.length) {
+                        mat.set(matricesData, i * 16);
+                    }
+                    skin.inverseBindMatrices.add(mat);
+                }
+            } else {
+                for (int i = 0; i < skin.jointNodeNames.size(); i++) {
+                    skin.inverseBindMatrices.add(new Matrix4f());
+                }
+            }
+            skins.add(skin);
+        }
+        return skins;
+    }
+
     private static List<ResourceLocation> parseAndRegisterImages(JsonObject json, ByteBuffer binBuffer) {
         List<ResourceLocation> imagesList = new ArrayList<>();
         if (!json.has("images")) return imagesList;
@@ -187,7 +238,6 @@ public class GlbLoader {
             JsonObject imgObj = jsonImages.get(i).getAsJsonObject();
             ResourceLocation registeredLoc = null;
 
-            // GLB 埋め込みバイナリ (bufferView) の場合
             if (imgObj.has("bufferView") && bufferViews != null) {
                 int bufferViewIdx = imgObj.get("bufferView").getAsInt();
                 JsonObject bView = bufferViews.get(bufferViewIdx).getAsJsonObject();
@@ -203,7 +253,6 @@ public class GlbLoader {
                     NativeImage nativeImage = NativeImage.read(in);
                     DynamicTexture dynTexture = new DynamicTexture(nativeImage);
 
-                    // DynamicTexture として Minecraft の TextureManager に登録
                     registeredLoc = ResourceLocation.fromNamespaceAndPath(
                             AntiRaidWeapons.MOD_ID, "dynamic_glb_tex_" + System.nanoTime() + "_" + i
                     );
@@ -211,23 +260,17 @@ public class GlbLoader {
                 } catch (Exception e) {
                     AntiRaidWeapons.LOGGER.error("Failed to register dynamic texture from GLB", e);
                 }
-
-                // 外部参照 (uri) の場合
             } else if (imgObj.has("uri")) {
                 String uri = imgObj.get("uri").getAsString();
                 registeredLoc = ResourceLocation.fromNamespaceAndPath(AntiRaidWeapons.MOD_ID, uri);
             }
 
-            // 画像ロードに失敗した場合でもインデックス整合性のために null をいれて保持
             imagesList.add(registeredLoc);
         }
 
         return imagesList;
     }
 
-    /**
-     * material オブジェクトおよび glTF 仕様の textures 配列を経由して ResourceLocation を解決する
-     */
     private static ResourceLocation resolveTextureLocation(JsonObject rootJson, JsonObject matObj, List<ResourceLocation> imagesList) {
         try {
             if (!matObj.has("pbrMetallicRoughness")) return null;
@@ -236,8 +279,7 @@ public class GlbLoader {
             if (!pbr.has("baseColorTexture")) return null;
             int textureIndex = pbr.getAsJsonObject("baseColorTexture").get("index").getAsInt();
 
-            // glTF 仕様: textures[textureIndex].source が images 配列のインデックスを指す
-            int imageIndex = textureIndex; // デフォルト (1:1 対応フォールバック)
+            int imageIndex = textureIndex;
             if (rootJson.has("textures")) {
                 JsonArray textures = rootJson.getAsJsonArray("textures");
                 if (textureIndex < textures.size()) {
@@ -257,22 +299,20 @@ public class GlbLoader {
         return null;
     }
 
-    private static GlbNode parseNodeHierarchy(JsonObject json, ByteBuffer bin, List<MaterialInfo> materials) {
+    private static GlbNode parseNodeHierarchy(JsonObject json, ByteBuffer bin, List<MaterialInfo> materials, List<GlbSkin> skins) {
         if (!json.has("nodes")) return new GlbNode();
 
         JsonArray nodesArray = json.getAsJsonArray("nodes");
         int nodeCount = nodesArray.size();
 
-        // 1. 全ノードをインスタンス化して配列に保持
         GlbNode[] allNodes = new GlbNode[nodeCount];
-        boolean[] isChild = new boolean[nodeCount]; // 親が存在するかの判定用
+        boolean[] isChild = new boolean[nodeCount];
 
         for (int i = 0; i < nodeCount; i++) {
             JsonObject nodeObj = nodesArray.get(i).getAsJsonObject();
             GlbNode node = new GlbNode();
             node.name = nodeObj.has("name") ? nodeObj.get("name").getAsString() : "node_" + i;
 
-            // トランスフォームの読み込み
             if (nodeObj.has("translation")) {
                 JsonArray t = nodeObj.getAsJsonArray("translation");
                 node.translation.set(t.get(0).getAsFloat(), t.get(1).getAsFloat(), t.get(2).getAsFloat());
@@ -285,17 +325,18 @@ public class GlbLoader {
                 JsonArray s = nodeObj.getAsJsonArray("scale");
                 node.scale.set(s.get(0).getAsFloat(), s.get(1).getAsFloat(), s.get(2).getAsFloat());
             }
+            if (nodeObj.has("skin")) {
+                node.skinIndex = nodeObj.get("skin").getAsInt();
+            }
 
-            // メッシュ読み込み
             if (nodeObj.has("mesh")) {
                 int meshIdx = nodeObj.get("mesh").getAsInt();
-                parseMesh(json, bin, meshIdx, node, materials);
+                parseMesh(json, bin, meshIdx, node, materials, skins);
             }
 
             allNodes[i] = node;
         }
 
-        // 2. glTF の children フィールドを走査し、正しい親子関係（ツリー構造）を構築
         for (int i = 0; i < nodeCount; i++) {
             JsonObject nodeObj = nodesArray.get(i).getAsJsonObject();
             if (nodeObj.has("children")) {
@@ -304,17 +345,15 @@ public class GlbLoader {
                     int childIdx = childElem.getAsInt();
                     if (childIdx >= 0 && childIdx < nodeCount) {
                         allNodes[i].children.add(allNodes[childIdx]);
-                        isChild[childIdx] = true; // 他のノードの子であることが確定
+                        isChild[childIdx] = true;
                     }
                 }
             }
         }
 
-        // 3. ルートノードの決定（どのノードの children にもなっていない最上位ノードを集める）
         GlbNode root = new GlbNode();
         root.name = "root";
 
-        // glTF 内で scenes が定義されている場合はシーンの nodes を優先参照、なければ親のないノードを格納
         if (json.has("scenes") && !json.getAsJsonArray("scenes").isEmpty()) {
             JsonObject scene = json.getAsJsonArray("scenes").get(0).getAsJsonObject();
             if (scene.has("nodes")) {
@@ -326,7 +365,6 @@ public class GlbLoader {
             }
         }
 
-        // フォールバック: 親が存在しないトップレベルノードを root の子にする
         for (int i = 0; i < nodeCount; i++) {
             if (!isChild[i]) {
                 root.children.add(allNodes[i]);
@@ -336,7 +374,7 @@ public class GlbLoader {
         return root;
     }
 
-    private static void parseMesh(JsonObject json, ByteBuffer bin, int meshIdx, GlbNode node, List<MaterialInfo> materials) {
+    private static void parseMesh(JsonObject json, ByteBuffer bin, int meshIdx, GlbNode node, List<MaterialInfo> materials, List<GlbSkin> skins) {
         JsonObject meshObj = json.getAsJsonArray("meshes").get(meshIdx).getAsJsonObject();
         JsonArray primitives = meshObj.getAsJsonArray("primitives");
 
@@ -346,28 +384,35 @@ public class GlbLoader {
 
             MeshPart part = new MeshPart();
 
-            // POSITION
+            // ノードにスキンが割り当てられていれば紐付け
+            if (node.skinIndex >= 0 && node.skinIndex < skins.size()) {
+                part.skin = skins.get(node.skinIndex);
+            }
+
             if (attributes.has("POSITION")) {
                 part.positions = readAccessorFloats(json, bin, attributes.get("POSITION").getAsInt());
             }
-            // NORMAL
             if (attributes.has("NORMAL")) {
                 part.normals = readAccessorFloats(json, bin, attributes.get("NORMAL").getAsInt());
             }
-            // TEXCOORD_0
             if (attributes.has("TEXCOORD_0")) {
                 part.uvs = readAccessorFloats(json, bin, attributes.get("TEXCOORD_0").getAsInt());
             }
-            // INDICES
+            // ボーン属性 JOINTS_0 / WEIGHTS_0 のデコード
+            if (attributes.has("JOINTS_0")) {
+                part.joints = readAccessorInts(json, bin, attributes.get("JOINTS_0").getAsInt());
+            }
+            if (attributes.has("WEIGHTS_0")) {
+                part.weights = readAccessorFloats(json, bin, attributes.get("WEIGHTS_0").getAsInt());
+            }
+
             if (prim.has("indices")) {
                 part.indices = readAccessorInts(json, bin, prim.get("indices").getAsInt());
             }
 
-            // MATERIAL (BaseColor & MaterialInfo 参照紐付け)
             if (prim.has("material")) {
                 int matIdx = prim.get("material").getAsInt();
 
-                // 解析済みの MaterialInfo を MeshPart に割り当て
                 if (materials != null && matIdx < materials.size()) {
                     part.material = materials.get(matIdx);
                 }
@@ -423,19 +468,30 @@ public class GlbLoader {
         JsonObject accessor = json.getAsJsonArray("accessors").get(accessorIdx).getAsJsonObject();
         int bufferViewIdx = accessor.get("bufferView").getAsInt();
         int count = accessor.get("count").getAsInt();
-        int componentType = accessor.get("componentType").getAsInt(); // 5123 = UNSIGNED_SHORT, 5125 = UNSIGNED_INT
+        int componentType = accessor.get("componentType").getAsInt();
 
         JsonObject bufferView = json.getAsJsonArray("bufferViews").get(bufferViewIdx).getAsJsonObject();
         int byteOffset = bufferView.has("byteOffset") ? bufferView.get("byteOffset").getAsInt() : 0;
         if (accessor.has("byteOffset")) byteOffset += accessor.get("byteOffset").getAsInt();
 
-        int[] result = new int[count];
+        String type = accessor.has("type") ? accessor.get("type").getAsString() : "SCALAR";
+        int numComponents = switch (type) {
+            case "VEC4" -> 4;
+            case "VEC3" -> 3;
+            case "VEC2" -> 2;
+            default -> 1;
+        };
+
+        int totalElements = count * numComponents;
+        int[] result = new int[totalElements];
         bin.position(byteOffset);
 
-        for (int i = 0; i < count; i++) {
-            if (componentType == 5123) {
+        for (int i = 0; i < totalElements; i++) {
+            if (componentType == 5121) {       // UNSIGNED_BYTE
+                result[i] = bin.get() & 0xFF;
+            } else if (componentType == 5123) { // UNSIGNED_SHORT
                 result[i] = bin.getShort() & 0xFFFF;
-            } else if (componentType == 5125) {
+            } else if (componentType == 5125) { // UNSIGNED_INT
                 result[i] = bin.getInt();
             } else {
                 result[i] = bin.get() & 0xFF;

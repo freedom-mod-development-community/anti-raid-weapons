@@ -34,6 +34,9 @@ public class GlbModelManager implements ResourceManagerReloadListener {
     public static final ResourceLocation MK13GMLS_ID = ResourceLocation.fromNamespaceAndPath(AntiRaidWeapons.MOD_ID, "models/block/mk13-gmls.glb");
     public static final ResourceLocation RIM66M2_ID = ResourceLocation.fromNamespaceAndPath(AntiRaidWeapons.MOD_ID, "models/entity/rim66m2.glb");
 
+    //yukky section
+    public static final ResourceLocation MK13BONE_ID = ResourceLocation.fromNamespaceAndPath(AntiRaidWeapons.MOD_ID, "models/block/mk13bone.glb");
+
     private GlbModelManager() {}
 
     @Override
@@ -47,7 +50,7 @@ public class GlbModelManager implements ResourceManagerReloadListener {
             AntiRaidWeapons.LOGGER.info("[ARW-DEBUG] GLBモデル(VBO)の一括ロードを開始します...");
 
             ResourceLocation[] targets = new ResourceLocation[] {
-                    OTO127MM_ID, MK45MOD4_ID, OPS39_ID, SPQ9B_ID, EMMI_ID, ATAGO_ID, MK13GMLS_ID, PHALANX_ID, RIM66M2_ID
+                    OTO127MM_ID, MK45MOD4_ID, OPS39_ID, SPQ9B_ID, EMMI_ID, ATAGO_ID, MK13GMLS_ID, PHALANX_ID, RIM66M2_ID, MK13BONE_ID
             };
 
             for (ResourceLocation location : targets) {

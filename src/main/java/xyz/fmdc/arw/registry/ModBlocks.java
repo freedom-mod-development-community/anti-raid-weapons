@@ -12,6 +12,7 @@ import xyz.fmdc.arw.AntiRaidWeapons;
 import xyz.fmdc.arw.common.block.*;
 import xyz.fmdc.arw.common.block.decoration.AtagoBlock;
 import xyz.fmdc.arw.common.block.sensor.*;
+import xyz.fmdc.arw.common.block.weapon.launcher.BonedMissileLauncherBlock;
 import xyz.fmdc.arw.common.block.weapon.singlegun.*;
 import xyz.fmdc.arw.common.blockentity.console.TestConsoleBlockEntity;
 import xyz.fmdc.arw.common.blockentity.decoration.AtagoBlockEntity;
@@ -47,6 +48,10 @@ public class ModBlocks {
     public static BlockBehaviour.Properties emeraldProps() {
         return BlockBehaviour.Properties.copy(Blocks.EMERALD_BLOCK);
     }
+    //yukky section
+    public static final BlockEntry<BonedMissileLauncherBlock, BonedMissileLauncherBlockEntity> MK13BONE =
+            new BlockEntry<>("mk13bone", () -> new BonedMissileLauncherBlock(defaultProps()), BonedMissileLauncherBlockEntity::new);
+    //
 
     // Block + Item + BlockEntity を1行で一括登録
     public static final BlockEntry<Ops39Block, Ops39BlockEntity> OPS39 =
