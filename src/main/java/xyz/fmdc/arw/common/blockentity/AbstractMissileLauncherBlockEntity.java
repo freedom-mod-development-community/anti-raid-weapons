@@ -354,12 +354,12 @@ public abstract class AbstractMissileLauncherBlockEntity extends AbstractARWBloc
 
     @Override
     public float getRenderTargetYaw(float partialTick) {
-        return Mth.rotLerp(partialTick, this.prevYaw, this.currentYaw);
+        return currentYaw;//Mth.rotLerp(partialTick, this.prevYaw, this.currentYaw);
     }
 
     @Override
     public float getRenderTargetPitch(float partialTick) {
-        return Mth.rotLerp(partialTick, this.prevPitch, this.currentPitch) + getPitchModelOffset();
+        return currentPitch;//Mth.rotLerp(partialTick, this.prevPitch, this.currentPitch) + getPitchModelOffset();
     }
 
     @Override

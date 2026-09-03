@@ -59,6 +59,10 @@ public class ClientModEvents {
                 ModBlocks.MK13_GMLS_BLOCK.getBEType(),
                 Mk13GmlsRenderer::new
         );
+        event.registerBlockEntityRenderer(
+                ModBlocks.MK13BONE.getBEType(), // または getBEType()
+                ctx -> new BonedMissileLauncherRenderer<>(ctx, be -> GlbModelManager.INSTANCE.getFastModel(GlbModelManager.MK13BONE_ID))
+        );
 
         //entity
         event.registerEntityRenderer(ModEntities.FIVE_INCH_SHELL.get(), ThrownItemRenderer::new);
