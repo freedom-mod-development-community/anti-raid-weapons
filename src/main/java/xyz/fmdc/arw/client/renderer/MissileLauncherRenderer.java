@@ -7,6 +7,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
 import xyz.fmdc.arw.client.GlbModelManager;
 import xyz.fmdc.arw.client.util.FastGlbModel;
@@ -24,8 +25,8 @@ public class MissileLauncherRenderer<T extends BlockEntity & IMissileLauncherBlo
     protected final GenericFastGlbRenderer missileRenderer = new GenericFastGlbRenderer();
 
     @Override
-    public void render(T blockEntity, float partialTick, PoseStack poseStack,
-                       MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
+    public void render(T blockEntity, float partialTick, @NotNull PoseStack poseStack,
+                       @NotNull MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
 
         // 1. ランチャー本体のモデルを取得
         FastGlbModel launcherModel = GlbModelManager.INSTANCE.getFastModel(blockEntity.getLauncherModelId());
