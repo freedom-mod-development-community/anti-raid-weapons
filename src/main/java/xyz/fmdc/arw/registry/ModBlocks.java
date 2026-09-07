@@ -22,6 +22,7 @@ import xyz.fmdc.arw.common.blockentity.vls.VlsBlockEntity;
 import xyz.fmdc.arw.common.blockentity.weapon.*;
 import xyz.fmdc.arw.common.block.decoration.EmmiBlock;
 import xyz.fmdc.arw.common.blockentity.decoration.EmmiBlockEntity;
+import xyz.fmdc.arw.common.blockentity.weapon.launcher.BonedMissileLauncherBlockEntity;
 import xyz.fmdc.arw.common.blockentity.weapon.singlegun.*;
 import xyz.fmdc.arw.radardisplay.RadarDisplayBlock;
 import xyz.fmdc.arw.radardisplay.RadarDisplayBlockEntity;

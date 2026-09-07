@@ -30,12 +30,6 @@ public class GenericFastGlbRenderer {
 
     @FunctionalInterface
     public interface BoneTransformCallback {
-        /**
-         * @param boneName   ボーン（Jointノード）の名前
-         * @param translation 現在の平行移動（書き換え可能）
-         * @param rotation    現在の回転（書き換え可能）
-         * @param scale       現在のスケール（書き換え可能）
-         */
         void apply(String boneName, Vector3f translation, Quaternionf rotation, Vector3f scale);
     }
 
@@ -64,16 +58,17 @@ public class GenericFastGlbRenderer {
     private final Quaternionf qStart = new Quaternionf();
     private final Quaternionf qEnd = new Quaternionf();
 
-    // スキニング計算用の一時変数
+    // トランスフォーム保持用 Map
     private final Map<String, Matrix4f> globalTransforms = new HashMap<>();
+    private final Map<String, Matrix4f> localTransforms = new HashMap<>();
+
     private final Matrix4f tempNodeMatrix = new Matrix4f();
-    private final Matrix4f jointMatrix = new Matrix4f();
     private final Vector4f skinPos = new Vector4f();
     private final Vector3f skinNorm = new Vector3f();
     private final Vector4f tempPos = new Vector4f();
     private final Vector3f tempNorm = new Vector3f();
 
-// --- render のオーバーロードを追加 ---
+    // --- render のオーバーロード ---
 
     public void render(FastGlbModel fastModel, PoseStack poseStack, MultiBufferSource bufferSource,
                        int packedLight, int packedOverlay, float partialTick,
@@ -99,7 +94,6 @@ public class GenericFastGlbRenderer {
         render(fastModel, poseStack, bufferSource, packedLight, packedOverlay, partialTick, activeAnimations, callback, postRenderCallback, null, centerBlockOffset);
     }
 
-    // BoneTransformCallback を受け取る完全版 render
     public void render(FastGlbModel fastModel, PoseStack poseStack, MultiBufferSource bufferSource,
                        int packedLight, int packedOverlay, float partialTick,
                        List<ActiveAnimation> activeAnimations,
@@ -110,30 +104,31 @@ public class GenericFastGlbRenderer {
 
         if (fastModel == null || fastModel.rootNode == null) return;
 
-// 1. 全ノードのグローバル変換行列を全網羅で一新計算 (boneCallback を追加)
+        // 1. Pass 1: 各ノードのローカルおよびグローバル行列を一括計算
         globalTransforms.clear();
-        computeGlobalTransforms(fastModel.rootNode, fastModel.rawData, new Matrix4f(), activeAnimations, callback, boneCallback, partialTick);
+        localTransforms.clear();
+        computeGlobalTransforms(fastModel.rootNode, fastModel.rawData, new Matrix4f(), activeAnimations, boneCallback);
 
         poseStack.pushPose();
         if (centerBlockOffset) {
             poseStack.translate(0.5, 0.0, 0.5);
         }
 
+        // 2. Pass 2: Pass 1 の計算結果を使って描画
         renderNode(fastModel.rootNode, fastModel.rawData, poseStack, bufferSource,
-                packedLight, packedOverlay, partialTick, activeAnimations, callback, postRenderCallback, boneCallback);
+                packedLight, packedOverlay, partialTick, callback, postRenderCallback);
 
         poseStack.popPose();
-        VertexBuffer.unbind();
+
+        // 【修正点 1】VertexBuffer.unbind() を削除 (OpenGL/RenderTypeのステート破壊防止)
     }
 
     /**
-     * Pass 1: 各ノード・ボーンの現在のグローバル変換行列（ローカル行列の積）を算出する
+     * Pass 1: 各ノード・ボーンのローカル行列およびグローバル行列を計算・保持する
      */
     private void computeGlobalTransforms(FastGlbModel.FastNode node, GlbLoader.GlbModelData rawData,
                                          Matrix4f parentTransform, List<ActiveAnimation> activeAnimations,
-                                         @Nullable NodeTransformCallback callback,
-                                         @Nullable BoneTransformCallback boneCallback,
-                                         float partialTick) {
+                                         @Nullable BoneTransformCallback boneCallback) {
 
         animTranslation.set(node.defaultTranslation());
         animRotation.set(node.defaultRotation());
@@ -147,67 +142,56 @@ public class GenericFastGlbRenderer {
                 }
             }
         }
+
+        // ボーン操作コールバック
         if (boneCallback != null) {
             boneCallback.apply(node.name(), animTranslation, animRotation, animScale);
         }
 
+        // ローカル変換行列を生成
         tempNodeMatrix.translationRotateScale(
                 animTranslation.x(), animTranslation.y(), animTranslation.z(),
                 animRotation.x(), animRotation.y(), animRotation.z(), animRotation.w(),
                 animScale.x(), animScale.y(), animScale.z()
         );
 
+        localTransforms.put(node.name(), new Matrix4f(tempNodeMatrix));
+
+        // グローバル変換行列の計算・保存
         Matrix4f currentGlobal = new Matrix4f(parentTransform).mul(tempNodeMatrix);
         globalTransforms.put(node.name(), currentGlobal);
 
         for (FastGlbModel.FastNode child : node.children()) {
-            computeGlobalTransforms(child, rawData, currentGlobal, activeAnimations, callback, boneCallback, partialTick);
+            computeGlobalTransforms(child, rawData, currentGlobal, activeAnimations, boneCallback);
         }
     }
 
     /**
-     * Pass 2: ノードとメッシュの描画
+     * Pass 2: Pass 1 で確定した行列を用いてメッシュを描画
      */
     private void renderNode(FastGlbModel.FastNode node, GlbLoader.GlbModelData rawData, PoseStack poseStack,
                             MultiBufferSource bufferSource, int packedLight, int packedOverlay,
-                            float partialTick, List<ActiveAnimation> activeAnimations,
+                            float partialTick,
                             @Nullable NodeTransformCallback callback,
-                            @Nullable NodePostRenderCallback postRenderCallback,
-                            @Nullable BoneTransformCallback boneCallback) {
+                            @Nullable NodePostRenderCallback postRenderCallback) {
 
         poseStack.pushPose();
 
-        animTranslation.set(node.defaultTranslation());
-        animRotation.set(node.defaultRotation());
-        animScale.set(node.defaultScale());
-
-        if (activeAnimations != null && !activeAnimations.isEmpty()) {
-            for (ActiveAnimation activeAnim : activeAnimations) {
-                GlbLoader.GlbAnimation anim = rawData.animations.get(activeAnim.name());
-                if (anim != null) {
-                    applyAnimationToNode(node.name(), anim, activeAnim.timeSeconds(), activeAnim.loop());
-                }
-            }
+        // Pass 1 で計算したローカル変換を PoseStack に適用
+        Matrix4f localMat = localTransforms.get(node.name());
+        if (localMat != null) {
+            poseStack.last().pose().mul(localMat);
         }
-
-        // ★★★ 追加: Pass 2 (PoseStack描画側) にも操作後の Transform を適用 ★★★
-        if (boneCallback != null) {
-            boneCallback.apply(node.name(), animTranslation, animRotation, animScale);
-        }
-
-        poseStack.translate(animTranslation.x(), animTranslation.y(), animTranslation.z());
-        poseStack.mulPose(animRotation);
 
         if (callback != null) {
             callback.apply(node.name(), poseStack, partialTick);
         }
 
-        poseStack.scale(animScale.x(), animScale.y(), animScale.z());
-
-        // メッシュパーツ描画
+        // メッシュ描画
         for (FastGlbModel.FastMeshPart part : node.meshParts()) {
             if (part.isSkinned()) {
-                renderSkinnedMeshPart(part, rawData, poseStack, packedLight, packedOverlay);
+                // 【修正点 2】スキンメッシュは BufferSource 経由で描画（VBO書き換えを防止）
+                renderSkinnedMeshPart(part, poseStack, bufferSource, packedLight, packedOverlay);
             } else {
                 renderMeshPartVbo(part, poseStack, packedLight, packedOverlay);
             }
@@ -217,26 +201,27 @@ public class GenericFastGlbRenderer {
             postRenderCallback.render(node.name(), poseStack, bufferSource, packedLight, packedOverlay, partialTick);
         }
 
+        // 子ノードの描画
         for (FastGlbModel.FastNode child : node.children()) {
             renderNode(child, rawData, poseStack, bufferSource, packedLight, packedOverlay,
-                    partialTick, activeAnimations, callback, postRenderCallback, boneCallback);
+                    partialTick, callback, postRenderCallback);
         }
 
         poseStack.popPose();
     }
 
     /**
-     * スキンメッシュ（ボーンアニメーション付き）の変形・動的 VBO 描画
+     * スキンメッシュの描画（MultiBufferSource / VertexConsumer 経由）
      */
-    private void renderSkinnedMeshPart(FastGlbModel.FastMeshPart part, GlbLoader.GlbModelData rawData,
-                                       PoseStack poseStack, int packedLight, int packedOverlay) {
+    private void renderSkinnedMeshPart(FastGlbModel.FastMeshPart part, PoseStack poseStack,
+                                       MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
         GlbLoader.MeshPart raw = part.rawPart();
         if (raw == null || raw.skin == null) return;
 
         GlbLoader.GlbSkin skin = raw.skin;
         Matrix4f[] jointMatrices = new Matrix4f[skin.jointNodeNames.size()];
 
-        // 各ボーンの現在の JointMatrix = GlobalTransform(Joint) * InverseBindMatrix(Joint)
+        // 各ボーンの JointMatrix 計算
         for (int i = 0; i < skin.jointNodeNames.size(); i++) {
             String jointName = skin.jointNodeNames.get(i);
             Matrix4f globalJoint = globalTransforms.getOrDefault(jointName, new Matrix4f());
@@ -245,16 +230,14 @@ public class GenericFastGlbRenderer {
             jointMatrices[i] = new Matrix4f(globalJoint).mul(invBind);
         }
 
-        // 動的バッファにビルドしてアップロード
-        BufferBuilder builder = Tesselator.getInstance().getBuilder();
-        builder.begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.NEW_ENTITY);
+        VertexConsumer consumer = bufferSource.getBuffer(part.renderType());
+        PoseStack.Pose lastPose = poseStack.last();
+        Matrix4f poseMatrix = lastPose.pose();
 
         float r = raw.baseColorFactor[0];
         float g = raw.baseColorFactor[1];
         float b = raw.baseColorFactor[2];
         float a = raw.baseColorFactor[3];
-
-        Matrix4f identity = new Matrix4f();
 
         for (int idx : raw.indices) {
             int posIdx = idx * 3;
@@ -280,7 +263,6 @@ public class GenericFastGlbRenderer {
             float w2 = raw.weights[jIdx + 2];
             float w3 = raw.weights[jIdx + 3];
 
-            // 頂点と法線のスキニング合成処理
             skinPos.set(0, 0, 0, 0);
             skinNorm.set(0, 0, 0);
 
@@ -295,20 +277,15 @@ public class GenericFastGlbRenderer {
                 v = raw.uvs[idx * 2 + 1];
             }
 
-            builder.vertex(identity, skinPos.x(), skinPos.y(), skinPos.z())
+            // 計算した頂点を直接 BufferSource へ送る
+            consumer.vertex(poseMatrix, skinPos.x(), skinPos.y(), skinPos.z())
                     .color(r, g, b, a)
                     .uv(u, v)
                     .overlayCoords(packedOverlay)
                     .uv2(packedLight)
-                    .normal(skinNorm.x(), skinNorm.y(), skinNorm.z())
+                    .normal(lastPose.normal(), skinNorm.x(), skinNorm.y(), skinNorm.z())
                     .endVertex();
         }
-
-        BufferBuilder.RenderedBuffer renderedBuffer = builder.end();
-        part.vbo().bind();
-        part.vbo().upload(renderedBuffer);
-
-        renderMeshPartVbo(part, poseStack, packedLight, packedOverlay);
     }
 
     private void applyJointWeight(int jointIdx, float weight, float vx, float vy, float vz,
@@ -317,25 +294,24 @@ public class GenericFastGlbRenderer {
 
         Matrix4f jMat = jointMatrices[jointIdx];
 
-        // 位置の変換
         tempPos.set(vx, vy, vz, 1.0f);
         tempPos.mul(jMat);
         skinPos.add(tempPos.x() * weight, tempPos.y() * weight, tempPos.z() * weight, 0);
 
-        // 法線の変換
         tempNorm.set(nx, ny, nz);
         tempNorm.mulDirection(jMat);
         skinNorm.add(tempNorm.x() * weight, tempNorm.y() * weight, tempNorm.z() * weight);
     }
 
+    /**
+     * 非スキンメッシュ（静的VBO）の描画
+     */
     private void renderMeshPartVbo(FastGlbModel.FastMeshPart part, PoseStack poseStack, int packedLight, int packedOverlay) {
         if (part.vbo() == null) return;
 
         RenderType renderType = part.renderType();
 
-        RenderSystem.enableDepthTest();
-        RenderSystem.depthMask(true);
-
+        // 【修正点 4】ステートの強制変更を整理し、安全にシェーダーとVBOを適用
         renderType.setupRenderState();
 
         Matrix4f modelViewMatrix = poseStack.last().pose();
@@ -387,7 +363,8 @@ public class GenericFastGlbRenderer {
         int len = times.length;
         if (len == 0 || values.length < 3) return;
 
-        if (time <= times[0]) {
+        // 【修正点 5】単一キーフレーム対応
+        if (len == 1 || time <= times[0]) {
             dest.set(values[0], values[1], values[2]);
             return;
         }
@@ -415,7 +392,7 @@ public class GenericFastGlbRenderer {
         int len = times.length;
         if (len == 0 || values.length < 4) return;
 
-        if (time <= times[0]) {
+        if (len == 1 || time <= times[0]) {
             dest.set(values[0], values[1], values[2], values[3]);
             return;
         }
@@ -433,7 +410,8 @@ public class GenericFastGlbRenderer {
         qStart.set(values[q0], values[q0 + 1], values[q0 + 2], values[q0 + 3]);
         qEnd.set(values[q1], values[q1 + 1], values[q1 + 2], values[q1 + 3]);
 
-        dest.set(qStart.slerp(qEnd, factor));
+        // JOMLの slerp は内部で自動的に最短経路（Shortest Path）補間を行って dest に結果を格納してくれます
+        qStart.slerp(qEnd, factor, dest);
     }
 
     private int findTimeIndex(float[] times, float time) {
