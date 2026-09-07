@@ -10,7 +10,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xyz.fmdc.arw.common.block.ARWBaseEntityBlock;
-import xyz.fmdc.arw.common.blockentity.weapon.BonedMissileLauncherBlockEntity;
+import xyz.fmdc.arw.common.blockentity.weapon.launcher.BonedMissileLauncherBlockEntity;
 import xyz.fmdc.arw.registry.ModBlocks;
 
 public class BonedMissileLauncherBlock extends ARWBaseEntityBlock {
