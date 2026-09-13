@@ -41,6 +41,11 @@ public class PacketHandler {
                 Mk45PacketTest::handle,
                 Optional.of(NetworkDirection.PLAY_TO_SERVER)
         );
+        INSTANCE.messageBuilder(S2CSyncRadarTargetsPacket.class, id())
+                .encoder(S2CSyncRadarTargetsPacket::encode)
+                .decoder(S2CSyncRadarTargetsPacket::new)
+                .consumerMainThread(S2CSyncRadarTargetsPacket::handle)
+                .add();
         INSTANCE.messageBuilder(UpdateRadarDisplayConfigPacket.class, id())
                 .encoder(UpdateRadarDisplayConfigPacket::toBytes)
                 .decoder(UpdateRadarDisplayConfigPacket::new)
