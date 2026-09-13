@@ -5,6 +5,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.NotNull;
 import xyz.fmdc.arw.api.TrackedTarget;
 import xyz.fmdc.arw.common.blockentity.sensor.SearchRadarBlockEntity;
 
@@ -34,7 +35,7 @@ public class RadarTest extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+    public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(guiGraphics);
         radarRadiusPx = (int) (Math.min(this.width, this.height) * 0.40f);
 

@@ -31,7 +31,7 @@ public class SearchRadarBlock extends ARWBaseEntityBlock {
 
     @Nullable
     @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> blockEntityType) {
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(@NotNull Level level, @NotNull BlockState state, @NotNull BlockEntityType<T> blockEntityType) {
         // BlockEntityType が一致しているか検証して Ticker を返す
         return createTickerHelper(blockEntityType, ModBlocks.SEARCH_RADAR_BLOCK.getBEType(), SearchRadarBlockEntity::tick);
     }
