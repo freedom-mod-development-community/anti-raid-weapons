@@ -1,5 +1,7 @@
 package xyz.fmdc.arw.client.gui;
 
+import com.mojang.logging.LogUtils;
+import org.slf4j.Logger;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -32,6 +34,8 @@ import java.util.Map;
 import java.util.UUID;
 
 public class TestConsoleScreen extends Screen {
+
+    private static final Logger LOGGER = LogUtils.getLogger();
 
     private final BlockPos consolePos;
     private UUID linkedCoreUuid = null;
@@ -126,7 +130,15 @@ public class TestConsoleScreen extends Screen {
         this.linkedCorePos = console.getLinkedFcsCorePos();
 
         AbstractFcsCoreBlockEntity fcsCore = console.getLinkedFcsCore();
-        if (fcsCore == null) return;
+        if (fcsCore == null) {
+            LOGGER.warn("[ARW TestConsole] Cannot refresh weapons: linked FCS Core is null (pos: {}, uuid: {})",
+                    this.linkedCorePos, this.linkedCoreUuid);
+            LOGGER.info("---- FCS TestConsole Weapon List ----");
+            LOGGER.info("No weapons found (FCS Core is null).");
+            LOGGER.info("-------------------------------------");
+            selectedWeapon = null;
+            return;
+        }
 
         Map<UUID, BlockPos> nodePositions = fcsCore.getNodePositions();
         for (UUID uuid : fcsCore.getConnectedNodeUuids()) {
@@ -145,6 +157,16 @@ public class TestConsoleScreen extends Screen {
             }
         }
 
+        LOGGER.info("---- FCS TestConsole Weapon List ----");
+        if (weaponList.isEmpty()) {
+            LOGGER.info("No weapons found.");
+        } else {
+            for (WeaponEntry entry : weaponList) {
+                LOGGER.info("Weapon: {} (Type: {}, Category: {}, Pos: {})", entry.name(), entry.typeName(), entry.category().getLabel(), entry.pos().toShortString());
+            }
+        }
+        LOGGER.info("-------------------------------------");
+
         if (!weaponList.isEmpty()) {
             // 選択中の兵器がリストに存在するか確認し、なければ先頭を選択
             if (selectedWeapon == null || weaponList.stream().noneMatch(w -> w.uuid().equals(selectedWeapon.uuid()))) {
@@ -156,7 +178,7 @@ public class TestConsoleScreen extends Screen {
     }
 
     private WeaponCategory categorizeWeapon(BlockEntity be) {
-        if (be instanceof AbstractMissileLauncherBlockEntity || be instanceof Mk13GmlsBlockEntity) {
+        if (be instanceof AbstractMissileLauncherBlockEntity) {
             return WeaponCategory.MISSILE_LAUNCHER;
         } else if (be instanceof AbstractSingleGunBlockEntity) {
             return WeaponCategory.NAVAL_GUN;
@@ -189,7 +211,7 @@ public class TestConsoleScreen extends Screen {
         int reloadBtnW = 75;
         int reloadBtnX = this.width - MARGIN - reloadBtnW;
         reloadDevicesButton = this.addRenderableWidget(Button.builder(
-                Component.literal("⟳ RELOAD"),
+                Component.literal("↻ RELOAD"),
                 button -> {
                     refreshWeapons();
                     init();
@@ -269,12 +291,12 @@ public class TestConsoleScreen extends Screen {
         ).bounds(btnStartX, actionBtnY, applyW, btnH).build());
 
         readCurrentAnglesButton = this.addRenderableWidget(Button.builder(
-                Component.literal("⟳ READ"),
+                Component.literal("↻ READ"),
                 b -> readCurrentAnglesFromWeapon()
         ).bounds(btnStartX + applyW + spacing, actionBtnY, readW, btnH).build());
 
         centerAimButton = this.addRenderableWidget(Button.builder(
-                Component.literal("✛ CENTER"),
+                Component.literal("✜ CENTER"),
                 b -> {
                     targetYaw = 0.0f;
                     targetPitch = 0.0f;

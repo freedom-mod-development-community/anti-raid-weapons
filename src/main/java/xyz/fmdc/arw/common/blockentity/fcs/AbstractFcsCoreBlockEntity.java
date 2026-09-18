@@ -373,23 +373,18 @@ public abstract class AbstractFcsCoreBlockEntity extends AbstractARWBlockEntity 
 
     @Override
     public void onDataPacket(net.minecraft.network.Connection net, ClientboundBlockEntityDataPacket pkt) {
+        super.onDataPacket(net, pkt);
         CompoundTag tag = pkt.getTag();
         if (tag != null) {
-            connectedNodeUuids.clear();
-            nodePositions.clear();
-            if (tag.contains("ConnectedNodeUuids", Tag.TAG_LIST)) {
-                ListTag list = tag.getList("ConnectedNodeUuids", Tag.TAG_COMPOUND);
-                for (int i = 0; i < list.size(); i++) {
-                    CompoundTag idTag = list.getCompound(i);
-                    if (idTag.hasUUID("UUID")) {
-                        UUID id = idTag.getUUID("UUID");
-                        connectedNodeUuids.add(id);
-                        if (idTag.contains("Pos")) {
-                            nodePositions.put(id, NbtUtils.readBlockPos(idTag.getCompound("Pos")));
-                        }
-                    }
-                }
-            }
+            load(tag);
+        }
+    }
+
+    @Override
+    public void handleUpdateTag(CompoundTag tag) {
+        super.handleUpdateTag(tag);
+        if (tag != null) {
+            load(tag);
         }
     }
 

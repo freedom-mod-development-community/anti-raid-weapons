@@ -55,7 +55,7 @@ public class TestConsoleBlockEntity extends AbstractARWBlockEntity implements IF
         if (this.level != null && this.linkedFcsCorePos != null && this.level.isLoaded(this.linkedFcsCorePos)) {
             BlockEntity be = this.level.getBlockEntity(this.linkedFcsCorePos);
             if (be instanceof AbstractFcsCoreBlockEntity fcsCore) {
-                if (this.linkedFcsCoreUuid == null || this.linkedFcsCoreUuid.equals(fcsCore.getUuid())) {
+                if (this.linkedFcsCoreUuid == null || this.linkedFcsCoreUuid.equals(fcsCore.getUuid()) || this.level.isClientSide) {
                     return fcsCore;
                 }
             }
@@ -106,9 +106,15 @@ public class TestConsoleBlockEntity extends AbstractARWBlockEntity implements IF
         super.onDataPacket(net, pkt);
         CompoundTag tag = pkt.getTag();
         if (tag != null) {
-            if (tag.contains("FcsConnected")) {
-                this.fcsConnected = tag.getBoolean("FcsConnected");
-            }
+            load(tag);
+        }
+    }
+
+    @Override
+    public void handleUpdateTag(CompoundTag tag) {
+        super.handleUpdateTag(tag);
+        if (tag != null) {
+            load(tag);
         }
     }
 }
