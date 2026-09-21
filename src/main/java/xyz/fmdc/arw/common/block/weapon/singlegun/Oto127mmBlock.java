@@ -18,7 +18,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xyz.fmdc.arw.common.block.ARWBaseEntityBlock;
 import xyz.fmdc.arw.common.blockentity.weapon.singlegun.Oto127mmBlockEntity;
-import xyz.fmdc.arw.common.item.FcsConnectorItem;
+import xyz.fmdc.arw.common.item.tool.FcsConnectorItem;
 import xyz.fmdc.arw.registry.ModBlocks;
 
 public class Oto127mmBlock extends ARWBaseEntityBlock {

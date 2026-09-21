@@ -9,23 +9,27 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import xyz.fmdc.arw.AntiRaidWeapons;
-import xyz.fmdc.arw.common.block.*;
+import xyz.fmdc.arw.common.block.console.TestConsoleBlock;
 import xyz.fmdc.arw.common.block.decoration.AtagoBlock;
+import xyz.fmdc.arw.common.block.fcs.FcsCoreBlock;
 import xyz.fmdc.arw.common.block.sensor.*;
+import xyz.fmdc.arw.common.block.vls.VlsBlock;
+import xyz.fmdc.arw.common.block.weapon.ciws.phalanxBlock;
 import xyz.fmdc.arw.common.block.weapon.launcher.BonedMissileLauncherBlock;
+import xyz.fmdc.arw.common.block.weapon.launcher.Mk13GmlsBlock;
 import xyz.fmdc.arw.common.block.weapon.singlegun.*;
 import xyz.fmdc.arw.common.blockentity.console.TestConsoleBlockEntity;
 import xyz.fmdc.arw.common.blockentity.decoration.AtagoBlockEntity;
 import xyz.fmdc.arw.common.blockentity.fcs.FcsCoreBlockEntity;
 import xyz.fmdc.arw.common.blockentity.sensor.*;
+import xyz.fmdc.arw.common.blockentity.sensor.optics.OpticalSightBlockEntity;
 import xyz.fmdc.arw.common.blockentity.vls.VlsBlockEntity;
-import xyz.fmdc.arw.common.blockentity.weapon.*;
 import xyz.fmdc.arw.common.block.decoration.EmmiBlock;
 import xyz.fmdc.arw.common.blockentity.decoration.EmmiBlockEntity;
+import xyz.fmdc.arw.common.blockentity.weapon.ciws.PhalanxBlockEntity;
 import xyz.fmdc.arw.common.blockentity.weapon.launcher.BonedMissileLauncherBlockEntity;
+import xyz.fmdc.arw.common.blockentity.weapon.launcher.Mk13GmlsBlockEntity;
 import xyz.fmdc.arw.common.blockentity.weapon.singlegun.*;
-import xyz.fmdc.arw.radardisplay.RadarDisplayBlock;
-import xyz.fmdc.arw.radardisplay.RadarDisplayBlockEntity;
 import xyz.fmdc.arw.registry.auto.BlockEntry;
 
 public class ModBlocks {
@@ -69,9 +73,6 @@ public class ModBlocks {
             new BlockEntry<>("mk45mod4", () -> new Mk45mod4Block(defaultProps()), Mk45Mod4BlockEntity::new);
     public static final BlockEntry<phalanxBlock, PhalanxBlockEntity> PHALANX =
             new BlockEntry<>("phalanx", () -> new phalanxBlock(defaultProps()), PhalanxBlockEntity::new);
-
-    public static final BlockEntry<RadarDisplayBlock, RadarDisplayBlockEntity> RADAR_DISPLAY =
-            new BlockEntry<>("radar_display", () -> new RadarDisplayBlock(stoneProps()), RadarDisplayBlockEntity::new);
 
     // --- FCS ---
     public static final BlockEntry<FcsCoreBlock, FcsCoreBlockEntity> FCS_CORE_BLOCK =

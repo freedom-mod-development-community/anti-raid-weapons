@@ -10,8 +10,8 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import org.jetbrains.annotations.NotNull;
 import xyz.fmdc.arw.api.fcs.IFcsSensorNode;
 import xyz.fmdc.arw.api.fcs.TargetTrack;
-import xyz.fmdc.arw.client.util.IDirectionalBlockEntity;
-import xyz.fmdc.arw.client.util.IYawModel;
+import xyz.fmdc.arw.api.blockentity.IDirectionalBlockEntity;
+import xyz.fmdc.arw.api.blockentity.IYawModel;
 import xyz.fmdc.arw.common.blockentity.AbstractARWBlockEntity;
 
 import java.util.ArrayList;

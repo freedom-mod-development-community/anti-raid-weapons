@@ -21,7 +21,7 @@ import net.minecraftforge.network.NetworkHooks;
 import xyz.fmdc.arw.AntiRaidWeapons;
 import xyz.fmdc.arw.common.entity.AbstractCannonProjectileEntity;
 import xyz.fmdc.arw.registry.ModEntities;
-import xyz.fmdc.arw.registry.auto.ModItems;
+import xyz.fmdc.arw.registry.ModItems;
 
 public class FiveInchShellEntity extends AbstractCannonProjectileEntity implements ItemSupplier {
 

@@ -16,7 +16,7 @@ import org.jetbrains.annotations.Nullable;
 import xyz.fmdc.arw.common.block.ARWBaseEntityBlock;
 import xyz.fmdc.arw.common.blockentity.weapon.singlegun.MannedTankTurretBlockEntity;
 import xyz.fmdc.arw.common.blockentity.weapon.singlegun.WWIIAntiAircraftGunBlockEntity;
-import xyz.fmdc.arw.common.item.FcsConnectorItem;
+import xyz.fmdc.arw.common.item.tool.FcsConnectorItem;
 
 public class MannedTankTurretBlock extends ARWBaseEntityBlock {
     public MannedTankTurretBlock(Properties properties) { super(properties); }

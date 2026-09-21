@@ -9,8 +9,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import org.jetbrains.annotations.NotNull;
 import xyz.fmdc.arw.client.util.FastGlbModel;
-import xyz.fmdc.arw.client.util.IDirectionalBlockEntity;
-import xyz.fmdc.arw.client.util.IYawPitchAnimatableModel;
+import xyz.fmdc.arw.api.blockentity.IDirectionalBlockEntity;
+import xyz.fmdc.arw.api.blockentity.IYawPitchAnimatableModel;
 
 import java.util.List;
 import java.util.function.Function;
