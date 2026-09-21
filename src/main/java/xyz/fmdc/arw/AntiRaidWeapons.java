@@ -13,7 +13,7 @@ import xyz.fmdc.arw.registry.ModMenuTypes;
 import xyz.fmdc.arw.registry.ModSounds;
 import xyz.fmdc.arw.registry.auto.ModBlockEntities;
 import xyz.fmdc.arw.registry.auto.ModCreativeTabs;
-import xyz.fmdc.arw.registry.auto.ModItems;
+import xyz.fmdc.arw.registry.ModItems;
 
 @Mod(AntiRaidWeapons.MOD_ID)
 public class AntiRaidWeapons {

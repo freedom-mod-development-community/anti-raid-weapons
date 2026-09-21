@@ -13,10 +13,10 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import xyz.fmdc.arw.client.gui.RadarTest;
+import xyz.fmdc.arw.client.gui.screen.RadarTest;
 import xyz.fmdc.arw.common.block.ARWBaseEntityBlock;
 import xyz.fmdc.arw.common.blockentity.sensor.SearchRadarBlockEntity;
-import xyz.fmdc.arw.common.item.FcsConnectorItem;
+import xyz.fmdc.arw.common.item.tool.FcsConnectorItem;
 import xyz.fmdc.arw.registry.ModBlocks;
 
 public class SearchRadarBlock extends ARWBaseEntityBlock {

@@ -8,7 +8,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import org.jetbrains.annotations.NotNull;
-import xyz.fmdc.arw.common.menu.AbstractWeaponMenu;
 
 /**
  * 兵器用GUIスクリーンの基底抽象クラス.

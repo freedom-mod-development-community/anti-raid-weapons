@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
 import xyz.fmdc.arw.api.fcs.IFcsControllableWeapon;
 import xyz.fmdc.arw.api.fcs.IFcsNetworkNode;
 import xyz.fmdc.arw.common.blockentity.AbstractARWBlockEntity;
-import xyz.fmdc.arw.common.blockentity.AbstractMissileLauncherBlockEntity;
+import xyz.fmdc.arw.common.blockentity.weapon.AbstractMissileLauncherBlockEntity;
 import xyz.fmdc.arw.common.blockentity.fcs.AbstractFcsCoreBlockEntity;
 import xyz.fmdc.arw.registry.ModBlocks;
 

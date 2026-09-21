@@ -7,8 +7,8 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import xyz.fmdc.arw.AntiRaidWeapons;
-import xyz.fmdc.arw.common.menu.Mk13GmlsMenu;
-import xyz.fmdc.arw.common.menu.Oto127mmMenu;
+import xyz.fmdc.arw.client.gui.Mk13GmlsMenu;
+import xyz.fmdc.arw.client.gui.Oto127mmMenu;
 
 public class ModMenuTypes {
     public static final DeferredRegister<MenuType<?>> MENUS =

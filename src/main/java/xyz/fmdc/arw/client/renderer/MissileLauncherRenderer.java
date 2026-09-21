@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
 import xyz.fmdc.arw.client.GlbModelManager;
 import xyz.fmdc.arw.client.util.FastGlbModel;
-import xyz.fmdc.arw.client.util.IMissileLauncherBlockEntity;
+import xyz.fmdc.arw.api.blockentity.IMissileLauncherBlockEntity;
 import xyz.fmdc.arw.common.blockentity.weapon.launcher.MissileSlot;
 
 import java.util.List;

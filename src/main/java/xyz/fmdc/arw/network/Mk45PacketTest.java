@@ -5,7 +5,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.network.NetworkEvent;
-import xyz.fmdc.arw.common.blockentity.AbstractSingleGunBlockEntity; // ※適切なインターフェースまたはBlockEntityクラスを指定
+import xyz.fmdc.arw.common.blockentity.weapon.AbstractSingleGunBlockEntity; // ※適切なインターフェースまたはBlockEntityクラスを指定
 
 import java.util.function.Supplier;
 

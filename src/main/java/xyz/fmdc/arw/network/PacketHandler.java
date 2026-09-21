@@ -46,11 +46,6 @@ public class PacketHandler {
                 .decoder(S2CSyncRadarTargetsPacket::new)
                 .consumerMainThread(S2CSyncRadarTargetsPacket::handle)
                 .add();
-        INSTANCE.messageBuilder(UpdateRadarDisplayConfigPacket.class, id())
-                .encoder(UpdateRadarDisplayConfigPacket::toBytes)
-                .decoder(UpdateRadarDisplayConfigPacket::new)
-                .consumerMainThread(UpdateRadarDisplayConfigPacket::handle)
-                .add();
         INSTANCE.messageBuilder(ServerboundFcsCoreUnregisterPacket.class, id())
                 .encoder(ServerboundFcsCoreUnregisterPacket::toBytes)
                 .decoder(ServerboundFcsCoreUnregisterPacket::new)

@@ -7,7 +7,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import org.jetbrains.annotations.NotNull;
 import xyz.fmdc.arw.client.GlbModelManager;
 import xyz.fmdc.arw.client.util.FastGlbModel;
-import xyz.fmdc.arw.common.blockentity.weapon.Mk13GmlsBlockEntity;
+import xyz.fmdc.arw.common.blockentity.weapon.launcher.Mk13GmlsBlockEntity;
 
 import java.util.List;
 

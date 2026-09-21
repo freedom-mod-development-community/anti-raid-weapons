@@ -15,7 +15,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xyz.fmdc.arw.common.block.ARWBaseEntityBlock;
 import xyz.fmdc.arw.common.blockentity.weapon.singlegun.WWIIAntiAircraftGunBlockEntity;
-import xyz.fmdc.arw.common.item.FcsConnectorItem;
+import xyz.fmdc.arw.common.item.tool.FcsConnectorItem;
 
 public class WWIIAntiAircraftGunBlock extends ARWBaseEntityBlock {
     public WWIIAntiAircraftGunBlock(Properties properties) { super(properties); }

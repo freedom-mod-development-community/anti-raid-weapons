@@ -22,8 +22,8 @@ import org.jetbrains.annotations.Nullable;
 import xyz.fmdc.arw.api.fcs.FiringSolution;
 import xyz.fmdc.arw.api.fcs.IFcsControllableWeapon;
 import xyz.fmdc.arw.client.renderer.GenericFastGlbRenderer;
-import xyz.fmdc.arw.client.util.IMissileLauncherBlockEntity;
-import xyz.fmdc.arw.client.util.IYawPitchAnimatableModel;
+import xyz.fmdc.arw.api.blockentity.IMissileLauncherBlockEntity;
+import xyz.fmdc.arw.api.blockentity.IYawPitchAnimatableModel;
 import xyz.fmdc.arw.common.blockentity.AbstractARWBlockEntity;
 import xyz.fmdc.arw.common.entity.AbstractMissileEntity;
 

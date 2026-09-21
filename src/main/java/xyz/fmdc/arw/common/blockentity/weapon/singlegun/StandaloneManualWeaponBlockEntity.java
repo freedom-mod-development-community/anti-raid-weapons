@@ -3,7 +3,7 @@ package xyz.fmdc.arw.common.blockentity.weapon.singlegun;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import xyz.fmdc.arw.common.blockentity.AbstractSingleGunBlockEntity;
+import xyz.fmdc.arw.common.blockentity.weapon.AbstractSingleGunBlockEntity;
 
 /**
  * FCSネットワークに接続しない、手動単装砲.
