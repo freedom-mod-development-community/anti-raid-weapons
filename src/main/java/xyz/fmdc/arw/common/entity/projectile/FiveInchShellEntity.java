@@ -18,6 +18,7 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkHooks;
+import org.jetbrains.annotations.NotNull;
 import xyz.fmdc.arw.AntiRaidWeapons;
 import xyz.fmdc.arw.common.entity.AbstractCannonProjectileEntity;
 import xyz.fmdc.arw.registry.ModEntities;
@@ -64,7 +65,7 @@ public class FiveInchShellEntity extends AbstractCannonProjectileEntity implemen
     }
 
     @Override
-    public ItemStack getItem() {
+    public @NotNull ItemStack getItem() {
         return new ItemStack(ModItems.getFiveInchShell(getAmmoType()));
     }
 
@@ -100,7 +101,7 @@ public class FiveInchShellEntity extends AbstractCannonProjectileEntity implemen
     }
 
     @Override
-    protected void onHitBlock(BlockHitResult result) {
+    protected void onHitBlock(@NotNull BlockHitResult result) {
         super.onHitBlock(result);
         if (!this.level().isClientSide) {
             BlockState blockState = this.level().getBlockState(result.getBlockPos());
@@ -165,7 +166,7 @@ public class FiveInchShellEntity extends AbstractCannonProjectileEntity implemen
     }
 
     @Override
-    public Packet<ClientGamePacketListener> getAddEntityPacket() {
+    public @NotNull Packet<ClientGamePacketListener> getAddEntityPacket() {
         return NetworkHooks.getEntitySpawningPacket(this);
     }
 }
