@@ -61,7 +61,8 @@ public abstract class AbstractARWBlockEntity extends BlockEntity{
 
     public void syncToClient() {
         setChanged();
-        if (this.level != null) {
+        //serverでのみ実行の保険.
+        if (this.level != null && !this.level.isClientSide) {
             BlockState state = getBlockState();
             this.level.sendBlockUpdated(this.worldPosition, state, state, 3);
         }
@@ -101,16 +102,13 @@ public abstract class AbstractARWBlockEntity extends BlockEntity{
             this.uuid = tag.getUUID("NetworkId");
         }
 
+        //安全のためnull上書きを削除.
         if (tag.hasUUID("LinkedFcsCoreUuid")) {
             this.linkedFcsCoreUuid = tag.getUUID("LinkedFcsCoreUuid");
-        } else {
-            this.linkedFcsCoreUuid = null;
         }
 
         if (tag.contains("LinkedFcsCorePos")) {
             this.linkedFcsCorePos = NbtUtils.readBlockPos(tag.getCompound("LinkedFcsCorePos"));
-        } else {
-            this.linkedFcsCorePos = null;
         }
     }
 
@@ -121,9 +119,10 @@ public abstract class AbstractARWBlockEntity extends BlockEntity{
         return tag;
     }
 
+    //全てのデータを送信.
     @Override
     public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
+        return ClientboundBlockEntityDataPacket.create(this, BlockEntity::getUpdateTag);
     }
 
     @Override

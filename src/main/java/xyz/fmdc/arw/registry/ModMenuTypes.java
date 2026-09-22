@@ -7,12 +7,16 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import xyz.fmdc.arw.AntiRaidWeapons;
+import xyz.fmdc.arw.client.gui.EmptyMenu;
 import xyz.fmdc.arw.client.gui.Mk13GmlsMenu;
 import xyz.fmdc.arw.client.gui.Oto127mmMenu;
 
 public class ModMenuTypes {
     public static final DeferredRegister<MenuType<?>> MENUS =
             DeferredRegister.create(ForgeRegistries.MENU_TYPES, AntiRaidWeapons.MOD_ID);
+
+    public static final RegistryObject<MenuType<EmptyMenu>> UYQ21_MENU =
+            MENUS.register("uyq21_menu", () -> IForgeMenuType.create(EmptyMenu::new));
 
     public static final RegistryObject<MenuType<Oto127mmMenu>> OTO127MM_MENU =
             MENUS.register("oto127mm_menu", () -> IForgeMenuType.create(Oto127mmMenu::new));
