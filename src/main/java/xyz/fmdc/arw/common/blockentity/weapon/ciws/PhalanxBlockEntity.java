@@ -4,17 +4,23 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import xyz.fmdc.arw.api.blockentity.IDirectionalBlockEntity;
+import xyz.fmdc.arw.api.fcs.FiringSolution;
+import xyz.fmdc.arw.api.fcs.IFcsControllableWeapon;
 import xyz.fmdc.arw.common.blockentity.weapon.ARWCIWSBlockEntity;
 import xyz.fmdc.arw.common.entity.projectile.FiveInchAmmoType;
 import xyz.fmdc.arw.common.entity.projectile.FiveInchShellEntity;
 import xyz.fmdc.arw.registry.ModBlocks;
 import xyz.fmdc.arw.registry.ModEntities;
 
+import java.util.UUID;
+
 /**
  * Phalanx (CIWS) 専用の BlockEntity。
  * ARWCIWSBlockEntity を継承し、ファランクス特有のパラメーターや動作を定義します。
  */
-public class PhalanxBlockEntity extends ARWCIWSBlockEntity implements IDirectionalBlockEntity {
+public class PhalanxBlockEntity extends ARWCIWSBlockEntity implements IDirectionalBlockEntity, IFcsControllableWeapon {
+
+    private boolean fcsConnected = false;
 
     public PhalanxBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlocks.PHALANX.getBEType(), pos, state);
@@ -63,5 +69,27 @@ public class PhalanxBlockEntity extends ARWCIWSBlockEntity implements IDirection
     @Override
     public float getRenderBarrelAng(float partialTick) {
         return this.barrelAngle;
+    }
+
+    @Override
+    public void applyFiringSolution(FiringSolution solution) {
+
+    }
+
+    //IFCSNetowrkNode
+    @Override
+    public UUID getNetworkId() {
+        return this.getUuid();
+    }
+
+    @Override
+    public boolean isConnectedToFcs() {
+        return this.fcsConnected;
+    }
+
+    @Override
+    public void setFcsConnected(boolean connected) {
+        this.fcsConnected = connected;
+        syncToClient();
     }
 }
