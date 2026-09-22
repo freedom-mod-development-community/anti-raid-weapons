@@ -11,6 +11,8 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xyz.fmdc.arw.client.gui.screen.RadarTest;
@@ -58,6 +60,7 @@ public class SearchRadarBlock extends ARWBaseEntityBlock {
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
+    @OnlyIn(Dist.CLIENT)
     private void openControlScreen(SearchRadarBlockEntity be) {
         net.minecraft.client.Minecraft.getInstance().setScreen(new RadarTest(be));
     }

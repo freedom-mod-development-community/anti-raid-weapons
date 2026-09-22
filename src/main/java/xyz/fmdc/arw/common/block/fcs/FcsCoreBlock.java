@@ -1,6 +1,5 @@
 package xyz.fmdc.arw.common.block.fcs;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -14,6 +13,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.DistExecutor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -46,14 +46,20 @@ public class FcsCoreBlock extends BaseEntityBlock {
     }
 
     @Override
+    @OnlyIn(Dist.CLIENT)
     public @NotNull InteractionResult use(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos,
                                          @NotNull Player player, @NotNull InteractionHand hand, @NotNull BlockHitResult hit) {
         if (player.getItemInHand(hand).getItem() instanceof FcsConnectorItem) {
             return InteractionResult.PASS;
         }
         if (level.isClientSide) {
-            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> Minecraft.getInstance().setScreen(new FcsCoreScreen(pos)));
+            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> openControlScreen(pos));
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    private void openControlScreen(BlockPos pos) {
+        net.minecraft.client.Minecraft.getInstance().setScreen(new FcsCoreScreen(pos));
     }
 }
