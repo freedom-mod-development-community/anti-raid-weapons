@@ -46,7 +46,6 @@ public class FcsCoreBlock extends BaseEntityBlock {
     }
 
     @Override
-    @OnlyIn(Dist.CLIENT)
     public @NotNull InteractionResult use(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos,
                                          @NotNull Player player, @NotNull InteractionHand hand, @NotNull BlockHitResult hit) {
         if (player.getItemInHand(hand).getItem() instanceof FcsConnectorItem) {

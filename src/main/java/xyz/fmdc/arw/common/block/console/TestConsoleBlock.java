@@ -41,7 +41,6 @@ public class TestConsoleBlock extends BaseEntityBlock {
     }
 
     @Override
-    @OnlyIn(Dist.CLIENT)
     public @NotNull InteractionResult use(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos,
                                          @NotNull Player player, @NotNull InteractionHand hand, @NotNull BlockHitResult hit) {
         // FCS コネクターアイテムを手prefixに持っている場合は接続処理を優先
