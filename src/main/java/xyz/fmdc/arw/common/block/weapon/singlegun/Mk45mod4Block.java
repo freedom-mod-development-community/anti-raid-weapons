@@ -11,6 +11,8 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xyz.fmdc.arw.client.gui.screen.Mk45TestGUI;
@@ -58,6 +60,7 @@ public class Mk45mod4Block extends ARWBaseEntityBlock {
     }
 
     // @OnlyIn(Dist.CLIENT) 相当の呼び出し分離（サーバー側でのクラスロードエラー防止）
+    @OnlyIn(Dist.CLIENT)
     private void openControlScreen(BlockPos pos) {
         net.minecraft.client.Minecraft.getInstance().setScreen(new Mk45TestGUI(pos));
     }

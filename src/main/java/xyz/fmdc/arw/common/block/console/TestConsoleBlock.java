@@ -1,6 +1,5 @@
 package xyz.fmdc.arw.common.block.console;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -12,6 +11,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.DistExecutor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -49,9 +49,14 @@ public class TestConsoleBlock extends BaseEntityBlock {
         }
 
         if (level.isClientSide) {
-            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> Minecraft.getInstance().setScreen(new TestConsoleScreen(pos)));
+            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> openControlScreen(pos));
         }
 
         return InteractionResult.sidedSuccess(level.isClientSide);
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    private void openControlScreen(BlockPos pos) {
+        net.minecraft.client.Minecraft.getInstance().setScreen(new TestConsoleScreen(pos));
     }
 }
