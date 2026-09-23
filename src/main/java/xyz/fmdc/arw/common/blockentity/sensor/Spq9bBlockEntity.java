@@ -1,64 +1,59 @@
 package xyz.fmdc.arw.common.blockentity.sensor;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
-import org.jetbrains.annotations.NotNull;
+import xyz.fmdc.arw.api.RadarTargetManager;
+import xyz.fmdc.arw.api.sensor.RadarScanRange;
 import xyz.fmdc.arw.registry.ModBlocks;
 
-public class Spq9bBlockEntity extends HorizontalRadarBlockEntity{
+import java.util.ArrayList;
 
-    private float currentYaw = 0.0f;
-    private float prevYaw = 0.0f;
+/**
+ * AN/SPQ-9B 対水上・低空目標捜索用パルスドップラーレーダー
+ */
+public class Spq9bBlockEntity extends HorizontalRadarBlockEntity {
+
     private final float RPM = 30f;
-    private final float rotationSpeed = RPM * 360 / (60*20) ; // 毎Tick回転する速度
+    private final float rotationSpeed = RPM * 360 / (60 * 20); // 毎Tick回転する速度 (30 RPM = 9度/tick)
 
     public Spq9bBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlocks.SPQ9B.getBEType(), pos, state);
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, Spq9bBlockEntity be) {
+        if (!be.isPowered()) {
+            be.prevYaw = be.currentYaw;
+            return;
+        }
+        be.tickSensor();
         be.prevYaw = be.currentYaw;
         be.currentYaw = (be.currentYaw + be.rotationSpeed) % 360.0f;
+
+        // FCS未接続時は自前でグローバルリストからスキャンを実行
+        if (!level.isClientSide && !be.isConnectedToFcs()) {
+            be.filterAndScan(new ArrayList<>(RadarTargetManager.INSTANCE.getGlobalTargets()));
+        }
     }
 
     @Override
-    public float getScanRange() {
-        return 500;
+    public RadarScanRange getScanRange() {
+        return RadarScanRange.omni(500.0f);
+    }
+
+    @Override
+    public float getInstantaneousBeamHorizontal() {
+        return 15.0f; // 高解像度・狭ビーム (15度)
     }
 
     @Override
     public void performScan() {
-    }
-
-    @Override
-    protected void saveAdditional(@NotNull CompoundTag tag) {
-        super.saveAdditional(tag);
-        tag.putFloat("Yaw", this.currentYaw);
-    }
-
-    @Override
-    public void load(@NotNull CompoundTag tag) {
-        super.load(tag);
-        this.currentYaw = tag.getFloat("Yaw");
-        this.prevYaw = this.currentYaw;
+        this.currentScanAngle = (this.currentScanAngle + rotationSpeed) % 360.0f;
     }
 
     @Override
     public AABB getRenderBoundingBox() {
         return new AABB(this.worldPosition).inflate(3.0);
-    }
-
-    @Override
-    public float getTargetYaw(float partialTick) {
-        // 直前の tick と現在の tick の角度を補間してスムーズに描画
-        // (360度から0度への跨ぎ時の飛躍を防ぐため補間計算)
-        float diff = this.currentYaw - this.prevYaw;
-        if (diff < -180.0f) diff += 360.0f;
-        if (diff > 180.0f) diff -= 360.0f;
-
-        return this.prevYaw + diff * partialTick;
     }
 }

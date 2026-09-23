@@ -3,6 +3,7 @@ package xyz.fmdc.arw.common.blockentity.sensor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
 import xyz.fmdc.arw.api.fcs.TargetTrack;
+import xyz.fmdc.arw.api.sensor.RadarScanRange;
 import xyz.fmdc.arw.registry.ModBlocks;
 
 /**
@@ -17,16 +18,17 @@ public class TrackingRadarBlockEntity extends HorizontalRadarBlockEntity {
     }
 
     @Override
-    public float getScanRange() {
-        return 384.0f;
+    public RadarScanRange getScanRange() {
+        return RadarScanRange.directional(384.0f, 60.0f, -10.0f, 85.0f);
     }
 
     public boolean isActiveRadar() {
-        return true;
+        return isPowered();
     }
 
     @Override
     public void performScan() {
+        if (!isPowered()) return;
         if (lockedTarget != null) {
             // ロックオン目標の追従旋回および位置の精密更新処理（スケルトン）
             this.primaryLockedTarget = lockedTarget;

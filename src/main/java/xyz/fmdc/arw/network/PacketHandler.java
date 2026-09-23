@@ -56,6 +56,11 @@ public class PacketHandler {
                 .decoder(ServerboundRemoteControlSessionPacket::new)
                 .consumerMainThread(ServerboundRemoteControlSessionPacket::handle)
                 .add();
+        INSTANCE.messageBuilder(ServerboundFcsSensorPowerPacket.class, id())
+                .encoder(ServerboundFcsSensorPowerPacket::toBytes)
+                .decoder(ServerboundFcsSensorPowerPacket::new)
+                .consumerMainThread(ServerboundFcsSensorPowerPacket::handle)
+                .add();
     }
 
     // クライアントからのパケット送信ヘルパー
