@@ -10,7 +10,9 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import xyz.fmdc.arw.AntiRaidWeapons;
 import xyz.fmdc.arw.common.block.console.TestConsoleBlock;
+import xyz.fmdc.arw.common.block.console.Uyq21Block;
 import xyz.fmdc.arw.common.block.decoration.AtagoBlock;
+import xyz.fmdc.arw.common.block.decoration.EmmiBlock;
 import xyz.fmdc.arw.common.block.fcs.FcsCoreBlock;
 import xyz.fmdc.arw.common.block.sensor.*;
 import xyz.fmdc.arw.common.block.vls.VlsBlock;
@@ -19,13 +21,16 @@ import xyz.fmdc.arw.common.block.weapon.launcher.BonedMissileLauncherBlock;
 import xyz.fmdc.arw.common.block.weapon.launcher.Mk13GmlsBlock;
 import xyz.fmdc.arw.common.block.weapon.singlegun.*;
 import xyz.fmdc.arw.common.blockentity.console.TestConsoleBlockEntity;
+import xyz.fmdc.arw.common.blockentity.console.Uyq21BlockEntity;
 import xyz.fmdc.arw.common.blockentity.decoration.AtagoBlockEntity;
+import xyz.fmdc.arw.common.blockentity.decoration.EmmiBlockEntity;
 import xyz.fmdc.arw.common.blockentity.fcs.FcsCoreBlockEntity;
-import xyz.fmdc.arw.common.blockentity.sensor.*;
+import xyz.fmdc.arw.common.blockentity.sensor.Ops39BlockEntity;
+import xyz.fmdc.arw.common.blockentity.sensor.SearchRadarBlockEntity;
+import xyz.fmdc.arw.common.blockentity.sensor.Spq9bBlockEntity;
+import xyz.fmdc.arw.common.blockentity.sensor.TrackingRadarBlockEntity;
 import xyz.fmdc.arw.common.blockentity.sensor.optics.OpticalSightBlockEntity;
 import xyz.fmdc.arw.common.blockentity.vls.VlsBlockEntity;
-import xyz.fmdc.arw.common.block.decoration.EmmiBlock;
-import xyz.fmdc.arw.common.blockentity.decoration.EmmiBlockEntity;
 import xyz.fmdc.arw.common.blockentity.weapon.ciws.PhalanxBlockEntity;
 import xyz.fmdc.arw.common.blockentity.weapon.launcher.BonedMissileLauncherBlockEntity;
 import xyz.fmdc.arw.common.blockentity.weapon.launcher.Mk13GmlsBlockEntity;
@@ -77,6 +82,8 @@ public class ModBlocks {
     // --- FCS ---
     public static final BlockEntry<FcsCoreBlock, FcsCoreBlockEntity> FCS_CORE_BLOCK =
             new BlockEntry<>("fcs_core", () -> new FcsCoreBlock(defaultProps()), FcsCoreBlockEntity::new);
+    public static final BlockEntry<Uyq21Block, Uyq21BlockEntity> UYQ21 =
+            new BlockEntry<>("uyq21", () -> new Uyq21Block(defaultProps()), Uyq21BlockEntity::new);
 
     // --- Sensors ---
     public static final BlockEntry<OpticalSightBlock, OpticalSightBlockEntity> OPTICAL_SIGHT_BLOCK =

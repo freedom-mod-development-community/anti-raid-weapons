@@ -25,7 +25,8 @@ import xyz.fmdc.arw.common.entity.projectile.FiveInchShellEntity;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class ARWCIWSBlockEntity extends AbstractARWBlockEntity implements IYawPitchBarrelAnimatableModel, IDirectionalBlockEntity {
+public abstract class ARWCIWSBlockEntity extends AbstractARWBlockEntity
+        implements IYawPitchBarrelAnimatableModel, IDirectionalBlockEntity {
 
     // CIWS アニメーションステート
     public enum FiringState {

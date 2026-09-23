@@ -11,13 +11,14 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import xyz.fmdc.arw.AntiRaidWeapons;
-import xyz.fmdc.arw.client.gui.Mk13GmlsScreen;
-import xyz.fmdc.arw.client.gui.Oto127mmScreen;
-import xyz.fmdc.arw.client.renderer.*;
-import xyz.fmdc.arw.client.renderer.entity.Rim66M2Renderer;
 import xyz.fmdc.arw.api.blockentity.IYawModel;
 import xyz.fmdc.arw.api.blockentity.IYawPitchAnimatableModel;
 import xyz.fmdc.arw.api.blockentity.IYawPitchBarrelAnimatableModel;
+import xyz.fmdc.arw.client.gui.Mk13GmlsScreen;
+import xyz.fmdc.arw.client.gui.Oto127mmScreen;
+import xyz.fmdc.arw.client.gui.screen.Uyq21Screen;
+import xyz.fmdc.arw.client.renderer.*;
+import xyz.fmdc.arw.client.renderer.entity.Rim66M2Renderer;
 import xyz.fmdc.arw.registry.ModBlocks;
 import xyz.fmdc.arw.registry.ModEntities;
 import xyz.fmdc.arw.registry.ModMenuTypes;
@@ -31,6 +32,7 @@ public class ClientModEvents {
         event.enqueueWork(() -> {
             MenuScreens.register(ModMenuTypes.OTO127MM_MENU.get(), Oto127mmScreen::new);
             MenuScreens.register(ModMenuTypes.MK13_GMLS_MENU.get(), Mk13GmlsScreen::new);
+            MenuScreens.register(ModMenuTypes.UYQ21_MENU.get(), Uyq21Screen::new);
         });
     }
 
@@ -43,9 +45,10 @@ public class ClientModEvents {
         registerRadar(event, ModBlocks.SEARCH_RADAR_BLOCK, GlbModelManager.OPS39_ID);
         registerRadar(event, ModBlocks.TRACKING_RADAR_BLOCK, GlbModelManager.OPS39_ID);
 
-        //decoration
+        //decoration or static
         registerDecoration(event, ModBlocks.EMMI, GlbModelManager.EMMI_ID);
         registerDecoration(event, ModBlocks.ATAGO, GlbModelManager.ATAGO_ID);
+        registerDecoration(event, ModBlocks.UYQ21, GlbModelManager.UYQ21_ID);
 
         //naval gun
         registerNavalGun(event, ModBlocks.OTO127MM, GlbModelManager.OTO127MM_ID);
