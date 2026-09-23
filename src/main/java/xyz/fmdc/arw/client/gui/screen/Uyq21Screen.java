@@ -3,12 +3,19 @@ package xyz.fmdc.arw.client.gui.screen;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
+import xyz.fmdc.arw.api.TrackedTarget;
 import xyz.fmdc.arw.client.gui.EmptyMenu;
+import xyz.fmdc.arw.common.blockentity.console.Uyq21BlockEntity;
+import xyz.fmdc.arw.common.blockentity.fcs.AbstractFcsCoreBlockEntity;
 
 import java.util.Arrays;
+import java.util.Map;
+import java.util.UUID;
 import java.util.function.Consumer;
 
 /**
@@ -18,6 +25,7 @@ import java.util.function.Consumer;
  * - 中心のレーダーは1:1（高さ方向を1とする正方形）
  * - レーダー左右のボーダーに各正方形ボタンの機能名を表示
  * - 文字情報はボタン機能名以外すべて非表示
+ * - レーダー表示は北が上（North-Up）
  */
 public class Uyq21Screen extends AbstractContainerScreen<EmptyMenu> {
 
@@ -61,6 +69,9 @@ public class Uyq21Screen extends AbstractContainerScreen<EmptyMenu> {
     private int buttonsStartY;
     private int leftBtnX;
     private int rightBtnX;
+
+    // レーダー表示レンジ (デフォルト: 512ブロック)
+    private float radarRange = 512.0f;
 
     public Uyq21Screen(EmptyMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -134,12 +145,6 @@ public class Uyq21Screen extends AbstractContainerScreen<EmptyMenu> {
         int gap = Math.max(3, (int) (this.width * 0.01f));
         int vertMargin = Math.max(4, (int) (this.height * 0.02f));
 
-        // 中心の表示部分は常に4:3、ボタンの表示領域を除いた幅に合わせる
-        // displayH = displayW * 3 / 4
-        // ボタン列全高 = displayH
-        // btnSize = (displayH - 9 * spacing) / 10
-        // displayW = width - 2 * (margin + gap + btnSize)
-        // 解: displayW = (width - 2*(margin + gap) + 1.8*spacing) * 20 / 23
         int approxSpacing = Math.max(1, (int) ((this.height - vertMargin * 2) * 0.012f));
         int calcDisplayW = (int) (((this.width - 2 * (margin + gap)) + 1.8f * approxSpacing) * 20.0f / 23.0f);
         int calcDisplayH = (calcDisplayW * 3) / 4;
@@ -246,6 +251,7 @@ public class Uyq21Screen extends AbstractContainerScreen<EmptyMenu> {
         int maxRadius = radarSize / 2 - 4;
         if (maxRadius > 10) {
             drawRadarReticle(guiGraphics, radarCenterX, radarCenterY, maxRadius);
+            drawRadarTargets(guiGraphics, radarCenterX, radarCenterY, maxRadius);
         }
         guiGraphics.disableScissor();
 
@@ -300,7 +306,7 @@ public class Uyq21Screen extends AbstractContainerScreen<EmptyMenu> {
     }
 
     /**
-     * レーダーHUDレティクル（十字線・同心円）の描画（図形のみ）
+     * レーダーHUDレティクル（十字線・同心円・方位記号）の描画
      */
     private void drawRadarReticle(GuiGraphics guiGraphics, int cx, int cy, int maxRadius) {
         int reticleColor = 0x2400FF88;
@@ -315,6 +321,83 @@ public class Uyq21Screen extends AbstractContainerScreen<EmptyMenu> {
         if (maxRadius > 40) {
             drawCircle(guiGraphics, cx, cy, (int) (maxRadius * 0.66f), reticleColor);
             drawCircle(guiGraphics, cx, cy, (int) (maxRadius * 0.33f), reticleColor);
+        }
+
+        // 方位記号（北が画面真上: North-Up）
+        int headingColor = 0x8800FF88;
+        guiGraphics.drawString(this.font, "N", cx - this.font.width("N") / 2, cy - maxRadius + 2, headingColor, false);
+        guiGraphics.drawString(this.font, "S", cx - this.font.width("S") / 2, cy + maxRadius - this.font.lineHeight - 1, headingColor, false);
+        guiGraphics.drawString(this.font, "E", cx + maxRadius - this.font.width("E") - 2, cy - this.font.lineHeight / 2, headingColor, false);
+        guiGraphics.drawString(this.font, "W", cx - maxRadius + 3, cy - this.font.lineHeight / 2, headingColor, false);
+    }
+
+    /**
+     * レーダー画面上にターゲットのドットと速度ベクトルラインを描画（北が上）
+     */
+    private void drawRadarTargets(GuiGraphics guiGraphics, int cx, int cy, int maxRadius) {
+        if (this.menu.getBlockEntity() instanceof Uyq21BlockEntity uyqBE) {
+            Map<UUID, TrackedTarget> targets = uyqBE.getTrackedTargets();
+            if (targets.isEmpty()) return;
+
+            BlockPos centerPos = uyqBE.getBlockPos();
+            double originX = centerPos.getX() + 0.5;
+            double originZ = centerPos.getZ() + 0.5;
+
+            // 表示レンジ（FCSコアが接続されている場合はそのアクティブ最大探知距離を優先、なければデフォルト512m）
+            float currentRange = this.radarRange;
+            AbstractFcsCoreBlockEntity core = uyqBE.getLinkedFcsCore();
+            if (core != null) {
+                float coreMaxRange = core.getMaxActiveDetectionRange();
+                if (coreMaxRange > 0.0f) {
+                    currentRange = coreMaxRange;
+                }
+            }
+
+            for (TrackedTarget target : targets.values()) {
+                Vec3 pos = target.getLastKnownPos();
+                if (pos == null) continue;
+
+                // ワールド座標差分（北が上: -Zが上、+Xが右）
+                double dX = pos.x - originX;
+                double dZ = pos.z - originZ;
+
+                // スクリーンピクセル座標への投影
+                double screenRelX = (dX / currentRange) * maxRadius;
+                double screenRelY = (dZ / currentRange) * maxRadius;
+
+                // レーダー円外判定
+                double distSqr = screenRelX * screenRelX + screenRelY * screenRelY;
+                if (distSqr > (double) maxRadius * maxRadius) {
+                    continue;
+                }
+
+                int px = (int) Math.round(cx + screenRelX);
+                int py = (int) Math.round(cy + screenRelY);
+
+                // 1. ベクトルライン（速度ベクトル）の描画
+                Vec3 vel = target.getLastKnownVelocity();
+                if (vel != null) {
+                    // 2秒間（40 ticks）の予想移動ベクトル
+                    double vxWorld = vel.x * 40.0;
+                    double vzWorld = vel.z * 40.0;
+                    double vxPix = (vxWorld / currentRange) * maxRadius;
+                    double vzPix = (vzWorld / currentRange) * maxRadius;
+
+                    if (vxPix * vxPix + vzPix * vzPix >= 1.0) {
+                        int endX = (int) Math.round(px + vxPix);
+                        int endY = (int) Math.round(py + vzPix);
+                        drawLine(guiGraphics, px, py, endX, endY, 0xCC00FF88);
+                    }
+                }
+
+                // 2. ターゲットのドット描画（3x3正方形、中心白）
+                guiGraphics.fill(px - 1, py - 1, px + 2, py + 2, 0xFF00FF88);
+                guiGraphics.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
+            }
+
+            // レンジ表示（画面左上に小さく表示）
+            String rangeText = String.format("RNG: %.0fm", currentRange);
+            guiGraphics.drawString(this.font, rangeText, radarX + 4, radarY + 4, 0x8800FF88, false);
         }
     }
 

@@ -14,7 +14,9 @@ import net.minecraft.world.phys.AABB;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xyz.fmdc.arw.api.RadarTargetManager;
+import xyz.fmdc.arw.api.TrackedTarget;
 import xyz.fmdc.arw.api.fcs.*;
+import xyz.fmdc.arw.api.sensor.ITrackedTargetHolder;
 import xyz.fmdc.arw.api.sensor.RadarScanRange;
 import xyz.fmdc.arw.common.blockentity.AbstractARWBlockEntity;
 
@@ -248,6 +250,26 @@ public abstract class AbstractFcsCoreBlockEntity extends AbstractARWBlockEntity 
 
     public List<IFcsControllableWeapon> getConnectedWeapons() {
         return Collections.unmodifiableList(connectedWeapons);
+    }
+
+    /**
+     * 接続された全稼働中センサーの探知目標（TrackedTarget）を統合・集約して取得
+     */
+    public Map<UUID, TrackedTarget> getCombinedTrackedTargets() {
+        Map<UUID, TrackedTarget> combined = new HashMap<>();
+        for (IFcsSensorNode sensor : connectedSensors) {
+            if (!sensor.isPowered()) continue;
+            if (sensor instanceof ITrackedTargetHolder holder) {
+                Map<UUID, TrackedTarget> targets = holder.getTrackedTargets();
+                for (Map.Entry<UUID, TrackedTarget> entry : targets.entrySet()) {
+                    TrackedTarget existing = combined.get(entry.getKey());
+                    if (existing == null || entry.getValue().getLastSeenGameTime() > existing.getLastSeenGameTime()) {
+                        combined.put(entry.getKey(), entry.getValue());
+                    }
+                }
+            }
+        }
+        return combined;
     }
 
     public void registerSensor(IFcsSensorNode sensor) {
