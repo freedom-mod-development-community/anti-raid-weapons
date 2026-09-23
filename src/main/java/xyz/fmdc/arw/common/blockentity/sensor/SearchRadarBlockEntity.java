@@ -9,6 +9,7 @@ import net.minecraftforge.network.PacketDistributor;
 import org.joml.Vector3f;
 import xyz.fmdc.arw.api.RadarTargetManager;
 import xyz.fmdc.arw.api.TrackedTarget;
+import xyz.fmdc.arw.api.sensor.ITrackedTargetHolder;
 import xyz.fmdc.arw.network.PacketHandler;
 import xyz.fmdc.arw.network.S2CSyncRadarTargetsPacket;
 import xyz.fmdc.arw.registry.ModBlocks;
@@ -18,7 +19,7 @@ import java.util.*;
 /**
  * 広域を周回/首振りスキャンし、複数目標（List<TargetTrack>）を出力する広域捜索レーダー（OPS-39等）
  */
-public class SearchRadarBlockEntity extends HorizontalRadarBlockEntity {
+public class SearchRadarBlockEntity extends HorizontalRadarBlockEntity implements ITrackedTargetHolder {
 
     private float currentYaw = 0.0f;
     private float prevYaw = 0.0f;
@@ -120,6 +121,7 @@ public class SearchRadarBlockEntity extends HorizontalRadarBlockEntity {
     /**
      * 外部（ミサイル管制システムやGUI、ネットワーク同期）から現在追尾中の全目標を取得するゲッター
      */
+    @Override
     public Map<UUID, TrackedTarget> getTrackedTargets() {
         return this.trackedTargets;
     }
@@ -157,6 +159,7 @@ public class SearchRadarBlockEntity extends HorizontalRadarBlockEntity {
     }
 
     //ClientRadarDataHandlerから.
+    @Override
     public void updateClientTrackedTargets(List<S2CSyncRadarTargetsPacket.TargetData> dataList) {
         if (this.level == null) return;
         long currentGameTime = this.level.getGameTime();
