@@ -8,6 +8,7 @@
   "block.arw.fcs_core": "FCS コア",
   "block.arw.mk13-gmls": "Mk.13 ミサイルランチャー",
   "block.arw.mk13_gmls": "Mk.13 ミサイルランチャー",
+  "block.arw.target_block": "レーダー標的ブロック",
   "block.arw.test_console": "動作確認用コンソール",
   "item.arw.fcs_connector": "FCS 接続ツール",
 
@@ -35,7 +36,7 @@
   "tooltip.arw.max_speed": "最高速度: %s m/tick",
   "tooltip.arw.warhead": "弾頭: %s",
   "tooltip.arw.guidance": "誘導方式: %s",
-  "tooltip.arw.guidance.sarh": "セミアクティブ・レーダー・ホーミング (SARH)",
+  "tooltip.arw.guidance.sarh": "セミセミアクティブ・レーダー・ホーミング (SARH)",
 
   "tooltip.arw.fcs_connector.linked_core_uuid": "接続先 FCS コア UUID: %s",
   "tooltip.arw.fcs_connector.no_core": "FCS コア未設定。FCS コアを右クリックして登録してください。",

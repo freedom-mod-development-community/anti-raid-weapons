@@ -15,6 +15,7 @@ import xyz.fmdc.arw.common.block.decoration.AtagoBlock;
 import xyz.fmdc.arw.common.block.decoration.EmmiBlock;
 import xyz.fmdc.arw.common.block.fcs.FcsCoreBlock;
 import xyz.fmdc.arw.common.block.sensor.*;
+import xyz.fmdc.arw.common.block.target.TargetBlock;
 import xyz.fmdc.arw.common.block.vls.VlsBlock;
 import xyz.fmdc.arw.common.block.weapon.ciws.phalanxBlock;
 import xyz.fmdc.arw.common.block.weapon.launcher.BonedMissileLauncherBlock;
@@ -30,6 +31,7 @@ import xyz.fmdc.arw.common.blockentity.sensor.SearchRadarBlockEntity;
 import xyz.fmdc.arw.common.blockentity.sensor.Spq9bBlockEntity;
 import xyz.fmdc.arw.common.blockentity.sensor.TrackingRadarBlockEntity;
 import xyz.fmdc.arw.common.blockentity.sensor.optics.OpticalSightBlockEntity;
+import xyz.fmdc.arw.common.blockentity.target.TargetBlockEntity;
 import xyz.fmdc.arw.common.blockentity.vls.VlsBlockEntity;
 import xyz.fmdc.arw.common.blockentity.weapon.ciws.PhalanxBlockEntity;
 import xyz.fmdc.arw.common.blockentity.weapon.launcher.BonedMissileLauncherBlockEntity;
@@ -58,6 +60,12 @@ public class ModBlocks {
     public static BlockBehaviour.Properties emeraldProps() {
         return BlockBehaviour.Properties.copy(Blocks.EMERALD_BLOCK);
     }
+
+    public static BlockBehaviour.Properties targetProps() {
+        return BlockBehaviour.Properties.copy(Blocks.TARGET)
+                .strength(1.5F, 1.5F);
+    }
+
     //yukky section
     public static final BlockEntry<BonedMissileLauncherBlock, BonedMissileLauncherBlockEntity> MK13BONE =
             new BlockEntry<>("mk13bone", () -> new BonedMissileLauncherBlock(defaultProps()), BonedMissileLauncherBlockEntity::new);
@@ -110,6 +118,10 @@ public class ModBlocks {
 
     public static final BlockEntry<Mk13GmlsBlock, Mk13GmlsBlockEntity> MK13_GMLS_BLOCK =
             new BlockEntry<>("mk13-gmls", () -> new Mk13GmlsBlock(defaultProps()), Mk13GmlsBlockEntity::new);
+
+    // --- Target Blocks ---
+    public static final BlockEntry<TargetBlock, TargetBlockEntity> TARGET_BLOCK =
+            new BlockEntry<>("target_block", () -> new TargetBlock(targetProps()), TargetBlockEntity::new);
 
     // --- Consoles ---
     public static final BlockEntry<TestConsoleBlock, TestConsoleBlockEntity> TEST_CONSOLE =

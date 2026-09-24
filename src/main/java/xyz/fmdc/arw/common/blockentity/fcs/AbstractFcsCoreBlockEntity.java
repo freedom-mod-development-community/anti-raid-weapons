@@ -154,7 +154,7 @@ public abstract class AbstractFcsCoreBlockEntity extends AbstractARWBlockEntity
                     UUID id = candidate.getEntityId();
                     detectedUuidsThisScan.add(id);
 
-                    TargetAffiliation aff = targetAffiliations.getOrDefault(id, TargetAffiliation.UNKNOWN);
+                    TargetAffiliation aff = targetAffiliations.getOrDefault(id, candidate.getAffiliation());
                     TrackedTarget existing = fcsTrackedTargets.get(id);
                     if (existing != null) {
                         existing.updateFromPacket(candidate.getLastKnownPos(), candidate.getLastKnownVelocity(), gameTime, aff);
@@ -167,12 +167,13 @@ public abstract class AbstractFcsCoreBlockEntity extends AbstractARWBlockEntity
             }
         }
 
-        // 4. タイムアウトおよび生存外エンティティの除去
+        // 4. タイムアウトおよび生存外エンティティ・破壊された標的ブロックの除去
         fcsTrackedTargets.values().removeIf(target -> {
             boolean expired = target.isExpired(gameTime, TARGET_TIMEOUT_TICKS);
             Entity e = serverLevel.getEntity(target.getEntityId());
             boolean dead = (e != null && !e.isAlive());
-            return expired || dead;
+            boolean blockDestroyed = RadarTargetManager.INSTANCE.isBlockTargetDestroyed(target.getEntityId(), gameTime);
+            return expired || dead || blockDestroyed;
         });
 
         // 喪失目標の識別情報クリーンアップ
