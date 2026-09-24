@@ -1,5 +1,6 @@
 package xyz.fmdc.arw.client.gui.screen;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -136,9 +137,6 @@ public class Uyq21Screen extends AbstractContainerScreen<EmptyMenu> {
 
     /**
      * 画面サイズに応じたレスポンシブレイアウトの計算
-     * - 中心の表示部分は常に4:3、ボタン表示領域を除いた幅に合わせる
-     * - 中心のレーダーは1:1（高さ方向を1とする）
-     * - ボタンは正方形
      */
     private void computeLayout() {
         int margin = Math.max(4, (int) (this.width * 0.015f));
@@ -195,13 +193,8 @@ public class Uyq21Screen extends AbstractContainerScreen<EmptyMenu> {
 
     @Override
     public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        // 標準の暗転背景描画
         this.renderBackground(guiGraphics);
-
-        // コンテナの背景・全画面UI要素の描画
         super.render(guiGraphics, mouseX, mouseY, partialTick);
-
-        // ツールチップの描画
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }
 
@@ -216,16 +209,13 @@ public class Uyq21Screen extends AbstractContainerScreen<EmptyMenu> {
         guiGraphics.fill(0, 0, this.width, this.height, BACKGROUND_COLOR);
 
         // 2. 中心の表示部分（常に4:3、黒背景）、1:1レーダー、および左右ボーダー内の機能名
-        renderCenterDisplay(guiGraphics);
+        renderCenterDisplay(guiGraphics, partialTick);
     }
 
     /**
      * 中心の表示部分の描画
-     * - 常に4:3の黒背景スクリーン
-     * - 中心のレーダーは1:1（高さ方向を1とする）
-     * - レーダー左右のボーダーに各ボタンの機能名を表示
      */
-    private void renderCenterDisplay(GuiGraphics guiGraphics) {
+    private void renderCenterDisplay(GuiGraphics guiGraphics, float partialTick) {
         if (displayW <= 0 || displayH <= 0) return;
 
         // 1. 中心の表示部分全体（4:3、純黒背景 0xFF000000）
@@ -251,7 +241,7 @@ public class Uyq21Screen extends AbstractContainerScreen<EmptyMenu> {
         int maxRadius = radarSize / 2 - 4;
         if (maxRadius > 10) {
             drawRadarReticle(guiGraphics, radarCenterX, radarCenterY, maxRadius);
-            drawRadarTargets(guiGraphics, radarCenterX, radarCenterY, maxRadius);
+            drawRadarTargets(guiGraphics, radarCenterX, radarCenterY, maxRadius, partialTick);
         }
         guiGraphics.disableScissor();
 
@@ -332,9 +322,10 @@ public class Uyq21Screen extends AbstractContainerScreen<EmptyMenu> {
     }
 
     /**
-     * レーダー画面上にターゲットのドットと速度ベクトルラインを描画（北が上）
+     * レーダー画面上にターゲットのドットと速度ベクトルラインを描画（北が上）。
+     * partialTick と速度ベクトルによるデッドレコニング（予測補間）を適用。
      */
-    private void drawRadarTargets(GuiGraphics guiGraphics, int cx, int cy, int maxRadius) {
+    private void drawRadarTargets(GuiGraphics guiGraphics, int cx, int cy, int maxRadius, float partialTick) {
         if (this.menu.getBlockEntity() instanceof Uyq21BlockEntity uyqBE) {
             Map<UUID, TrackedTarget> targets = uyqBE.getTrackedTargets();
             if (targets.isEmpty()) return;
@@ -353,13 +344,32 @@ public class Uyq21Screen extends AbstractContainerScreen<EmptyMenu> {
                 }
             }
 
+            long currentClientGameTime = Minecraft.getInstance().level != null
+                    ? Minecraft.getInstance().level.getGameTime()
+                    : 0L;
+
             for (TrackedTarget target : targets.values()) {
-                Vec3 pos = target.getLastKnownPos();
-                if (pos == null) continue;
+                Vec3 basePos = target.getLastKnownPos();
+                if (basePos == null) continue;
+
+                Vec3 vel = target.getLastKnownVelocity();
+
+                // デッドレコニング（予測補間）：前回収信Tickからの経過時間 + partialTick
+                double interpolatedX = basePos.x;
+                double interpolatedZ = basePos.z;
+
+                if (vel != null && currentClientGameTime > 0L) {
+                    long elapsedTicks = Math.max(0, currentClientGameTime - target.getLastSeenGameTime());
+                    if (elapsedTicks < 40) { // 2秒以内のデータのみ補間（外挿暴走防止）
+                        double totalElapsed = (double) elapsedTicks + partialTick;
+                        interpolatedX += vel.x * totalElapsed;
+                        interpolatedZ += vel.z * totalElapsed;
+                    }
+                }
 
                 // ワールド座標差分（北が上: -Zが上、+Xが右）
-                double dX = pos.x - originX;
-                double dZ = pos.z - originZ;
+                double dX = interpolatedX - originX;
+                double dZ = interpolatedZ - originZ;
 
                 // スクリーンピクセル座標への投影
                 double screenRelX = (dX / currentRange) * maxRadius;
@@ -375,7 +385,6 @@ public class Uyq21Screen extends AbstractContainerScreen<EmptyMenu> {
                 int py = (int) Math.round(cy + screenRelY);
 
                 // 1. ベクトルライン（速度ベクトル）の描画
-                Vec3 vel = target.getLastKnownVelocity();
                 if (vel != null) {
                     // 2秒間（40 ticks）の予想移動ベクトル
                     double vxWorld = vel.x * 40.0;

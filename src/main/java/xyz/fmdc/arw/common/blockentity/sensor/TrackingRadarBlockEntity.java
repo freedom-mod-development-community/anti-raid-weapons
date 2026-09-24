@@ -31,11 +31,15 @@ public class TrackingRadarBlockEntity extends HorizontalRadarBlockEntity {
         if (!isPowered()) return;
         if (lockedTarget != null) {
             // ロックオン目標の追従旋回および位置の精密更新処理（スケルトン）
-            this.primaryLockedTarget = lockedTarget;
         }
     }
 
     public void setLockTarget(TargetTrack target) {
         this.lockedTarget = target;
+    }
+
+    @Override
+    public TargetTrack getPrimaryLockedTarget() {
+        return this.lockedTarget;
     }
 }

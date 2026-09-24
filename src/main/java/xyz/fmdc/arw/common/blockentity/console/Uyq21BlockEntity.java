@@ -15,7 +15,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xyz.fmdc.arw.api.TrackedTarget;
@@ -25,17 +24,16 @@ import xyz.fmdc.arw.api.sensor.ITrackedTargetHolder;
 import xyz.fmdc.arw.client.gui.EmptyMenu;
 import xyz.fmdc.arw.common.blockentity.AbstractARWBlockEntity;
 import xyz.fmdc.arw.common.blockentity.fcs.AbstractFcsCoreBlockEntity;
-import xyz.fmdc.arw.network.PacketHandler;
-import xyz.fmdc.arw.network.S2CSyncRadarTargetsPacket;
 import xyz.fmdc.arw.registry.ModBlocks;
 
 import java.util.*;
 
+/**
+ * AN/UYQ-21 射撃指揮コンソールのBlockEntity。
+ * 自身ではターゲットリストを直接重複保持せず、リンクされたFCSコアへ問い合わせるステートレスなプロキシとして動作する。
+ */
 public class Uyq21BlockEntity extends AbstractARWBlockEntity
         implements IDirectionalBlockEntity, IFcsNetworkNode, MenuProvider, ITrackedTargetHolder {
-
-    // 追尾中の目標マップ (UUID -> TrackedTarget)
-    private final Map<UUID, TrackedTarget> trackedTargets = new HashMap<>();
 
     private boolean fcsConnected = false;
 
@@ -44,29 +42,7 @@ public class Uyq21BlockEntity extends AbstractARWBlockEntity
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, Uyq21BlockEntity be) {
-        if (!level.isClientSide) {
-            be.serverTick();
-        }
-    }
-
-    public void serverTick() {
-        if (this.level == null) return;
-
-        AbstractFcsCoreBlockEntity fcsCore = getLinkedFcsCore();
-        if (fcsCore != null && isConnectedToFcs()) {
-            // FCSコアから接続された全稼働中センサーの探知目標を収集・統合
-            Map<UUID, TrackedTarget> coreTargets = fcsCore.getCombinedTrackedTargets();
-            this.trackedTargets.clear();
-            this.trackedTargets.putAll(coreTargets);
-        } else {
-            // FCSコア未接続時は目標クリア
-            if (!this.trackedTargets.isEmpty()) {
-                this.trackedTargets.clear();
-            }
-        }
-
-        // クライアント同期パケットの送信
-        syncToClients();
+        // FCSコアによる一元管理アーキテクチャのため、コンソールBEでの独自Tick走査・同期パケット送信は不要
     }
 
     /**
@@ -85,48 +61,13 @@ public class Uyq21BlockEntity extends AbstractARWBlockEntity
         return null;
     }
 
-    /**
-     * クライアントへ探知目標を同期
-     */
-    protected void syncToClients() {
-        if (this.level == null || this.level.isClientSide) return;
-
-        List<S2CSyncRadarTargetsPacket.TargetData> packetList = new ArrayList<>(this.trackedTargets.size());
-        for (TrackedTarget target : this.trackedTargets.values()) {
-            String name = target.getEntity() != null
-                    ? target.getEntity().getType().getDescription().getString()
-                    : target.getEntityTypeName();
-            packetList.add(new S2CSyncRadarTargetsPacket.TargetData(
-                    target.getEntityId(),
-                    name != null ? name : "Unknown",
-                    target.getLastKnownPos(),
-                    target.getLastKnownVelocity() != null ? target.getLastKnownVelocity() : Vec3.ZERO
-            ));
-        }
-
-        PacketHandler.INSTANCE.send(
-                PacketDistributor.TRACKING_CHUNK.with(() -> this.level.getChunkAt(this.worldPosition)),
-                new S2CSyncRadarTargetsPacket(this.worldPosition, packetList)
-        );
-    }
-
     @Override
     public Map<UUID, TrackedTarget> getTrackedTargets() {
-        return this.trackedTargets;
-    }
-
-    @Override
-    public void updateClientTrackedTargets(List<S2CSyncRadarTargetsPacket.TargetData> dataList) {
-        if (this.level == null) return;
-        long currentGameTime = this.level.getGameTime();
-
-        this.trackedTargets.clear();
-        for (S2CSyncRadarTargetsPacket.TargetData data : dataList) {
-            this.trackedTargets.put(
-                    data.uuid(),
-                    new TrackedTarget(data.uuid(), data.name(), data.pos(), data.vel(), currentGameTime)
-            );
+        AbstractFcsCoreBlockEntity core = getLinkedFcsCore();
+        if (core != null) {
+            return core.getTrackedTargets();
         }
+        return Collections.emptyMap();
     }
 
     @Override

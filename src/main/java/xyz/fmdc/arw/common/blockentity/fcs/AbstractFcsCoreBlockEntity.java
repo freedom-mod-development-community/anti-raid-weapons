@@ -6,11 +6,14 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xyz.fmdc.arw.api.RadarTargetManager;
@@ -19,19 +22,35 @@ import xyz.fmdc.arw.api.fcs.*;
 import xyz.fmdc.arw.api.sensor.ITrackedTargetHolder;
 import xyz.fmdc.arw.api.sensor.RadarScanRange;
 import xyz.fmdc.arw.common.blockentity.AbstractARWBlockEntity;
+import xyz.fmdc.arw.network.PacketHandler;
+import xyz.fmdc.arw.network.S2CSyncRadarTargetsPacket;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * センサーデータの統合・偏差計算・兵装への指示を行うFCS Coreの基底クラス
+ * センサーデータの統合・偏差計算・兵装への指示を行うFCS Coreの基底クラス。
+ * 接続中レーダー群の探知範囲を包括するAABBによる粗取得と精密幾何判定（Track Fusion）、
+ * および目標リストの一元保持とクライアント同期を担当する。
  */
-public abstract class AbstractFcsCoreBlockEntity extends AbstractARWBlockEntity implements IFcsNetworkNode {
+public abstract class AbstractFcsCoreBlockEntity extends AbstractARWBlockEntity
+        implements IFcsNetworkNode, ITrackedTargetHolder {
 
     protected final Set<UUID> connectedNodeUuids = new LinkedHashSet<>();
     protected final Map<UUID, BlockPos> nodePositions = new HashMap<>();
     protected final List<IFcsSensorNode> connectedSensors = new ArrayList<>();
     protected final List<IFcsControllableWeapon> connectedWeapons = new ArrayList<>();
     protected final Map<UUID, RadarScanRange> sensorScanRanges = new HashMap<>();
+
+    // FCSコアが一元保持する確定目標リスト (UUID -> TrackedTarget)
+    protected final Map<UUID, TrackedTarget> fcsTrackedTargets = new ConcurrentHashMap<>();
+
+    // 目標の追尾喪失タイムアウト（40 Ticks = 2秒）
+    protected static final long TARGET_TIMEOUT_TICKS = 40L;
+
+    // Tick間引き制御カウンター（2Tickに1回再計算）
+    protected int scanTicker = 0;
+    protected static final int SCAN_INTERVAL_TICKS = 2;
 
     public AbstractFcsCoreBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -40,59 +59,162 @@ public abstract class AbstractFcsCoreBlockEntity extends AbstractARWBlockEntity 
     public void tickFcs() {
         if (this.level == null || this.level.isClientSide) return;
         validateConnectedNodes();
-        scanAndFilterSensors();
+
+        scanTicker++;
+        if (scanTicker >= SCAN_INTERVAL_TICKS) {
+            scanTicker = 0;
+            scanAndFuseTargets();
+        }
     }
 
     /**
-     * 接続された全レーダーの探索範囲を合成し、一次候補を各レーダーへ配布して詳細スキャンを実行
+     * 稼働中センサーの情報を保持する内部レコード
      */
-    protected void scanAndFilterSensors() {
-        if (connectedSensors.isEmpty()) return;
+    private record ActiveSensor(Vec3 pos, float yaw, float pitch, RadarScanRange range) {}
 
-        // 1. 稼働中（電源ON）の全センサーの探知範囲を包括する合成AABBを算出
+    /**
+     * 接続・通電中の全レーダーの探知範囲を包含する包括エリア（AABB）を算出し、
+     * マスタから候補を取得して各レーダーの幾何判定（OR条件合成）を実施、目標を一元保持・同期する。
+     */
+    protected void scanAndFuseTargets() {
+        if (!(this.level instanceof ServerLevel serverLevel)) return;
+
+        // 1. 稼働中（電源ON）の全センサーの情報を収集
+        List<ActiveSensor> activeSensors = new ArrayList<>();
         double minX = Double.POSITIVE_INFINITY, minY = Double.POSITIVE_INFINITY, minZ = Double.POSITIVE_INFINITY;
         double maxX = Double.NEGATIVE_INFINITY, maxY = Double.NEGATIVE_INFINITY, maxZ = Double.NEGATIVE_INFINITY;
-        boolean hasActiveSensor = false;
 
-        List<IFcsSensorNode> activeSensors = new ArrayList<>();
         for (IFcsSensorNode sensor : connectedSensors) {
             if (!sensor.isPowered()) continue;
-            activeSensors.add(sensor);
-            hasActiveSensor = true;
 
             BlockPos pos = nodePositions.get(sensor.getNetworkId());
             if (pos == null && sensor instanceof BlockEntity be) {
                 pos = be.getBlockPos();
             }
-            if (pos != null) {
-                RadarScanRange range = sensorScanRanges.getOrDefault(sensor.getNetworkId(), sensor.getScanRange());
-                float r = range.maxRange();
-                minX = Math.min(minX, pos.getX() - r);
-                minY = Math.min(minY, pos.getY() - r);
-                minZ = Math.min(minZ, pos.getZ() - r);
-                maxX = Math.max(maxX, pos.getX() + r);
-                maxY = Math.max(maxY, pos.getY() + r);
-                maxZ = Math.max(maxZ, pos.getZ() + r);
-            }
+            if (pos == null) continue;
+
+            RadarScanRange range = sensorScanRanges.getOrDefault(sensor.getNetworkId(), sensor.getScanRange());
+            float r = range.maxRange();
+
+            Vec3 sensorPos = new Vec3(pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5);
+            float yaw = sensor.getAntennaYaw();
+            float pitch = sensor.getAntennaPitch();
+
+            activeSensors.add(new ActiveSensor(sensorPos, yaw, pitch, range));
+
+            minX = Math.min(minX, pos.getX() - r);
+            minY = Math.min(minY, pos.getY() - r);
+            minZ = Math.min(minZ, pos.getZ() - r);
+            maxX = Math.max(maxX, pos.getX() + r + 1.0);
+            maxY = Math.max(maxY, pos.getY() + r + 1.0);
+            maxZ = Math.max(maxZ, pos.getZ() + r + 1.0);
         }
 
-        if (!hasActiveSensor || activeSensors.isEmpty()) return;
+        long gameTime = serverLevel.getGameTime();
 
+        // 稼働中センサーが存在しない場合は全目標をクリアしてクライアント同期
+        if (activeSensors.isEmpty()) {
+            if (!fcsTrackedTargets.isEmpty()) {
+                fcsTrackedTargets.clear();
+                syncTargetsToClients();
+            }
+            return;
+        }
+
+        // 2. 包括AABBによる候補Entityの粗取得（Coarse Filter）
         AABB combinedBounds = new AABB(minX, minY, minZ, maxX, maxY, maxZ);
+        List<TrackedTarget> candidates = RadarTargetManager.INSTANCE.queryCandidatesInAABB(serverLevel, combinedBounds);
 
-        // 2. 合成範囲内のターゲット候補を取得（一次絞り込み）
-        List<Entity> candidates = new ArrayList<>();
-        for (Entity entity : RadarTargetManager.INSTANCE.getGlobalTargets()) {
-            if (!entity.isAlive() || entity.level() != this.level) continue;
-            if (combinedBounds.contains(entity.position())) {
-                candidates.add(entity);
+        // 3. 各レーダーの幾何判定による精密判定（Fine Filter / Track Fusion）
+        Set<UUID> detectedUuidsThisScan = new HashSet<>();
+
+        for (TrackedTarget candidate : candidates) {
+            Vec3 targetPos = candidate.getLastKnownPos();
+            if (targetPos == null) continue;
+
+            // 各レーダーの探知範囲をOR合成評価
+            for (ActiveSensor sensor : activeSensors) {
+                if (sensor.range.isInRange(sensor.pos, sensor.yaw, sensor.pitch, targetPos)) {
+                    UUID id = candidate.getEntityId();
+                    detectedUuidsThisScan.add(id);
+
+                    TrackedTarget existing = fcsTrackedTargets.get(id);
+                    if (existing != null) {
+                        if (candidate.getEntity() != null) {
+                            existing.update(candidate.getEntity(), gameTime);
+                        } else {
+                            existing.updateFromPacket(candidate.getLastKnownPos(), candidate.getLastKnownVelocity(), gameTime);
+                        }
+                    } else {
+                        fcsTrackedTargets.put(id, candidate);
+                    }
+                    break; // OR条件：いずれか1つに入っていれば確定
+                }
             }
         }
 
-        // 3. 各センサーの実際の向き・視野角（ビームFOV）で二次フィルタリングを実行
-        for (IFcsSensorNode sensor : activeSensors) {
-            sensor.filterAndScan(candidates);
+        // 4. タイムアウトおよび生存外エンティティの除去
+        fcsTrackedTargets.values().removeIf(target -> {
+            boolean expired = target.isExpired(gameTime, TARGET_TIMEOUT_TICKS);
+            boolean dead = target.getEntity() != null && !target.getEntity().isAlive();
+            return expired || dead;
+        });
+
+        // 5. クライアント同期パケット送信
+        syncTargetsToClients();
+    }
+
+    /**
+     * FCSコアの確定目標リストをクライアントへS2C送信
+     */
+    protected void syncTargetsToClients() {
+        if (this.level == null || this.level.isClientSide) return;
+
+        List<S2CSyncRadarTargetsPacket.TargetData> packetList = new ArrayList<>(this.fcsTrackedTargets.size());
+        for (TrackedTarget target : this.fcsTrackedTargets.values()) {
+            String name = target.getEntity() != null
+                    ? target.getEntity().getType().getDescription().getString()
+                    : (target.getEntityTypeName() != null ? target.getEntityTypeName() : "Unknown");
+            packetList.add(new S2CSyncRadarTargetsPacket.TargetData(
+                    target.getEntityId(),
+                    name,
+                    target.getLastKnownPos(),
+                    target.getLastKnownVelocity() != null ? target.getLastKnownVelocity() : Vec3.ZERO
+            ));
         }
+
+        PacketHandler.INSTANCE.send(
+                PacketDistributor.TRACKING_CHUNK.with(() -> this.level.getChunkAt(this.worldPosition)),
+                new S2CSyncRadarTargetsPacket(this.worldPosition, packetList)
+        );
+    }
+
+    // --- ITrackedTargetHolder 実装 ---
+
+    @Override
+    public Map<UUID, TrackedTarget> getTrackedTargets() {
+        return this.fcsTrackedTargets;
+    }
+
+    @Override
+    public void updateClientTrackedTargets(List<S2CSyncRadarTargetsPacket.TargetData> dataList) {
+        if (this.level == null) return;
+        long currentGameTime = this.level.getGameTime();
+
+        this.fcsTrackedTargets.clear();
+        for (S2CSyncRadarTargetsPacket.TargetData data : dataList) {
+            this.fcsTrackedTargets.put(
+                    data.uuid(),
+                    new TrackedTarget(data.uuid(), data.name(), data.pos(), data.vel(), currentGameTime)
+            );
+        }
+    }
+
+    /**
+     * 既存互換用
+     */
+    public Map<UUID, TrackedTarget> getCombinedTrackedTargets() {
+        return getTrackedTargets();
     }
 
     public boolean registerDevice(BlockEntity device) {
@@ -252,26 +374,6 @@ public abstract class AbstractFcsCoreBlockEntity extends AbstractARWBlockEntity 
         return Collections.unmodifiableList(connectedWeapons);
     }
 
-    /**
-     * 接続された全稼働中センサーの探知目標（TrackedTarget）を統合・集約して取得
-     */
-    public Map<UUID, TrackedTarget> getCombinedTrackedTargets() {
-        Map<UUID, TrackedTarget> combined = new HashMap<>();
-        for (IFcsSensorNode sensor : connectedSensors) {
-            if (!sensor.isPowered()) continue;
-            if (sensor instanceof ITrackedTargetHolder holder) {
-                Map<UUID, TrackedTarget> targets = holder.getTrackedTargets();
-                for (Map.Entry<UUID, TrackedTarget> entry : targets.entrySet()) {
-                    TrackedTarget existing = combined.get(entry.getKey());
-                    if (existing == null || entry.getValue().getLastSeenGameTime() > existing.getLastSeenGameTime()) {
-                        combined.put(entry.getKey(), entry.getValue());
-                    }
-                }
-            }
-        }
-        return combined;
-    }
-
     public void registerSensor(IFcsSensorNode sensor) {
         if (!connectedSensors.contains(sensor)) {
             connectedSensors.add(sensor);
@@ -297,9 +399,6 @@ public abstract class AbstractFcsCoreBlockEntity extends AbstractARWBlockEntity 
 
     // --- 探索範囲（RadarScanRange）管理 ---
 
-    /**
-     * 接続されたセンサーから探索範囲を受信・更新
-     */
     public void updateSensorScanRange(UUID sensorUuid, RadarScanRange range) {
         if (sensorUuid != null && range != null) {
             this.sensorScanRanges.put(sensorUuid, range);
@@ -335,9 +434,6 @@ public abstract class AbstractFcsCoreBlockEntity extends AbstractARWBlockEntity 
 
     // --- センサー電源管理 ---
 
-    /**
-     * 特定センサーの電源をON/OFF
-     */
     public void setSensorPower(UUID sensorUuid, boolean power) {
         if (sensorUuid == null) return;
         for (IFcsSensorNode sensor : connectedSensors) {
@@ -357,9 +453,6 @@ public abstract class AbstractFcsCoreBlockEntity extends AbstractARWBlockEntity 
         }
     }
 
-    /**
-     * 接続された全センサーの電源を一括ON/OFF
-     */
     public void setAllSensorsPower(boolean power) {
         for (IFcsSensorNode sensor : connectedSensors) {
             sensor.setPowered(power);
@@ -377,9 +470,6 @@ public abstract class AbstractFcsCoreBlockEntity extends AbstractARWBlockEntity 
         }
     }
 
-    /**
-     * 特定センサーの電源状態を確認
-     */
     public boolean isSensorPowered(UUID sensorUuid) {
         if (sensorUuid == null) return false;
         for (IFcsSensorNode sensor : connectedSensors) {
@@ -442,6 +532,8 @@ public abstract class AbstractFcsCoreBlockEntity extends AbstractARWBlockEntity 
         }
         connectedNodeUuids.clear();
         nodePositions.clear();
+        fcsTrackedTargets.clear();
+        syncTargetsToClients();
         syncToClient();
         setChanged();
     }

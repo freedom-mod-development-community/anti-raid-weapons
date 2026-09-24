@@ -2,6 +2,10 @@ package xyz.fmdc.arw.api.sensor;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.Vec3;
+import xyz.fmdc.arw.api.TrackedTarget;
 
 /**
  * レーダーの探索範囲・ビーム幾何パラメータを保持するレコード。
@@ -44,6 +48,59 @@ public record RadarScanRange(
 
     public boolean isOmni() {
         return horizontalFov >= 360.0f;
+    }
+
+    /**
+     * 目標位置がレーダーの探知幾何範囲（距離、Yaw、Pitch）内にあるか精密判定する。
+     *
+     * @param radarPos     レーダーアンテナのワールド位置
+     * @param antennaYaw   レーダーアンテナのワールド絶対水平方位角 (度, 南=0, 西=90, 北=180, 東=270/-90)
+     * @param antennaPitch レーダーアンテナの基準仰角 (度, 水平=0, 見上げ=正)
+     * @param targetPos    目標のワールド座標
+     * @return 範囲内であれば true
+     */
+    public boolean isInRange(Vec3 radarPos, float antennaYaw, float antennaPitch, Vec3 targetPos) {
+        if (radarPos == null || targetPos == null) return false;
+
+        double dx = targetPos.x - radarPos.x;
+        double dy = targetPos.y - radarPos.y;
+        double dz = targetPos.z - radarPos.z;
+
+        // 1. 距離判定
+        double distSq = dx * dx + dy * dy + dz * dz;
+        if (distSq < (double) minRange * minRange || distSq > (double) maxRange * maxRange) {
+            return false;
+        }
+
+        // 2. 水平角 (Yaw) 判定
+        if (!isOmni()) {
+            // Minecraft座標系: +Z=南(0°), -X=西(90°), -Z=北(180°), +X=東(-90°)
+            float targetYaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
+            float yawDiff = Mth.wrapDegrees(targetYaw - antennaYaw);
+            if (Math.abs(yawDiff) > horizontalFov / 2.0f) {
+                return false;
+            }
+        }
+
+        // 3. 垂直角 (Pitch) 判定
+        if (minPitch > -90.0f || maxPitch < 90.0f) {
+            double distHoriz = Math.sqrt(dx * dx + dz * dz);
+            float targetPitch = (float) Math.toDegrees(Math.atan2(dy, distHoriz));
+            float relPitch = targetPitch - antennaPitch;
+            if (relPitch < minPitch || relPitch > maxPitch) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public boolean isInRange(Vec3 radarPos, float antennaYaw, float antennaPitch, TrackedTarget target) {
+        return target != null && isInRange(radarPos, antennaYaw, antennaPitch, target.getLastKnownPos());
+    }
+
+    public boolean isInRange(Vec3 radarPos, float antennaYaw, float antennaPitch, Entity target) {
+        return target != null && isInRange(radarPos, antennaYaw, antennaPitch, target.position());
     }
 
     public CompoundTag toTag() {

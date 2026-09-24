@@ -3,14 +3,11 @@ package xyz.fmdc.arw.common.blockentity.sensor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import xyz.fmdc.arw.api.RadarTargetManager;
 import xyz.fmdc.arw.api.sensor.RadarScanRange;
 import xyz.fmdc.arw.registry.ModBlocks;
 
-import java.util.ArrayList;
-
 /**
- * 広域を周回スキャンし、複数目標を出力する広域捜索レーダー（OPS-39等）
+ * 広域を周回スキャンし、探知パラメータを提供する広域捜索レーダー（OPS-39等）
  */
 public class SearchRadarBlockEntity extends HorizontalRadarBlockEntity {
 
@@ -31,11 +28,6 @@ public class SearchRadarBlockEntity extends HorizontalRadarBlockEntity {
         be.tickSensor();
         be.prevYaw = be.currentYaw;
         be.currentYaw = (be.currentYaw + be.rotationSpeed) % 360.0f;
-
-        // FCSコアに未接続（スタンドアロン稼働）時は、自前でグローバルターゲットから候補を取得して走査
-        if (!level.isClientSide && !be.isConnectedToFcs()) {
-            be.filterAndScan(new ArrayList<>(RadarTargetManager.INSTANCE.getGlobalTargets()));
-        }
     }
 
     @Override
