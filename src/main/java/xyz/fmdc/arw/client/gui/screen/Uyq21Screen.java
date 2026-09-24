@@ -16,6 +16,7 @@ import net.minecraftforge.items.IItemHandler;
 import org.jetbrains.annotations.NotNull;
 import xyz.fmdc.arw.api.TargetAffiliation;
 import xyz.fmdc.arw.api.TrackedTarget;
+import xyz.fmdc.arw.api.control.IRemoteControllableWeapon;
 import xyz.fmdc.arw.api.fcs.FiringSolution;
 import xyz.fmdc.arw.api.fcs.IFcsControllableWeapon;
 import xyz.fmdc.arw.api.sensor.RadarScanRange;
@@ -42,6 +43,7 @@ import java.util.function.Consumer;
  * - 中心のレーダー/兵装画面は1:1（高さ方向を1とする正方形）
  * - 左右のボタン横に「< ラベル」や「ラベル >」のインジケーターを2行・縮小フォントで表示
  * - 兵装選択ページ（WEAPONS）: MCDU風の2段組テキスト情報設計、Line Select Keyによる管制
+ * - 自動追尾指向モード（AUTO SLEW / TRACK MODE）: 回転可能な兵装（Mk13, Oto127, Mk45, CIWS等）で目標を自動追尾
  * - レーダー表示は北が上（North-Up）
  */
 public class Uyq21Screen extends AbstractContainerScreen<EmptyMenu> {
@@ -115,6 +117,8 @@ public class Uyq21Screen extends AbstractContainerScreen<EmptyMenu> {
     private final Map<UUID, FireApprovalMode> weaponApprovalModes = new HashMap<>();
     private final Map<UUID, SalvoMode> weaponSalvoModes = new HashMap<>();
     private final Map<UUID, Boolean> weaponHoldFire = new HashMap<>();
+    private final Map<UUID, Boolean> weaponAutoSlewMap = new HashMap<>(); // 兵装UUID -> 自動追尾指向（AUTO SLEW）フラグ
+    private final Map<UUID, float[]> weaponLastSentAngles = new HashMap<>(); // 兵装UUID -> 前回送信角度 [yaw, pitch]
 
     // 兵装一覧のページング（1ページ4スロット: L1〜L4）
     private int weaponPage = 0;
@@ -205,6 +209,44 @@ public class Uyq21Screen extends AbstractContainerScreen<EmptyMenu> {
 
         refreshWeaponsList();
         setupPageButtons();
+    }
+
+    /**
+     * 毎Tick呼び出し: 自動追尾指向（AUTO SLEW）中の兵装へ最新の指向諸元を送信
+     */
+    @Override
+    public void containerTick() {
+        super.containerTick();
+        tickAutoSlew();
+    }
+
+    private void tickAutoSlew() {
+        if (currentPage != PageMode.WEAPONS) return;
+        if (!(this.menu.getBlockEntity() instanceof Uyq21BlockEntity uyqBE)) return;
+
+        for (WeaponDisplayEntry wpn : connectedWeapons) {
+            if (!weaponAutoSlewMap.getOrDefault(wpn.uuid(), false)) continue;
+            if (!(wpn.blockEntity() instanceof IRemoteControllableWeapon)) continue;
+
+            UUID tgtUuid = weaponAssignedTargets.get(wpn.uuid());
+            if (tgtUuid == null) continue;
+
+            TrackedTarget tgt = uyqBE.getTrackedTargets().get(tgtUuid);
+            if (tgt == null || tgt.getLastKnownPos() == null) continue;
+
+            // 弾道計算ソルバーで見越し角・落差補正諸元を算出
+            FiringSolution sol = FiringSolution.calculateForWeapon(wpn.blockEntity(), tgt);
+
+            float curYaw = sol.targetYaw();
+            float curPitch = sol.targetPitch();
+
+            // 前回送信角度との差分をチェック（閾値: 0.1度以上、または初回）
+            float[] last = weaponLastSentAngles.get(wpn.uuid());
+            if (last == null || Math.abs(curYaw - last[0]) >= 0.1f || Math.abs(curPitch - last[1]) >= 0.1f) {
+                weaponLastSentAngles.put(wpn.uuid(), new float[]{ curYaw, curPitch });
+                PacketHandler.sendToServer(new ServerboundWeaponControlPacket(wpn.pos(), curYaw, curPitch, false));
+            }
+        }
     }
 
     /**
@@ -346,8 +388,19 @@ public class Uyq21Screen extends AbstractContainerScreen<EmptyMenu> {
             }
         }
 
-        // L5: 空き / 拡張
-        setLeftButton(4, "<", idx -> {});
+        // L5: 自動追尾指向モード（AUTO SLEW / TRACK MODE）- 回転可能兵装時のみ有効
+        boolean isRotatable = activeWpn != null && activeWpn.blockEntity() instanceof IRemoteControllableWeapon;
+        if (isRotatable) {
+            boolean isSlew = activeWpnUuid != null && weaponAutoSlewMap.getOrDefault(activeWpnUuid, false);
+            String slewLabel = isSlew ? "< AUTO SLEW\n  [TRACK]" : "< AUTO SLEW\n  [OFF]";
+            setLeftButton(4, slewLabel, idx -> {
+                if (activeWpnUuid != null) {
+                    weaponAutoSlewMap.put(activeWpnUuid, !isSlew);
+                }
+            });
+        } else {
+            setLeftButton(4, "< SLEW N/A\n  [FIXED]", idx -> {});
+        }
 
         // L6: 区切り線
         setLeftButton(5, "-------------", idx -> {});
@@ -722,7 +775,15 @@ public class Uyq21Screen extends AbstractContainerScreen<EmptyMenu> {
         guiGraphics.drawString(this.font, selPrefix, curX, curY, 0xFF00FFFF, false);
         guiGraphics.drawString(this.font, selName, curX + this.font.width(selPrefix), curY, 0xFFFFFFFF, false);
         guiGraphics.drawString(this.font, linkStr, curX + curW - this.font.width(linkStr), curY, 0xFF00FF66, false);
-        curY += lineHeight + 4;
+        curY += lineHeight + 1;
+
+        // AUTO SLEW 状態行
+        boolean isSlew = weaponAutoSlewMap.getOrDefault(wpn.uuid(), false);
+        boolean isRotatable = wpn.blockEntity() instanceof IRemoteControllableWeapon;
+        String slewStatus = !isRotatable ? "N/A (FIXED MOUNT)" : (isSlew ? "TRACKING [SLAVED TO FCS]" : "IDLE [MANUAL]");
+        int slewColor = !isRotatable ? 0xFF666666 : (isSlew ? 0xFF00E5FF : 0xFF888888);
+        guiGraphics.drawString(this.font, "AUTO SLEW    : " + slewStatus, curX, curY, slewColor, false);
+        curY += lineHeight + 3;
 
         // 割り当て目標の取得
         UUID assignedUuid = weaponAssignedTargets.get(wpn.uuid());
@@ -831,7 +892,9 @@ public class Uyq21Screen extends AbstractContainerScreen<EmptyMenu> {
             curY += lineHeight;
 
             guiGraphics.drawString(this.font, "POSITION     : ---", curX, curY, 0xFF666666, false);
+            curY += lineHeight;
             guiGraphics.drawString(this.font, "CLOSING SPD  : ---", curX, curY, 0xFF666666, false);
+            curY += lineHeight;
             guiGraphics.drawString(this.font, "TIME TO GO   : ---", curX, curY, 0xFF666666, false);
             curY += lineHeight + 4;
 
@@ -1102,6 +1165,10 @@ public class Uyq21Screen extends AbstractContainerScreen<EmptyMenu> {
             return 0xFFFFAA00;
         }
         if (currentPage == PageMode.WEAPONS) {
+            WeaponDisplayEntry activeWpn = (selectedWeaponIndex >= 0 && selectedWeaponIndex < connectedWeapons.size())
+                    ? connectedWeapons.get(selectedWeaponIndex) : null;
+            UUID activeWpnUuid = activeWpn != null ? activeWpn.uuid() : null;
+
             // L1〜L4: 選択中の兵装スロットはシアンハイライト
             if (i < WEAPONS_PER_PAGE) {
                 int wpnIdx = weaponPage * WEAPONS_PER_PAGE + i;
@@ -1110,7 +1177,12 @@ public class Uyq21Screen extends AbstractContainerScreen<EmptyMenu> {
                 }
                 return 0xFF666666;
             }
-            if (i == 4) return 0xFF666666; // L5: 空き
+            if (i == 4) { // L5: AUTO SLEW
+                boolean isRotatable = activeWpn != null && activeWpn.blockEntity() instanceof IRemoteControllableWeapon;
+                if (!isRotatable) return 0xFF555555;
+                boolean isSlew = activeWpnUuid != null && weaponAutoSlewMap.getOrDefault(activeWpnUuid, false);
+                return isSlew ? 0xFF00E5FF : 0xFF888888;
+            }
             if (i == 5) return 0xFF888888; // L6: 区切り線
             if (i == 6) return (this.selectedTargetUuid != null) ? 0xFF00FF66 : 0xFF888888; // L7: ASSIGN
             if (i == 7) return 0xFFFFAA00; // L8: DESELECT
