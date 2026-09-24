@@ -218,8 +218,8 @@ public class TargetBlockEntity extends AbstractARWBlockEntity {
         if (additionalDetails != null) {
             AntiRaidWeapons.LOGGER.info("Details           : {}", additionalDetails);
         }
-        AntiRaidWeapons.LOGGER.info("Game Time         : {} (Survived: {} ticks / approx. {:.1f}s)",
-                gameTime, survivedTicks, (float) survivedTicks / 20.0f);
+        AntiRaidWeapons.LOGGER.info("Game Time         : {} (Survived: {} ticks / approx. {}s)",
+                gameTime, survivedTicks, String.format("%.1f", (float) survivedTicks / 20.0f));
         AntiRaidWeapons.LOGGER.info("==================================================================");
 
         // 1行サマリーログ（外部ログ監視ツール等での解析用）
