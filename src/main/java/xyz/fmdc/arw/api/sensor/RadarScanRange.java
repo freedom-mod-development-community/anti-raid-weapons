@@ -25,11 +25,30 @@ public record RadarScanRange(
 ) {
     public static final RadarScanRange DEFAULT = omni(512.0f);
 
+    // 諸元プリセット
+    public static final RadarScanRange SPQ9B = of(36000.0f, 137.0f, 360.0f, -10.0f, 50.0f);
+    public static final RadarScanRange OPS39 = of(20000.0f, 100.0f, 360.0f, -5.0f, 15.0f);
+
     /**
      * 360度全周回転型の捜索レーダー用ファクトリ
      */
     public static RadarScanRange omni(float maxRange) {
         return new RadarScanRange(maxRange, 0.0f, 360.0f, -90.0f, 90.0f);
+    }
+
+    public static RadarScanRange omni(double maxRange) {
+        return omni((float) maxRange);
+    }
+
+    /**
+     * 水平360度全周で、垂直角（Pitch）の範囲を指定する全周レーダー用ファクトリ
+     */
+    public static RadarScanRange omniWithPitch(float maxRange, float minPitch, float maxPitch) {
+        return new RadarScanRange(maxRange, 0.0f, 360.0f, minPitch, maxPitch);
+    }
+
+    public static RadarScanRange omniWithPitch(double maxRange, float minPitch, float maxPitch) {
+        return omniWithPitch((float) maxRange, minPitch, maxPitch);
     }
 
     /**
@@ -39,6 +58,10 @@ public record RadarScanRange(
         return new RadarScanRange(maxRange, 0.0f, horizontalFov, minPitch, maxPitch);
     }
 
+    public static RadarScanRange directional(double maxRange, float horizontalFov, float minPitch, float maxPitch) {
+        return directional((float) maxRange, horizontalFov, minPitch, maxPitch);
+    }
+
     /**
      * 近接不感帯（minRange）も指定可能な詳細ファクトリ
      */
@@ -46,8 +69,19 @@ public record RadarScanRange(
         return new RadarScanRange(maxRange, minRange, horizontalFov, minPitch, maxPitch);
     }
 
+    public static RadarScanRange of(double maxRange, double minRange, float horizontalFov, float minPitch, float maxPitch) {
+        return new RadarScanRange((float) maxRange, (float) minRange, horizontalFov, minPitch, maxPitch);
+    }
+
     public boolean isOmni() {
         return horizontalFov >= 360.0f;
+    }
+
+    /**
+     * 垂直視野角（vFov: maxPitch - minPitch）を取得
+     */
+    public float verticalFov() {
+        return maxPitch - minPitch;
     }
 
     /**

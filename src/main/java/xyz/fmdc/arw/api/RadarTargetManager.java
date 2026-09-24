@@ -8,6 +8,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import xyz.fmdc.arw.common.entity.AbstractMissileEntity;
 
@@ -16,35 +17,27 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * サーバー側でワールド内のレーダー探知対象エンティティを一元管理するマスタマネージャ。
+ * メモリリークおよびワールド停止・保存時のクローズ競合を防止するため、Entity インスタンス実体への強参照は保持せず、
+ * プリミティブな Entity ID (int) と UUID のみを追跡する。
  */
 public class RadarTargetManager {
     public static final RadarTargetManager INSTANCE = new RadarTargetManager();
 
-    // 監視対象Entity IDセット（FastUtil）
-    private final IntSet targetEntityIdSet = IntSets.synchronize(new IntOpenHashSet());
+    // 監視対象の Entity ID セット（高速走査用）
+    private final IntSet activeEntityIds = IntSets.synchronize(new IntOpenHashSet());
 
-    // UUID <-> EntityID 対照マップ
-    private final Map<UUID, Integer> uuidToEntityIdMap = new ConcurrentHashMap<>();
-    private final Map<Integer, UUID> entityIdToUuidMap = new ConcurrentHashMap<>();
+    // UUID -> Entity ID 対照マップ
+    private final Map<UUID, Integer> uuidToIdMap = new ConcurrentHashMap<>();
 
-    // EntityID -> Entity の高速ルックアップ用マップ
-    private final Map<Integer, Entity> idToEntityMap = new ConcurrentHashMap<>();
-
-    // 既存互換用のグローバルターゲットセット（参照のみ）
-    private final Set<Entity> globalTargets = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    private RadarTargetManager() {}
 
     public void registerEntity(Entity entity) {
-        if (entity == null) return;
-        if (isRadarDetectable(entity)) {
-            int entityId = entity.getId();
-            UUID uuid = entity.getUUID();
+        if (!isRadarDetectable(entity)) return;
+        int entityId = entity.getId();
+        UUID uuid = entity.getUUID();
 
-            targetEntityIdSet.add(entityId);
-            uuidToEntityIdMap.put(uuid, entityId);
-            entityIdToUuidMap.put(entityId, uuid);
-            idToEntityMap.put(entityId, entity);
-            globalTargets.add(entity);
-        }
+        uuidToIdMap.put(uuid, entityId);
+        activeEntityIds.add(entityId);
     }
 
     public void unregisterEntity(Entity entity) {
@@ -52,11 +45,18 @@ public class RadarTargetManager {
         int entityId = entity.getId();
         UUID uuid = entity.getUUID();
 
-        targetEntityIdSet.remove(entityId);
-        uuidToEntityIdMap.remove(uuid);
-        entityIdToUuidMap.remove(entityId);
-        idToEntityMap.remove(entityId);
-        globalTargets.remove(entity);
+        uuidToIdMap.remove(uuid);
+        activeEntityIds.remove(entityId);
+    }
+
+    /**
+     * サーバー停止・ワールドアンロード時の完全解放
+     */
+    public void clear() {
+        synchronized (activeEntityIds) {
+            activeEntityIds.clear();
+        }
+        uuidToIdMap.clear();
     }
 
     /**
@@ -70,18 +70,19 @@ public class RadarTargetManager {
         long gameTime = level.getGameTime();
         List<TrackedTarget> candidates = new ArrayList<>();
 
-        for (Entity entity : idToEntityMap.values()) {
-            if (entity.level() != level || !entity.isAlive()) {
-                continue;
-            }
-            double x = entity.getX();
-            double y = entity.getY();
-            double z = entity.getZ();
+        int[] ids;
+        synchronized (activeEntityIds) {
+            ids = activeEntityIds.toIntArray();
+        }
 
-            // 不等式による高速AABB内外チェック
-            if (x >= aabb.minX && x <= aabb.maxX &&
-                y >= aabb.minY && y <= aabb.maxY &&
-                z >= aabb.minZ && z <= aabb.maxZ) {
+        for (int id : ids) {
+            Entity entity = level.getEntity(id);
+            if (entity == null || !entity.isAlive()) continue;
+
+            Vec3 pos = entity.position();
+            if (pos.x >= aabb.minX && pos.x <= aabb.maxX &&
+                pos.y >= aabb.minY && pos.y <= aabb.maxY &&
+                pos.z >= aabb.minZ && pos.z <= aabb.maxZ) {
                 candidates.add(new TrackedTarget(entity, gameTime));
             }
         }
@@ -97,17 +98,19 @@ public class RadarTargetManager {
 
         List<Entity> candidates = new ArrayList<>();
 
-        for (Entity entity : idToEntityMap.values()) {
-            if (entity.level() != level || !entity.isAlive()) {
-                continue;
-            }
-            double x = entity.getX();
-            double y = entity.getY();
-            double z = entity.getZ();
+        int[] ids;
+        synchronized (activeEntityIds) {
+            ids = activeEntityIds.toIntArray();
+        }
 
-            if (x >= aabb.minX && x <= aabb.maxX &&
-                y >= aabb.minY && y <= aabb.maxY &&
-                z >= aabb.minZ && z <= aabb.maxZ) {
+        for (int id : ids) {
+            Entity entity = level.getEntity(id);
+            if (entity == null || !entity.isAlive()) continue;
+
+            Vec3 pos = entity.position();
+            if (pos.x >= aabb.minX && pos.x <= aabb.maxX &&
+                pos.y >= aabb.minY && pos.y <= aabb.maxY &&
+                pos.z >= aabb.minZ && pos.z <= aabb.maxZ) {
                 candidates.add(entity);
             }
         }
@@ -117,7 +120,7 @@ public class RadarTargetManager {
 
     /**
      * レーダー探知対象かどうかのフィルタリング条件。
-     * Monster, Player（非Spectator）, 自作ミサイル（AbstractMissileEntity）等
+     * Monster, Player（非Spectatorかつ生存）, 自作ミサイル（AbstractMissileEntity）等
      */
     public boolean isRadarDetectable(Entity entity) {
         if (entity == null || !entity.isAlive()) {
@@ -136,32 +139,10 @@ public class RadarTargetManager {
     }
 
     /**
-     * 既存互換用のEntityセット取得
-     */
-    public Set<Entity> getGlobalTargets() {
-        return globalTargets;
-    }
-
-    /**
      * 監視対象Entity IDセットの取得
      */
     public IntSet getTargetEntityIdSet() {
-        return targetEntityIdSet;
-    }
-
-    /**
-     * 内部探索ループ用：探知対象のEntityID一覧を取得
-     */
-    public Set<Integer> getTargetEntityIds() {
-        return idToEntityMap.keySet();
-    }
-
-    /**
-     * EntityIDからEntity実体をO(1)で取得
-     */
-    @Nullable
-    public Entity getEntityById(int entityId) {
-        return idToEntityMap.get(entityId);
+        return activeEntityIds;
     }
 
     /**
@@ -169,14 +150,6 @@ public class RadarTargetManager {
      */
     @Nullable
     public Integer getEntityIdByUuid(UUID uuid) {
-        return uuidToEntityIdMap.get(uuid);
-    }
-
-    /**
-     * 対照表：EntityIDからUUIDを取得
-     */
-    @Nullable
-    public UUID getUuidByEntityId(int entityId) {
-        return entityIdToUuidMap.get(entityId);
+        return uuid != null ? uuidToIdMap.get(uuid) : null;
     }
 }

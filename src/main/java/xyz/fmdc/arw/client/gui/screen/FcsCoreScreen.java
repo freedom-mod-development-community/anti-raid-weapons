@@ -22,6 +22,7 @@ import xyz.fmdc.arw.common.blockentity.weapon.AbstractSingleGunBlockEntity;
 import xyz.fmdc.arw.common.blockentity.console.TestConsoleBlockEntity;
 import xyz.fmdc.arw.common.blockentity.fcs.AbstractFcsCoreBlockEntity;
 import xyz.fmdc.arw.common.blockentity.sensor.HorizontalRadarBlockEntity;
+import xyz.fmdc.arw.common.blockentity.sensor.Ops39BlockEntity;
 import xyz.fmdc.arw.common.blockentity.sensor.Spq9bBlockEntity;
 import xyz.fmdc.arw.common.blockentity.vls.VlsBlockEntity;
 import xyz.fmdc.arw.common.blockentity.weapon.ARWCIWSBlockEntity;
@@ -418,22 +419,47 @@ public class FcsCoreScreen extends Screen {
             drawDetailRow(guiGraphics, "STATUS:", linked ? "ONLINE / LINKED" : "OFFLINE", x + 10, textY, 0xFF6C8EA4, 0xFF00FF88);
 
         } else if (be instanceof Spq9bBlockEntity spq) {
-            drawDetailRow(guiGraphics, "CATEGORY:", "Radar", x + 10, textY, 0xFF4DEEEA, 0xFFFFFFFF);
+            drawDetailRow(guiGraphics, "CATEGORY:", "Radar (Pulse Doppler)", x + 10, textY, 0xFF4DEEEA, 0xFFFFFFFF);
             textY += lineGap;
 
             RadarScanRange range = spq.getScanRange();
-            String rangeText = String.format("%dm (FOV: %.0f°)", (int) range.maxRange(), range.horizontalFov());
+            String rangeText = String.format("%dm (FOV: %.0f°, Elev: %.0f°~+%.0f°)", (int) range.maxRange(), range.horizontalFov(), range.minPitch(), range.maxPitch());
             drawDetailRow(guiGraphics, "SCAN RANGE:", rangeText, x + 10, textY, 0xFF6C8EA4, 0xFFCCDDEE);
             textY += lineGap;
 
             drawDetailRow(guiGraphics, "POWER:", spq.isPowered() ? "ON" : "OFF", x + 10, textY, 0xFF6C8EA4, spq.isPowered() ? 0xFF00FF88 : 0xFFFF4444);
             textY += lineGap;
 
-            drawDetailRow(guiGraphics, "SCAN SPEED:", "30 RPM (Continuous Rotation)", x + 10, textY, 0xFF6C8EA4, 0xFFCCDDEE);
+            drawDetailRow(guiGraphics, "SCAN SPEED:", "30 RPM (9.0°/tick)", x + 10, textY, 0xFF6C8EA4, 0xFFCCDDEE);
+            textY += lineGap;
+
+            drawDetailRow(guiGraphics, "BEAM WIDTH:", String.format("%.1f° (Narrow)", spq.getInstantaneousBeamHorizontal()), x + 10, textY, 0xFF6C8EA4, 0xFFCCDDEE);
             textY += lineGap;
 
             String statusText = !spq.isConnectedToFcs() ? "OFFLINE" : (spq.isPowered() ? "ACTIVE / SCANNING" : "STANDBY / POWER OFF");
             int statusColor = !spq.isConnectedToFcs() ? 0xFF888888 : (spq.isPowered() ? 0xFF00FF88 : 0xFFFFCC00);
+            drawDetailRow(guiGraphics, "STATUS:", statusText, x + 10, textY, 0xFF6C8EA4, statusColor);
+
+        } else if (be instanceof Ops39BlockEntity ops) {
+            drawDetailRow(guiGraphics, "CATEGORY:", "Radar (Surface Search)", x + 10, textY, 0xFF4DEEEA, 0xFFFFFFFF);
+            textY += lineGap;
+
+            RadarScanRange range = ops.getScanRange();
+            String rangeText = String.format("%dm (FOV: %.0f°, Elev: %.0f°~+%.0f°)", (int) range.maxRange(), range.horizontalFov(), range.minPitch(), range.maxPitch());
+            drawDetailRow(guiGraphics, "SCAN RANGE:", rangeText, x + 10, textY, 0xFF6C8EA4, 0xFFCCDDEE);
+            textY += lineGap;
+
+            drawDetailRow(guiGraphics, "POWER:", ops.isPowered() ? "ON" : "OFF", x + 10, textY, 0xFF6C8EA4, ops.isPowered() ? 0xFF00FF88 : 0xFFFF4444);
+            textY += lineGap;
+
+            drawDetailRow(guiGraphics, "SCAN SPEED:", String.format("%.0f RPM (%.1f°/tick)", Ops39BlockEntity.RPM, Ops39BlockEntity.ROTATION_SPEED), x + 10, textY, 0xFF6C8EA4, 0xFFCCDDEE);
+            textY += lineGap;
+
+            drawDetailRow(guiGraphics, "BEAM WIDTH:", String.format("%.1f° (Surface Slot)", ops.getInstantaneousBeamHorizontal()), x + 10, textY, 0xFF6C8EA4, 0xFFCCDDEE);
+            textY += lineGap;
+
+            String statusText = !ops.isConnectedToFcs() ? "OFFLINE" : (ops.isPowered() ? "ACTIVE / SCANNING" : "STANDBY / POWER OFF");
+            int statusColor = !ops.isConnectedToFcs() ? 0xFF888888 : (ops.isPowered() ? 0xFF00FF88 : 0xFFFFCC00);
             drawDetailRow(guiGraphics, "STATUS:", statusText, x + 10, textY, 0xFF6C8EA4, statusColor);
 
         } else if (be instanceof HorizontalRadarBlockEntity radar) {

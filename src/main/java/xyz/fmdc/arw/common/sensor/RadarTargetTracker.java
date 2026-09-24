@@ -1,6 +1,7 @@
 package xyz.fmdc.arw.common.sensor;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -66,9 +67,14 @@ public class RadarTargetTracker {
         List<Entity> detectedList = new ArrayList<>();
         double maxRangeSqr = (double) maxRange * maxRange;
 
+        int[] ids;
+        synchronized (RadarTargetManager.INSTANCE.getTargetEntityIdSet()) {
+            ids = RadarTargetManager.INSTANCE.getTargetEntityIdSet().toIntArray();
+        }
+
         // 内部探索: EntityIDのセットを反復
-        for (int entityId : RadarTargetManager.INSTANCE.getTargetEntityIds()) {
-            Entity target = RadarTargetManager.INSTANCE.getEntityById(entityId);
+        for (int entityId : ids) {
+            Entity target = level.getEntity(entityId);
             if (target == null) continue;
 
             // 共通探知チェック: 生存状態、ディメンション一致
@@ -122,12 +128,13 @@ public class RadarTargetTracker {
 
         // 2. タイムアウトまたは死亡した目標を削除
         trackedTargets.values().removeIf(target -> {
-            boolean expired = target.isExpired(currentGameTime, timeoutTicks)
-                    || (target.getEntity() != null && !target.getEntity().isAlive());
-            if (expired && onLostListener != null) {
+            boolean expired = target.isExpired(currentGameTime, timeoutTicks);
+            Entity e = (level instanceof ServerLevel sl) ? sl.getEntity(target.getEntityId()) : null;
+            boolean dead = (e != null && !e.isAlive());
+            if ((expired || dead) && onLostListener != null) {
                 onLostListener.accept(target);
             }
-            return expired;
+            return expired || dead;
         });
     }
 
@@ -139,9 +146,7 @@ public class RadarTargetTracker {
 
         List<S2CSyncRadarTargetsPacket.TargetData> packetList = new ArrayList<>(this.trackedTargets.size());
         for (TrackedTarget target : this.trackedTargets.values()) {
-            String name = target.getEntity() != null
-                    ? target.getEntity().getType().getDescription().getString()
-                    : target.getEntityTypeName();
+            String name = target.getEntityTypeName();
             packetList.add(new S2CSyncRadarTargetsPacket.TargetData(
                     target.getEntityId(),
                     name != null ? name : "Unknown",

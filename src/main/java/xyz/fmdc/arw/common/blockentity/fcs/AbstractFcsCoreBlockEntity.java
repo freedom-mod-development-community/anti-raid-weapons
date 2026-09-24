@@ -58,6 +58,13 @@ public abstract class AbstractFcsCoreBlockEntity extends AbstractARWBlockEntity
 
     public void tickFcs() {
         if (this.level == null || this.level.isClientSide) return;
+        if (!(this.level instanceof ServerLevel serverLevel)) return;
+
+        // サーバー停止シーケンス中またはプレイヤー不在時は処理を停止（ワールド保存時のchunkMap.hasWork()ループ競合を防止）
+        if (!serverLevel.getServer().isRunning() || serverLevel.getServer().getPlayerList().getPlayerCount() == 0) {
+            return;
+        }
+
         validateConnectedNodes();
 
         scanTicker++;
@@ -78,6 +85,11 @@ public abstract class AbstractFcsCoreBlockEntity extends AbstractARWBlockEntity
      */
     protected void scanAndFuseTargets() {
         if (!(this.level instanceof ServerLevel serverLevel)) return;
+
+        // サーバー停止中またはプレイヤー不在時はスキップ
+        if (!serverLevel.getServer().isRunning() || serverLevel.getServer().getPlayerList().getPlayerCount() == 0) {
+            return;
+        }
 
         // 1. 稼働中（電源ON）の全センサーの情報を収集
         List<ActiveSensor> activeSensors = new ArrayList<>();
@@ -140,11 +152,7 @@ public abstract class AbstractFcsCoreBlockEntity extends AbstractARWBlockEntity
 
                     TrackedTarget existing = fcsTrackedTargets.get(id);
                     if (existing != null) {
-                        if (candidate.getEntity() != null) {
-                            existing.update(candidate.getEntity(), gameTime);
-                        } else {
-                            existing.updateFromPacket(candidate.getLastKnownPos(), candidate.getLastKnownVelocity(), gameTime);
-                        }
+                        existing.updateFromPacket(candidate.getLastKnownPos(), candidate.getLastKnownVelocity(), gameTime);
                     } else {
                         fcsTrackedTargets.put(id, candidate);
                     }
@@ -156,7 +164,8 @@ public abstract class AbstractFcsCoreBlockEntity extends AbstractARWBlockEntity
         // 4. タイムアウトおよび生存外エンティティの除去
         fcsTrackedTargets.values().removeIf(target -> {
             boolean expired = target.isExpired(gameTime, TARGET_TIMEOUT_TICKS);
-            boolean dead = target.getEntity() != null && !target.getEntity().isAlive();
+            Entity e = serverLevel.getEntity(target.getEntityId());
+            boolean dead = (e != null && !e.isAlive());
             return expired || dead;
         });
 
@@ -169,15 +178,17 @@ public abstract class AbstractFcsCoreBlockEntity extends AbstractARWBlockEntity
      */
     protected void syncTargetsToClients() {
         if (this.level == null || this.level.isClientSide) return;
+        if (this.level instanceof ServerLevel serverLevel) {
+            if (!serverLevel.getServer().isRunning() || serverLevel.getServer().getPlayerList().getPlayerCount() == 0) {
+                return;
+            }
+        }
 
         List<S2CSyncRadarTargetsPacket.TargetData> packetList = new ArrayList<>(this.fcsTrackedTargets.size());
         for (TrackedTarget target : this.fcsTrackedTargets.values()) {
-            String name = target.getEntity() != null
-                    ? target.getEntity().getType().getDescription().getString()
-                    : (target.getEntityTypeName() != null ? target.getEntityTypeName() : "Unknown");
             packetList.add(new S2CSyncRadarTargetsPacket.TargetData(
                     target.getEntityId(),
-                    name,
+                    target.getEntityTypeName() != null ? target.getEntityTypeName() : "Unknown",
                     target.getLastKnownPos(),
                     target.getLastKnownVelocity() != null ? target.getLastKnownVelocity() : Vec3.ZERO
             ));
@@ -533,9 +544,12 @@ public abstract class AbstractFcsCoreBlockEntity extends AbstractARWBlockEntity
         connectedNodeUuids.clear();
         nodePositions.clear();
         fcsTrackedTargets.clear();
-        syncTargetsToClients();
-        syncToClient();
-        setChanged();
+
+        if (this.level instanceof ServerLevel sl && sl.getServer().isRunning() && sl.getServer().getPlayerList().getPlayerCount() > 0) {
+            syncTargetsToClients();
+            syncToClient();
+            setChanged();
+        }
     }
 
     @Override
