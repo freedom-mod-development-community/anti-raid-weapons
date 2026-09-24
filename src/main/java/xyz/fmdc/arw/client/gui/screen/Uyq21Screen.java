@@ -16,6 +16,7 @@ import net.minecraftforge.items.IItemHandler;
 import org.jetbrains.annotations.NotNull;
 import xyz.fmdc.arw.api.TargetAffiliation;
 import xyz.fmdc.arw.api.TrackedTarget;
+import xyz.fmdc.arw.api.fcs.FiringSolution;
 import xyz.fmdc.arw.api.fcs.IFcsControllableWeapon;
 import xyz.fmdc.arw.api.sensor.RadarScanRange;
 import xyz.fmdc.arw.client.gui.EmptyMenu;
@@ -308,7 +309,7 @@ public class Uyq21Screen extends AbstractContainerScreen<EmptyMenu> {
                 ? connectedWeapons.get(selectedWeaponIndex) : null;
         UUID activeWpnUuid = activeWpn != null ? activeWpn.uuid() : null;
 
-        // 目標情報と射撃諸元計算
+        // 目標情報と射撃諸元計算（FiringSolution ソルバーによる見越し角・重力落差計算）
         UUID assignedTargetUuid = activeWpnUuid != null ? weaponAssignedTargets.get(activeWpnUuid) : null;
         TrackedTarget assignedTarget = null;
         if (assignedTargetUuid != null && this.menu.getBlockEntity() instanceof Uyq21BlockEntity uyqBE) {
@@ -316,20 +317,19 @@ public class Uyq21Screen extends AbstractContainerScreen<EmptyMenu> {
         }
 
         boolean hasTarget = assignedTarget != null && assignedTarget.getLastKnownPos() != null;
-        double distH = 0.0, dist3D = 0.0, azimDeg = 0.0;
-        boolean inRange = false;
+        FiringSolution solution = (hasTarget && activeWpn != null)
+                ? FiringSolution.calculateForWeapon(activeWpn.blockEntity(), assignedTarget)
+                : FiringSolution.IDLE;
+
+        boolean inRange = solution.inRange();
+        boolean isSolutionReady = solution.isTargetLocked();
+        double distH = 0.0;
         if (hasTarget && activeWpn != null) {
             Vec3 tPos = assignedTarget.getLastKnownPos();
             BlockPos wPos = activeWpn.pos();
             double dx = tPos.x - (wPos.getX() + 0.5);
-            double dy = tPos.y - (wPos.getY() + 0.5);
             double dz = tPos.z - (wPos.getZ() + 0.5);
             distH = Math.sqrt(dx * dx + dz * dz);
-            dist3D = Math.sqrt(dx * dx + dy * dy + dz * dz);
-            azimDeg = Math.toDegrees(Math.atan2(dx, -dz));
-            if (azimDeg < 0) azimDeg += 360.0;
-            float maxR = getMaxWeaponRange(activeWpn.blockEntity());
-            inRange = dist3D <= maxR;
         }
 
         // --- 左サイドボタン（L1〜L10: index 0〜9） ---
@@ -380,7 +380,7 @@ public class Uyq21Screen extends AbstractContainerScreen<EmptyMenu> {
         // --- 右サイドボタン（R1〜R10: index 0〜9） ---
         // R1: 射撃承認モード（STATUS: RDY / SEMI / AUTO）
         FireApprovalMode appMode = activeWpnUuid != null ? weaponApprovalModes.getOrDefault(activeWpnUuid, FireApprovalMode.AUTO) : FireApprovalMode.AUTO;
-        String statusLabel = String.format("STATUS: %s\n(%s) >", inRange ? "RDY" : "STBY", appMode.getLabel());
+        String statusLabel = String.format("STATUS: %s\n(%s) >", isSolutionReady ? "RDY" : "STBY", appMode.getLabel());
         setRightButton(0, statusLabel, idx -> {
             if (activeWpnUuid != null) {
                 weaponApprovalModes.put(activeWpnUuid, appMode.next());
@@ -398,14 +398,15 @@ public class Uyq21Screen extends AbstractContainerScreen<EmptyMenu> {
 
         // R3: 方位・距離（BRG/RNG）
         if (hasTarget) {
-            setRightButton(2, String.format("BRG/RNG: %03.0f°\n%.0fm >", azimDeg, distH), idx -> {});
+            float azim = solution.targetYaw() < 0 ? solution.targetYaw() + 360.0f : solution.targetYaw();
+            setRightButton(2, String.format("BRG/RNG: %03.0f°\n%.0fm >", azim, distH), idx -> {});
         } else {
             setRightButton(2, "BRG/RNG: ---\n--- >", idx -> {});
         }
 
         // R4: 射撃諸元ステータス（SOL）
         if (hasTarget) {
-            String solLabel = inRange ? "SOL: READY\nINTERCEPT OK >" : "SOL: NO SOL\nOUT OF RNG >";
+            String solLabel = isSolutionReady ? "SOL: READY\nINTERCEPT OK >" : (inRange ? "SOL: CALC\nLEAD SEARCH >" : "SOL: NO SOL\nOUT OF RNG >");
             setRightButton(3, solLabel, idx -> {});
         } else {
             setRightButton(3, "SOL: IDLE\nNO TARGET >", idx -> {});
@@ -466,18 +467,12 @@ public class Uyq21Screen extends AbstractContainerScreen<EmptyMenu> {
             TrackedTarget tgt = uyqBE.getTrackedTargets().get(tgtUuid);
             if (tgt == null || tgt.getLastKnownPos() == null) return;
 
-            Vec3 tPos = tgt.getLastKnownPos();
+            // FiringSolution による弾道見越し角・重力補正を適用
+            FiringSolution solution = FiringSolution.calculateForWeapon(wpn.blockEntity(), tgt);
             BlockPos wPos = wpn.pos();
-            double dx = tPos.x - (wPos.getX() + 0.5);
-            double dy = tPos.y - (wPos.getY() + 0.5);
-            double dz = tPos.z - (wPos.getZ() + 0.5);
-            double distH = Math.sqrt(dx * dx + dz * dz);
-
-            float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
-            float pitch = (float) -Math.toDegrees(Math.atan2(dy, distH));
 
             // サーバーへ発射制御パケットを送信
-            PacketHandler.sendToServer(new ServerboundWeaponControlPacket(wPos, yaw, pitch, true));
+            PacketHandler.sendToServer(new ServerboundWeaponControlPacket(wPos, solution.targetYaw(), solution.targetPitch(), true));
         }
     }
 
@@ -742,12 +737,10 @@ public class Uyq21Screen extends AbstractContainerScreen<EmptyMenu> {
             double dx = tPos.x - (wPos.getX() + 0.5);
             double dy = tPos.y - (wPos.getY() + 0.5);
             double dz = tPos.z - (wPos.getZ() + 0.5);
-            double distH = Math.sqrt(dx * dx + dz * dz);
             double dist3D = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
-            double azimDeg = Math.toDegrees(Math.atan2(dx, -dz));
-            if (azimDeg < 0) azimDeg += 360.0;
-            double elevDeg = Math.toDegrees(Math.atan2(dy, distH));
+            // 弾道計算ソルバーによる諸元算出（超音速・重力落差対応）
+            FiringSolution solution = FiringSolution.calculateForWeapon(wpn.blockEntity(), assignedTgt);
 
             double closingSpd = 0.0;
             if (assignedTgt.getLastKnownVelocity() != null) {
@@ -756,16 +749,11 @@ public class Uyq21Screen extends AbstractContainerScreen<EmptyMenu> {
                 closingSpd = -(dot / (dist3D > 0.001 ? dist3D : 1.0));
             }
 
-            double muzzleVel = 400.0;
-            if (wpn.blockEntity() instanceof AbstractSingleGunBlockEntity gun) {
-                muzzleVel = gun.getMuzzleVelocity() * 20.0;
-            }
-            double effectiveSpd = muzzleVel + closingSpd;
-            double timeToGo = effectiveSpd > 1.0 ? dist3D / effectiveSpd : 99.0;
-
+            double timeToGo = solution.getTimeOfFlightSeconds();
             float maxRange = getMaxWeaponRange(wpn.blockEntity());
-            boolean inRange = dist3D <= maxRange;
-            int envelopePct = (int) Math.round((dist3D / maxRange) * 100.0);
+            boolean inRange = solution.inRange();
+            boolean isReady = solution.isTargetLocked();
+            int envelopePct = (int) Math.round((solution.slantRange() / maxRange) * 100.0);
 
             // TARGET TRACK : #042 [AIR - HOSTILE]
             String tn = getTrackNumber(assignedUuid);
@@ -794,8 +782,9 @@ public class Uyq21Screen extends AbstractContainerScreen<EmptyMenu> {
             curY += lineHeight + 4;
 
             // SOLUTION     : ELEV +14.2° / AZIM 048.5°
-            String solStr = String.format("SOLUTION     : ELEV %+05.1f° / AZIM %05.1f°", elevDeg, azimDeg);
-            guiGraphics.drawString(this.font, solStr, curX, curY, inRange ? 0xFF00FF66 : 0xFFFFAA00, false);
+            float azim = solution.targetYaw() < 0 ? solution.targetYaw() + 360.0f : solution.targetYaw();
+            String solStr = String.format("SOLUTION     : ELEV %+05.1f° / AZIM %05.1f°", solution.targetPitch(), azim);
+            guiGraphics.drawString(this.font, solStr, curX, curY, isReady ? 0xFF00FF66 : 0xFFFFAA00, false);
             curY += lineHeight;
 
             // ENGAGE ENVELOPE: IN RANGE [==========|    ] 72%
@@ -821,8 +810,10 @@ public class Uyq21Screen extends AbstractContainerScreen<EmptyMenu> {
             boolean hold = weaponHoldFire.getOrDefault(wpn.uuid(), false);
             if (hold) {
                 guiGraphics.drawString(this.font, "SYSTEM MSG: HOLD FIRE ACTIVE. WEAPON INHIBITED.", curX, curY, 0xFFFF3333, false);
-            } else if (inRange) {
+            } else if (isReady) {
                 guiGraphics.drawString(this.font, "SYSTEM MSG: FIRING SOLUTION CALCULATED. READY.", curX, curY, 0xFF00FF66, false);
+            } else if (inRange) {
+                guiGraphics.drawString(this.font, "SYSTEM MSG: TARGET OUT OF WEAPON ENVELOPE / NO LEAD.", curX, curY, 0xFFFFAA00, false);
             } else {
                 guiGraphics.drawString(this.font, "SYSTEM MSG: TARGET BEYOND ENGAGEMENT ENVELOPE.", curX, curY, 0xFFFFAA00, false);
             }
@@ -840,9 +831,7 @@ public class Uyq21Screen extends AbstractContainerScreen<EmptyMenu> {
             curY += lineHeight;
 
             guiGraphics.drawString(this.font, "POSITION     : ---", curX, curY, 0xFF666666, false);
-            curY += lineHeight;
             guiGraphics.drawString(this.font, "CLOSING SPD  : ---", curX, curY, 0xFF666666, false);
-            curY += lineHeight;
             guiGraphics.drawString(this.font, "TIME TO GO   : ---", curX, curY, 0xFF666666, false);
             curY += lineHeight + 4;
 
@@ -1161,7 +1150,12 @@ public class Uyq21Screen extends AbstractContainerScreen<EmptyMenu> {
                 // 諸元成立時に点滅
                 boolean hold = activeWpnUuid != null && weaponHoldFire.getOrDefault(activeWpnUuid, false);
                 boolean hasTarget = activeWpnUuid != null && weaponAssignedTargets.containsKey(activeWpnUuid);
-                if (hasTarget && !hold) {
+                TrackedTarget tgt = (hasTarget && this.menu.getBlockEntity() instanceof Uyq21BlockEntity uyqBE)
+                        ? uyqBE.getTrackedTargets().get(weaponAssignedTargets.get(activeWpnUuid)) : null;
+                boolean isLocked = (tgt != null && activeWpn != null)
+                        && FiringSolution.calculateForWeapon(activeWpn.blockEntity(), tgt).isTargetLocked();
+
+                if (isLocked && !hold) {
                     boolean blink = (Minecraft.getInstance().level != null && (Minecraft.getInstance().level.getGameTime() / 6) % 2 == 0);
                     return blink ? 0xFFFF3333 : 0xFFFFAA00;
                 }
