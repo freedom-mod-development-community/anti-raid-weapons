@@ -17,6 +17,7 @@ import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xyz.fmdc.arw.api.RadarTargetManager;
+import xyz.fmdc.arw.api.TargetAffiliation;
 import xyz.fmdc.arw.api.TrackedTarget;
 import xyz.fmdc.arw.api.fcs.*;
 import xyz.fmdc.arw.api.sensor.ITrackedTargetHolder;
@@ -44,6 +45,9 @@ public abstract class AbstractFcsCoreBlockEntity extends AbstractARWBlockEntity
 
     // FCSコアが一元保持する確定目標リスト (UUID -> TrackedTarget)
     protected final Map<UUID, TrackedTarget> fcsTrackedTargets = new ConcurrentHashMap<>();
+
+    // 目標の識別状態（IFF）マップ (UUID -> TargetAffiliation)
+    protected final Map<UUID, TargetAffiliation> targetAffiliations = new ConcurrentHashMap<>();
 
     // 目標の追尾喪失タイムアウト（40 Ticks = 2秒）
     protected static final long TARGET_TIMEOUT_TICKS = 40L;
@@ -150,10 +154,12 @@ public abstract class AbstractFcsCoreBlockEntity extends AbstractARWBlockEntity
                     UUID id = candidate.getEntityId();
                     detectedUuidsThisScan.add(id);
 
+                    TargetAffiliation aff = targetAffiliations.getOrDefault(id, TargetAffiliation.UNKNOWN);
                     TrackedTarget existing = fcsTrackedTargets.get(id);
                     if (existing != null) {
-                        existing.updateFromPacket(candidate.getLastKnownPos(), candidate.getLastKnownVelocity(), gameTime);
+                        existing.updateFromPacket(candidate.getLastKnownPos(), candidate.getLastKnownVelocity(), gameTime, aff);
                     } else {
+                        candidate.setAffiliation(aff);
                         fcsTrackedTargets.put(id, candidate);
                     }
                     break; // OR条件：いずれか1つに入っていれば確定
@@ -168,6 +174,9 @@ public abstract class AbstractFcsCoreBlockEntity extends AbstractARWBlockEntity
             boolean dead = (e != null && !e.isAlive());
             return expired || dead;
         });
+
+        // 喪失目標の識別情報クリーンアップ
+        targetAffiliations.keySet().retainAll(fcsTrackedTargets.keySet());
 
         // 5. クライアント同期パケット送信
         syncTargetsToClients();
@@ -190,7 +199,8 @@ public abstract class AbstractFcsCoreBlockEntity extends AbstractARWBlockEntity
                     target.getEntityId(),
                     target.getEntityTypeName() != null ? target.getEntityTypeName() : "Unknown",
                     target.getLastKnownPos(),
-                    target.getLastKnownVelocity() != null ? target.getLastKnownVelocity() : Vec3.ZERO
+                    target.getLastKnownVelocity() != null ? target.getLastKnownVelocity() : Vec3.ZERO,
+                    target.getAffiliation()
             ));
         }
 
@@ -216,16 +226,35 @@ public abstract class AbstractFcsCoreBlockEntity extends AbstractARWBlockEntity
         for (S2CSyncRadarTargetsPacket.TargetData data : dataList) {
             this.fcsTrackedTargets.put(
                     data.uuid(),
-                    new TrackedTarget(data.uuid(), data.name(), data.pos(), data.vel(), currentGameTime)
+                    new TrackedTarget(data.uuid(), data.name(), data.pos(), data.vel(), currentGameTime, data.affiliation())
             );
         }
     }
 
     /**
-     * 既存互換用
+     * 既往互換用
      */
     public Map<UUID, TrackedTarget> getCombinedTrackedTargets() {
         return getTrackedTargets();
+    }
+
+    // --- 目標識別（IFF）管理 ---
+
+    public void setTargetAffiliation(UUID targetUuid, TargetAffiliation affiliation) {
+        if (targetUuid == null || affiliation == null) return;
+        this.targetAffiliations.put(targetUuid, affiliation);
+        TrackedTarget target = this.fcsTrackedTargets.get(targetUuid);
+        if (target != null) {
+            target.setAffiliation(affiliation);
+        }
+        if (this.level != null && !this.level.isClientSide) {
+            syncTargetsToClients();
+            setChanged();
+        }
+    }
+
+    public TargetAffiliation getTargetAffiliation(UUID targetUuid) {
+        return this.targetAffiliations.getOrDefault(targetUuid, TargetAffiliation.UNKNOWN);
     }
 
     public boolean registerDevice(BlockEntity device) {
@@ -544,6 +573,7 @@ public abstract class AbstractFcsCoreBlockEntity extends AbstractARWBlockEntity
         connectedNodeUuids.clear();
         nodePositions.clear();
         fcsTrackedTargets.clear();
+        targetAffiliations.clear();
 
         if (this.level instanceof ServerLevel sl && sl.getServer().isRunning() && sl.getServer().getPlayerList().getPlayerCount() > 0) {
             syncTargetsToClients();
@@ -650,6 +680,18 @@ public abstract class AbstractFcsCoreBlockEntity extends AbstractARWBlockEntity
             list.add(idTag);
         }
         tag.put("ConnectedNodeUuids", list);
+
+        // 目標識別情報の保存
+        if (!targetAffiliations.isEmpty()) {
+            ListTag affList = new ListTag();
+            for (Map.Entry<UUID, TargetAffiliation> entry : targetAffiliations.entrySet()) {
+                CompoundTag affTag = new CompoundTag();
+                affTag.putUUID("UUID", entry.getKey());
+                affTag.putByte("Affiliation", (byte) entry.getValue().ordinal());
+                affList.add(affTag);
+            }
+            tag.put("TargetAffiliations", affList);
+        }
     }
 
     @Override
@@ -658,6 +700,7 @@ public abstract class AbstractFcsCoreBlockEntity extends AbstractARWBlockEntity
         connectedNodeUuids.clear();
         nodePositions.clear();
         sensorScanRanges.clear();
+        targetAffiliations.clear();
         if (tag.contains("ConnectedNodeUuids", Tag.TAG_LIST)) {
             ListTag list = tag.getList("ConnectedNodeUuids", Tag.TAG_COMPOUND);
             for (int i = 0; i < list.size(); i++) {
@@ -671,6 +714,15 @@ public abstract class AbstractFcsCoreBlockEntity extends AbstractARWBlockEntity
                     if (idTag.contains("ScanRange")) {
                         sensorScanRanges.put(id, RadarScanRange.fromTag(idTag.getCompound("ScanRange")));
                     }
+                }
+            }
+        }
+        if (tag.contains("TargetAffiliations", Tag.TAG_LIST)) {
+            ListTag affList = tag.getList("TargetAffiliations", Tag.TAG_COMPOUND);
+            for (int i = 0; i < affList.size(); i++) {
+                CompoundTag affTag = affList.getCompound(i);
+                if (affTag.hasUUID("UUID")) {
+                    targetAffiliations.put(affTag.getUUID("UUID"), TargetAffiliation.fromOrdinal(affTag.getByte("Affiliation")));
                 }
             }
         }

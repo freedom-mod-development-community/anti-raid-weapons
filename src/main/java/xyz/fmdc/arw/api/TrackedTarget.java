@@ -17,6 +17,7 @@ public class TrackedTarget {
     private Vec3 lastKnownPos;
     private Vec3 lastKnownVelocity;
     private long lastSeenGameTime;
+    private TargetAffiliation affiliation = TargetAffiliation.UNKNOWN;
 
     // サーバー側：Entity からスナップショットを生成
     public TrackedTarget(Entity entity, long gameTime) {
@@ -25,15 +26,22 @@ public class TrackedTarget {
         this.lastKnownPos = entity.position();
         this.lastKnownVelocity = entity.getDeltaMovement();
         this.lastSeenGameTime = gameTime;
+        this.affiliation = TargetAffiliation.UNKNOWN;
     }
 
-    // クライアント側：S2Cパケットから生成
+    // クライアント側：S2Cパケットから生成（後方互換）
     public TrackedTarget(UUID uuid, String name, Vec3 pos, Vec3 velocity, long gameTime) {
+        this(uuid, name, pos, velocity, gameTime, TargetAffiliation.UNKNOWN);
+    }
+
+    // クライアント側：S2Cパケットから生成（識別情報付き）
+    public TrackedTarget(UUID uuid, String name, Vec3 pos, Vec3 velocity, long gameTime, TargetAffiliation affiliation) {
         this.entityId = uuid;
         this.entityTypeName = name;
         this.lastKnownPos = pos;
         this.lastKnownVelocity = velocity;
         this.lastSeenGameTime = gameTime;
+        this.affiliation = affiliation != null ? affiliation : TargetAffiliation.UNKNOWN;
     }
 
     public void update(Entity entity, long gameTime) {
@@ -47,6 +55,16 @@ public class TrackedTarget {
         this.lastKnownPos = pos;
         this.lastKnownVelocity = velocity;
         this.lastSeenGameTime = gameTime;
+    }
+
+    // クライアント側でのパケット更新用（識別付き）
+    public void updateFromPacket(Vec3 pos, Vec3 velocity, long gameTime, TargetAffiliation affiliation) {
+        this.lastKnownPos = pos;
+        this.lastKnownVelocity = velocity;
+        this.lastSeenGameTime = gameTime;
+        if (affiliation != null) {
+            this.affiliation = affiliation;
+        }
     }
 
     public boolean isExpired(long currentGameTime, long timeoutTicks) {
@@ -72,4 +90,12 @@ public class TrackedTarget {
     public Vec3 getLastKnownPos() { return lastKnownPos; }
     public Vec3 getLastKnownVelocity() { return lastKnownVelocity; }
     public long getLastSeenGameTime() { return lastSeenGameTime; }
+
+    public TargetAffiliation getAffiliation() {
+        return affiliation != null ? affiliation : TargetAffiliation.UNKNOWN;
+    }
+
+    public void setAffiliation(TargetAffiliation affiliation) {
+        this.affiliation = affiliation != null ? affiliation : TargetAffiliation.UNKNOWN;
+    }
 }

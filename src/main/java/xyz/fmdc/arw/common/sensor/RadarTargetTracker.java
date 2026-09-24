@@ -1,56 +1,39 @@
 package xyz.fmdc.arw.common.sensor;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.PacketDistributor;
-import xyz.fmdc.arw.api.RadarTargetManager;
 import xyz.fmdc.arw.api.TrackedTarget;
 import xyz.fmdc.arw.network.PacketHandler;
 import xyz.fmdc.arw.network.S2CSyncRadarTargetsPacket;
 
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 
 /**
- * レーダーの探知・追尾・タイムアウト・パケット同期ロジックをカプセル化するコンポーネントクラス。
- * 内部探索はEntityIDを用い、外部公開・追尾データ管理はUUIDをキーとして扱う。
+ * レーダーの追尾目標リストの管理、タイムアウト判定、パケット送受信を共通化するクラス
  */
 public class RadarTargetTracker {
+
+    // 追尾タイムアウト（Tick数：2秒＝40Tick）
+    private static final long TIMEOUT_TICKS = 40;
 
     // 外部公開・保持用の追尾中目標マップ (UUID -> TrackedTarget)
     private final Map<UUID, TrackedTarget> trackedTargets = new HashMap<>();
 
-    // 記憶保持時間 (デフォルト: 40 ticks = 2秒)
-    private long timeoutTicks;
+    // 内部管理用：前フレームで探知された目標のUUIDセット
+    private final Set<UUID> detectedUuidsThisTick = new HashSet<>();
 
-    // イベントリスナー（新規捕捉・ロスト時）
-    private Consumer<Entity> onDiscoveredListener = null;
+    // 目標喪失時のコールバックリスナー（必要に応じて設定）
     private Consumer<TrackedTarget> onLostListener = null;
 
-    public RadarTargetTracker() {
-        this(40L);
-    }
+    public RadarTargetTracker() {}
 
-    public RadarTargetTracker(long timeoutTicks) {
-        this.timeoutTicks = timeoutTicks;
-    }
-
-    public void setTimeoutTicks(long timeoutTicks) {
-        this.timeoutTicks = timeoutTicks;
-    }
-
-    public long getTimeoutTicks() {
-        return this.timeoutTicks;
-    }
-
-    public void setOnDiscoveredListener(Consumer<Entity> listener) {
-        this.onDiscoveredListener = listener;
-    }
-
+    /**
+     * 目標喪失時のコールバックを設定
+     */
     public void setOnLostListener(Consumer<TrackedTarget> listener) {
         this.onLostListener = listener;
     }
@@ -60,81 +43,38 @@ public class RadarTargetTracker {
     }
 
     /**
-     * 内部探索処理 (EntityID ベース)
-     * RadarTargetManager の登録目標から、中心座標と最大距離、任意のフィルターを満たす目標を探索する
-     */
-    public List<Entity> scanEntities(Level level, Vec3 centerPos, float maxRange, Predicate<Entity> additionalFilter) {
-        List<Entity> detectedList = new ArrayList<>();
-        double maxRangeSqr = (double) maxRange * maxRange;
-
-        int[] ids;
-        synchronized (RadarTargetManager.INSTANCE.getTargetEntityIdSet()) {
-            ids = RadarTargetManager.INSTANCE.getTargetEntityIdSet().toIntArray();
-        }
-
-        // 内部探索: EntityIDのセットを反復
-        for (int entityId : ids) {
-            Entity target = level.getEntity(entityId);
-            if (target == null) continue;
-
-            // 共通探知チェック: 生存状態、ディメンション一致
-            if (!target.isAlive() || target.level() != level) {
-                continue;
-            }
-
-            // 距離判定
-            if (target.position().distanceToSqr(centerPos) > maxRangeSqr) {
-                continue;
-            }
-
-            // 追加条件判定（視野角など、nullの場合は全方位）
-            if (additionalFilter != null && !additionalFilter.test(target)) {
-                continue;
-            }
-
-            detectedList.add(target);
-        }
-
-        return detectedList;
-    }
-
-    /**
-     * 全方位探知（フィルターなし）の探索
-     */
-    public List<Entity> scanEntities(Level level, Vec3 centerPos, float maxRange) {
-        return scanEntities(level, centerPos, maxRange, null);
-    }
-
-    /**
      * 探知したエンティティリストを元に、内部の追尾マップ（UUID -> TrackedTarget）を更新する
      */
     public void updateTrackedTargets(Level level, List<Entity> detectedThisFrame) {
         if (level == null) return;
         long currentGameTime = level.getGameTime();
 
-        // 1. 今回探知されたエンティティを登録・更新
+        detectedUuidsThisTick.clear();
+
         for (Entity entity : detectedThisFrame) {
             UUID uuid = entity.getUUID();
+            detectedUuidsThisTick.add(uuid);
+
             TrackedTarget existing = trackedTargets.get(uuid);
             if (existing != null) {
                 existing.update(entity, currentGameTime);
             } else {
                 trackedTargets.put(uuid, new TrackedTarget(entity, currentGameTime));
-                if (onDiscoveredListener != null) {
-                    onDiscoveredListener.accept(entity);
-                }
             }
         }
 
-        // 2. タイムアウトまたは死亡した目標を削除
         trackedTargets.values().removeIf(target -> {
-            boolean expired = target.isExpired(currentGameTime, timeoutTicks);
-            Entity e = (level instanceof ServerLevel sl) ? sl.getEntity(target.getEntityId()) : null;
-            boolean dead = (e != null && !e.isAlive());
-            if ((expired || dead) && onLostListener != null) {
-                onLostListener.accept(target);
+            boolean expired = target.isExpired(currentGameTime, TIMEOUT_TICKS);
+            Entity entity = target.getEntity();
+            boolean dead = (entity != null && !entity.isAlive());
+
+            if (expired || dead) {
+                if (onLostListener != null) {
+                    onLostListener.accept(target);
+                }
+                return true;
             }
-            return expired || dead;
+            return false;
         });
     }
 
@@ -151,7 +91,8 @@ public class RadarTargetTracker {
                     target.getEntityId(),
                     name != null ? name : "Unknown",
                     target.getLastKnownPos(),
-                    target.getLastKnownVelocity() != null ? target.getLastKnownVelocity() : Vec3.ZERO
+                    target.getLastKnownVelocity() != null ? target.getLastKnownVelocity() : Vec3.ZERO,
+                    target.getAffiliation()
             ));
         }
 
@@ -172,7 +113,7 @@ public class RadarTargetTracker {
         for (S2CSyncRadarTargetsPacket.TargetData data : dataList) {
             this.trackedTargets.put(
                     data.uuid(),
-                    new TrackedTarget(data.uuid(), data.name(), data.pos(), data.vel(), currentGameTime)
+                    new TrackedTarget(data.uuid(), data.name(), data.pos(), data.vel(), currentGameTime, data.affiliation())
             );
         }
     }
