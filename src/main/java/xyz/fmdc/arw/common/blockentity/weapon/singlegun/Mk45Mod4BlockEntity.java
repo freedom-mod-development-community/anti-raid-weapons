@@ -32,10 +32,7 @@ public class Mk45Mod4BlockEntity extends AbstractSingleGunBlockEntity implements
     public static final float FIRE_ANIM_DURATION = 0.8f;
     public static final float RELOAD_ANIM_DURATION = 2.0f;
 
-    private int tickCounter = 0;
-
     private FiveInchAmmoType currentAmmo = FiveInchAmmoType.MK80_HE_PD;
-
 
     private UUID controllerPlayerUUID = null;
 
@@ -46,24 +43,13 @@ public class Mk45Mod4BlockEntity extends AbstractSingleGunBlockEntity implements
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, Mk45Mod4BlockEntity be) {
-        // 共通の武器旋回・アニメーション処理を実行
+        // 共通の武器旋回・アニメーション・クールダウン処理を実行
         be.tickSingleGun();
 
-        if (be.cooldownTicks > 0) {
-            be.cooldownTicks--;
-        }
-
-        // 遠隔操作中ではなく、かつFCS未接続時のテスト・デフォルト挙動（任意で記述）
+        // 遠隔操作中ではなく、かつFCS未接続時のデフォルト挙動（必要に応じてStandby状態の維持など）
         if (!be.isBeingRemoteControlled() && !be.isConnectedToFcs()) {
             // Standby状態の維持など
         }
-        // テスト用：発射処理
-        if (!level.isClientSide) {
-            if (be.tickCounter % 120 == 0) {
-                be.fire();
-            }
-        }
-        be.tickCounter++;
     }
 
     @Override

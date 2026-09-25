@@ -68,8 +68,6 @@ public class Mk13GmlsBlockEntity extends AbstractMissileLauncherBlockEntity impl
     public static final double PITCH_PIVOT_Y = 2.0082097D;
     public static final double PITCH_PIVOT_Z = -0.56523925D;
 
-    private int tickCounter = 0;
-
     // インベントリ機能 (Forge ItemStackHandler)
     private final ItemStackHandler inventory = new ItemStackHandler(INVENTORY_SIZE) {
         @Override
@@ -92,14 +90,6 @@ public class Mk13GmlsBlockEntity extends AbstractMissileLauncherBlockEntity impl
     public static void tick(Level level, BlockPos pos, BlockState state, Mk13GmlsBlockEntity be) {
         // 共通のミサイルランチャー旋回・アニメーション・クールダウン処理を実行
         be.tickMissileLauncher();
-
-        // テスト用：定期発射処理
-        if (!level.isClientSide) {
-            if (be.tickCounter % 120 == 0) {
-                be.fire();
-            }
-        }
-        be.tickCounter++;
     }
 
     @Override
