@@ -51,7 +51,6 @@ public class Oto127mmBlockEntity extends AbstractSingleGunBlockEntity implements
 
     public static final int INVENTORY_SIZE = 9;
 
-    private int tickCounter = 0;
     private FiveInchAmmoType currentAmmo = FiveInchAmmoType.MK80_HE_PD;
     private UUID controllerPlayerUUID = null;
 
@@ -74,15 +73,6 @@ public class Oto127mmBlockEntity extends AbstractSingleGunBlockEntity implements
     public static void tick(Level level, BlockPos pos, BlockState state, Oto127mmBlockEntity be) {
         // 共通の武器旋回・アニメーション・クールダウン処理を実行
         be.tickSingleGun();
-        //be.currentPitch = -((float) be.tickCounter / 10) % 30;
-
-        // テスト用：発射処理
-        if (!level.isClientSide) {
-            if (be.tickCounter % 120 == 0) {
-                be.fire();
-            }
-        }
-        be.tickCounter++;
     }
 
     @Override

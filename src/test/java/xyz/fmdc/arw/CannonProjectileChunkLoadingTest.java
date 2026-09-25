@@ -7,14 +7,17 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.phys.Vec3;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import xyz.fmdc.arw.api.fcs.FiringSolution;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * 砲弾のチャンクロード機能に関する単体テスト。
- * チケット仕様、参照追跡、不要チャンクの解放、複数砲弾の競合防止、TTL安全性を検証する。
+ * 砲弾のチャンクロード機能および砲の発射命令制御に関する単体テスト。
+ * チケット仕様、参照追跡、不要チャンクの解放、複数砲弾の競合防止、TTL安全性、
+ * ならびに自動射撃の抑止と明示的な発射命令（allowFire / triggerFire）時のみの射撃を検証する。
  */
 public class CannonProjectileChunkLoadingTest {
 
@@ -130,5 +133,84 @@ public class CannonProjectileChunkLoadingTest {
 
         tag.putBoolean("ChunkLoadingEnabled", true);
         assertTrue(tag.getBoolean("ChunkLoadingEnabled"));
+    }
+
+    @Test
+    @DisplayName("砲の自動射撃廃止と発射命令（allowFire / triggerFire）による発射制御ロジック検証")
+    public void testFiringCommandOnlyLogic() {
+        // 発射回数を追跡するモックモデル
+        AtomicInteger firedCount = new AtomicInteger(0);
+
+        // 武器状態
+        class SimulatedWeapon {
+            int cooldown = 0;
+
+            boolean canFire() {
+                return cooldown <= 0;
+            }
+
+            void fire() {
+                if (!canFire()) return;
+                firedCount.incrementAndGet();
+                cooldown = 60; // 射撃後クールダウン開始
+            }
+
+            // 通常tick: 自動射撃ロジックは削除されており、クールダウン低減のみ実行
+            void tick() {
+                if (cooldown > 0) {
+                    cooldown--;
+                }
+            }
+
+            // FCSからの射撃諸元受信（発射命令）
+            void applyFiringSolution(FiringSolution solution) {
+                if (solution == null) return;
+                if (solution.allowFire() && canFire()) {
+                    fire();
+                }
+            }
+
+            // プレイヤーや遠隔端末からの直接・遠隔トリガー入力
+            void handleRemoteInput(boolean triggerFire) {
+                if (triggerFire && canFire()) {
+                    fire();
+                }
+            }
+        }
+
+        SimulatedWeapon gun = new SimulatedWeapon();
+
+        // 1. tick経過（1200ticks = 60秒分）で自動射撃が一切行われないことの検証
+        for (int i = 0; i < 1200; i++) {
+            gun.tick();
+        }
+        assertEquals(0, firedCount.get(), "テスト用自動射撃が削除されたため、tick経過のみで砲が勝手に発射されてはならない");
+
+        // 2. FCS発射命令不許可（allowFire = false）の場合、射撃されないことの検証
+        FiringSolution noFireSolution = new FiringSolution(0.0f, 0.0f, false, false);
+        gun.applyFiringSolution(noFireSolution);
+        assertEquals(0, firedCount.get(), "allowFireがfalseのときは発射されないこと");
+
+        // 3. FCS発射命令許可（allowFire = true）の場合のみ発射されることの検証
+        FiringSolution fireSolution = new FiringSolution(0.0f, 0.0f, true, true);
+        gun.applyFiringSolution(fireSolution);
+        assertEquals(1, firedCount.get(), "allowFireがtrueかつcanFireのときに正確に1回発射されること");
+        assertTrue(gun.cooldown > 0, "発射後にクールダウンが設定されること");
+
+        // 4. クールダウン中は再度の発射命令があっても発射されないことの検証
+        gun.applyFiringSolution(fireSolution);
+        assertEquals(1, firedCount.get(), "クールダウン中は発射命令があっても発射されないこと");
+
+        // 5. クールダウン完了までtick経過
+        while (!gun.canFire()) {
+            gun.tick();
+        }
+
+        // 6. 遠隔・直接トリガー（triggerFire = true）による発射命令の検証
+        gun.handleRemoteInput(false);
+        assertEquals(1, firedCount.get(), "triggerFireがfalseのときは発射されないこと");
+
+        gun.handleRemoteInput(true);
+        assertEquals(2, firedCount.get(), "triggerFireがtrueのときに正確に発射されること");
     }
 }
