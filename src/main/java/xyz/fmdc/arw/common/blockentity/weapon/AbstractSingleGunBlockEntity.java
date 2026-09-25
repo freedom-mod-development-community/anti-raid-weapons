@@ -147,7 +147,6 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
 
         Vec3 direction = getFiringDirection();
         Vec3 muzzlePos = Vec3.atBottomCenterOf(this.worldPosition).add(getMuzzleOffset());
-        System.out.println(muzzlePos);
 
         // 1. サウンド再生
         this.level.playSound(
@@ -164,7 +163,7 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
             FiveInchShellEntity shell = new FiveInchShellEntity(getShellEntityType(), this.level);
             shell.setPos(muzzlePos.x, muzzlePos.y, muzzlePos.z);
             shell.setAmmoType(getSelectedAmmoType());
-            shell.setDeltaMovement(direction.scale(getMuzzleVelocity()));
+            shell.setInitialMovement(direction.scale(getMuzzleVelocity()));
 
             this.level.addFreshEntity(shell);
 

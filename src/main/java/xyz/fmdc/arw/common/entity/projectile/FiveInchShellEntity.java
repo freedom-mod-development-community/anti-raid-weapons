@@ -30,11 +30,13 @@ public class FiveInchShellEntity extends AbstractCannonProjectileEntity implemen
             SynchedEntityData.defineId(FiveInchShellEntity.class, EntityDataSerializers.INT);
 
     private int lifeTicks = 0;
-    private static final int MAX_LIFE_TICKS = 200; // 10秒で消滅
+    private static final int MAX_LIFE_TICKS = 400; // 20秒で消滅
 
     public FiveInchShellEntity(EntityType<? extends FiveInchShellEntity> type, Level level) {
         super(type, level);
         this.noCulling = true;
+        this.diameter = 0.127; // 127mm
+        updateAmmoProperties(FiveInchAmmoType.MK80_HE_PD);
     }
 
     public FiveInchShellEntity(Level level, double x, double y, double z) {
@@ -56,6 +58,9 @@ public class FiveInchShellEntity extends AbstractCannonProjectileEntity implemen
     private void updateAmmoProperties(FiveInchAmmoType type) {
         this.explosionPower = 3.0F + (type.getExplosiveFillerKg() * 0.5F);
         this.directDamage = 50.0F;
+        // カタログ諸元（質量・全長）を弾道エンジン諸元に同期
+        this.mass = type.getWeightKg();
+        this.length = type.getLengthMeters();
     }
 
     @Override
@@ -135,8 +140,6 @@ public class FiveInchShellEntity extends AbstractCannonProjectileEntity implemen
             }
             this.discard();
         }
-        // ログ出力等のため onHitBlock / onHitEntity をトリガーする super.onHit を呼び出す
-        // ※ AbstractCannonProjectileEntity.onHit は二重爆発防止のため除外して ThrowableProjectile.onHit の動作を委譲
         if (result.getType() == HitResult.Type.ENTITY) {
             this.onHitEntity((EntityHitResult) result);
         } else if (result.getType() == HitResult.Type.BLOCK) {
