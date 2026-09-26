@@ -20,7 +20,6 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.NotNull;
 import xyz.fmdc.arw.AntiRaidWeapons;
-import xyz.fmdc.arw.common.entity.AbstractCannonProjectileEntity;
 import xyz.fmdc.arw.registry.ModEntities;
 import xyz.fmdc.arw.registry.ModItems;
 

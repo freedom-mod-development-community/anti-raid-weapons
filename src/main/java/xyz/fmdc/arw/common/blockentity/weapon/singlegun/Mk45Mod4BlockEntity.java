@@ -29,6 +29,9 @@ public class Mk45Mod4BlockEntity extends AbstractSingleGunBlockEntity implements
     private static final float MIN_PITCH = -65.0f;     // 仰角（上向き）
     private static final float MAX_PITCH = 15.0f;      // 俯角（下向き）
 
+    // 実物初速 808 m/s (Minecraft: 1秒 = 20 ticks -> 808 / 20 = 40.4 blocks/tick)
+    private static final float MUZZLE_VELOCITY = 40.4f;
+
     public static final float FIRE_ANIM_DURATION = 0.8f;
     public static final float RELOAD_ANIM_DURATION = 2.0f;
 
@@ -96,6 +99,15 @@ public class Mk45Mod4BlockEntity extends AbstractSingleGunBlockEntity implements
     public int getMaxCooldownTicks() {
         // Mk45 (Mod 4) 連射速度: 約20発/分 ➔ 1発あたり 3秒 (60 ticks)
         return 60;
+    }
+
+    /**
+     * 初速パラメータ [blocks/tick]
+     * 実物初速 808 m/s (808 / 20 = 40.4 blocks/tick)
+     */
+    @Override
+    public float getMuzzleVelocity() {
+        return MUZZLE_VELOCITY;
     }
 
     @Override

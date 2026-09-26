@@ -1,4 +1,4 @@
-package xyz.fmdc.arw.common.entity;
+package xyz.fmdc.arw.common.entity.projectile;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.EntityType;
@@ -6,7 +6,7 @@ import net.minecraft.world.entity.projectile.ThrowableProjectile;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
-import xyz.fmdc.arw.common.entity.projectile.AbstractBallisticProjectileEntity;
+import xyz.fmdc.arw.common.entity.AbstractBallisticProjectileEntity;
 
 public abstract class AbstractCannonProjectileEntity extends AbstractBallisticProjectileEntity {
 

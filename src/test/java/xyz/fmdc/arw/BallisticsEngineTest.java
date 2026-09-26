@@ -17,6 +17,30 @@ public class BallisticsEngineTest {
         assertEquals(BallisticsEngine.RHO_SEA_LEVEL, rhoSea, 1e-4);
         assertTrue(rhoHigh < rhoSea, "高高度では空気密度が低下すること");
         assertTrue(rhoSpace < rhoHigh, "超高高度ではさらに空気密度が低下すること");
+        assertEquals(8500.0, BallisticsEngine.SCALE_HEIGHT, 1e-4, "実世界の地球標準大気スケールハイト8500mであること");
+    }
+
+    @Test
+    public void testSpeedOfSoundAndMachDrag() {
+        // 海面高度 (63.0) での音速が約 340.29 m/s
+        double speedSoundSea = BallisticsEngine.calculateSpeedOfSound(63.0);
+        assertEquals(BallisticsEngine.SPEED_OF_SOUND_SEA_LEVEL, speedSoundSea, 0.5);
+
+        // 高度が高くなると気温低下に伴い音速が低下すること
+        double speedSoundHigh = BallisticsEngine.calculateSpeedOfSound(5000.0);
+        assertTrue(speedSoundHigh < speedSoundSea, "高高度では気温低下により音速が下がること");
+
+        // 亜音速 (M=0.5) では抗力倍率は1.0
+        assertEquals(1.0, BallisticsEngine.calculateMachDragMultiplier(0.5), 1e-4);
+
+        // 遷音速〜音速付近 (M=1.05) で波抗力ピーク (2.0倍以上)
+        double peakDrag = BallisticsEngine.calculateMachDragMultiplier(1.05);
+        assertTrue(peakDrag >= 2.0, "音速突破時に波抗力が激増すること");
+
+        // 超音速域 (M=2.5) ではピークより減少するが1.0より高いこと
+        double superDrag = BallisticsEngine.calculateMachDragMultiplier(2.5);
+        assertTrue(superDrag < peakDrag, "超音速域ではピーク時より抗力倍率が減少すること");
+        assertTrue(superDrag > 1.0, "超音速域でも波抗力により亜音速より高いこと");
     }
 
     @Test

@@ -1,4 +1,4 @@
-package xyz.fmdc.arw.common.entity.projectile;
+package xyz.fmdc.arw.common.entity;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;

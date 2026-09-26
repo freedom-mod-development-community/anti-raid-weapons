@@ -9,9 +9,8 @@ import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import org.jetbrains.annotations.Nullable;
 import xyz.fmdc.arw.common.blockentity.target.TargetBlockEntity;
-import xyz.fmdc.arw.common.entity.AbstractMissileEntity;
+import xyz.fmdc.arw.common.entity.missile.AbstractMissileEntity;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
