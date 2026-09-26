@@ -2,12 +2,13 @@ package xyz.fmdc.arw.common.blockentity.sensor.optics;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
+import xyz.fmdc.arw.api.sensor.RadarScanRange;
 import xyz.fmdc.arw.common.blockentity.sensor.HorizontalRadarBlockEntity;
 import xyz.fmdc.arw.common.blockentity.weapon.singlegun.StandaloneManualWeaponBlockEntity;
 import xyz.fmdc.arw.registry.ModBlocks;
 
 /**
- * FCSを介さず、アナログ高角砲等へ1対1で直結して照準方位角を送る光学測遠機
+ * FCSを介さず、アナログ高角砲等へ1対1で直結して照準方位角を送る光学測距機
  */
 public class OpticalSightBlockEntity extends HorizontalRadarBlockEntity {
 
@@ -20,8 +21,8 @@ public class OpticalSightBlockEntity extends HorizontalRadarBlockEntity {
     }
 
     @Override
-    public float getScanRange() {
-        return 128.0f; // 目視限界距離
+    public RadarScanRange getScanRange() {
+        return RadarScanRange.directional(128.0f, 45.0f, -20.0f, 60.0f); // 目視限界距離
     }
 
     @Override

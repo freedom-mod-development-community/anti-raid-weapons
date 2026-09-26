@@ -100,7 +100,7 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
     }
 
     public void setTargetYaw(float yaw) {
-        this.targetYaw = Mth.clamp(yaw, getMinYaw(), getMaxYaw());
+        this.targetYaw = (this.limitYaw) ? Mth.clamp(yaw, getMinYaw(), getMaxYaw()) : Mth.wrapDegrees(yaw);
     }
 
     public void setTargetPitch(float pitch) {
@@ -147,7 +147,6 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
 
         Vec3 direction = getFiringDirection();
         Vec3 muzzlePos = Vec3.atBottomCenterOf(this.worldPosition).add(getMuzzleOffset());
-        System.out.println(muzzlePos);
 
         // 1. サウンド再生
         this.level.playSound(
@@ -164,7 +163,7 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
             FiveInchShellEntity shell = new FiveInchShellEntity(getShellEntityType(), this.level);
             shell.setPos(muzzlePos.x, muzzlePos.y, muzzlePos.z);
             shell.setAmmoType(getSelectedAmmoType());
-            shell.setDeltaMovement(direction.scale(getMuzzleVelocity()));
+            shell.setInitialMovement(direction.scale(getMuzzleVelocity()));
 
             this.level.addFreshEntity(shell);
 
@@ -258,12 +257,30 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
     @Override
     public void applyFiringSolution(FiringSolution solution) {
         if (solution == null) return;
-        setTargetYaw(solution.targetYaw());
+        // solution.targetYaw() はワールド絶対Yaw（度: 0=北(Z-), 90=東(X+), 180=南(Z+), 270=西(X-)）
+        // ブロックの currentYaw は Facing に対するローカル相対角（0=正面）
+        // したがって、Facing の角度を減算してローカル目標Yawに変換する
+        float localTargetYaw = Mth.wrapDegrees(solution.targetYaw() - this.getFacing().toYRot());
+        setTargetYaw(localTargetYaw);
         setTargetPitch(solution.targetPitch());
 
-        if (solution.allowFire() && canFire()) {
+        // 旋回追従が完了して目標を指向しており、かつ canFire() の場合にのみ発射
+        if (solution.allowFire() && isAimedAtTarget() && canFire()) {
             fire();
         }
+    }
+
+    /**
+     * 砲塔および砲身が目標方向（targetYaw, targetPitch）を指向しているか判定
+     */
+    public boolean isAimedAtTarget() {
+        return isAimedAtTarget(2.0f, 2.0f);
+    }
+
+    public boolean isAimedAtTarget(float yawToleranceDeg, float pitchToleranceDeg) {
+        float yawDiff = Math.abs(Mth.wrapDegrees(this.targetYaw - this.currentYaw));
+        float pitchDiff = Math.abs(Mth.wrapDegrees(this.targetPitch - this.currentPitch));
+        return yawDiff <= yawToleranceDeg && pitchDiff <= pitchToleranceDeg;
     }
 
     protected abstract boolean canFire();

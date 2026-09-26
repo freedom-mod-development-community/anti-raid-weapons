@@ -6,6 +6,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import xyz.fmdc.arw.common.blockentity.AbstractARWBlockEntity;
 import xyz.fmdc.arw.registry.ModMenuTypes;
 
@@ -23,6 +24,11 @@ public class EmptyMenu extends AbstractContainerMenu {
         super(ModMenuTypes.UYQ21_MENU.get(), containerId);
         this.blockEntity = blockEntity;
         // ※ addSlot(...) を一切呼ばない（インベントリなし）
+    }
+
+    @Nullable
+    public AbstractARWBlockEntity getBlockEntity() {
+        return this.blockEntity;
     }
 
     @Override

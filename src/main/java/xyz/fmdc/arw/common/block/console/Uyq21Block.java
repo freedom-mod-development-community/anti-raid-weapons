@@ -9,6 +9,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.network.NetworkHooks;
@@ -16,6 +18,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xyz.fmdc.arw.common.block.ARWBaseEntityBlock;
 import xyz.fmdc.arw.common.blockentity.console.Uyq21BlockEntity;
+import xyz.fmdc.arw.registry.ModBlocks;
 
 public class Uyq21Block extends ARWBaseEntityBlock {
 
@@ -27,6 +30,12 @@ public class Uyq21Block extends ARWBaseEntityBlock {
     @Override
     public BlockEntity newBlockEntity(@NotNull BlockPos pos, @NotNull BlockState state) {
         return new Uyq21BlockEntity(pos, state);
+    }
+
+    @Nullable
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(@NotNull Level level, @NotNull BlockState state, @NotNull BlockEntityType<T> blockEntityType) {
+        return createTickerHelper(blockEntityType, ModBlocks.UYQ21.getBEType(), Uyq21BlockEntity::tick);
     }
 
     @Override

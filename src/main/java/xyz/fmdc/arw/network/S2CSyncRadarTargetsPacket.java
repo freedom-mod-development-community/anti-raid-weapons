@@ -4,6 +4,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkEvent;
+import xyz.fmdc.arw.api.TargetAffiliation;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +15,11 @@ public class S2CSyncRadarTargetsPacket {
     private final BlockPos pos;
     private final List<TargetData> targets;
 
-    public record TargetData(UUID uuid, String name, Vec3 pos, Vec3 vel) {}
+    public record TargetData(UUID uuid, String name, Vec3 pos, Vec3 vel, TargetAffiliation affiliation) {
+        public TargetData(UUID uuid, String name, Vec3 pos, Vec3 vel) {
+            this(uuid, name, pos, vel, TargetAffiliation.UNKNOWN);
+        }
+    }
 
     public S2CSyncRadarTargetsPacket(BlockPos pos, List<TargetData> targets) {
         this.pos = pos;
@@ -30,7 +35,8 @@ public class S2CSyncRadarTargetsPacket {
             String name = buf.readUtf();
             Vec3 targetPos = new Vec3(buf.readDouble(), buf.readDouble(), buf.readDouble());
             Vec3 targetVel = new Vec3(buf.readDouble(), buf.readDouble(), buf.readDouble());
-            this.targets.add(new TargetData(uuid, name, targetPos, targetVel));
+            TargetAffiliation affiliation = TargetAffiliation.fromOrdinal(buf.readByte());
+            this.targets.add(new TargetData(uuid, name, targetPos, targetVel, affiliation));
         }
     }
 
@@ -46,6 +52,7 @@ public class S2CSyncRadarTargetsPacket {
             buf.writeDouble(data.vel().x);
             buf.writeDouble(data.vel().y);
             buf.writeDouble(data.vel().z);
+            buf.writeByte(data.affiliation() != null ? data.affiliation().ordinal() : TargetAffiliation.UNKNOWN.ordinal());
         }
     }
 

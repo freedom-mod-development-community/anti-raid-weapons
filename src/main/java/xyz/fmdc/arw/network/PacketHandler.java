@@ -56,6 +56,16 @@ public class PacketHandler {
                 .decoder(ServerboundRemoteControlSessionPacket::new)
                 .consumerMainThread(ServerboundRemoteControlSessionPacket::handle)
                 .add();
+        INSTANCE.messageBuilder(ServerboundFcsSensorPowerPacket.class, id())
+                .encoder(ServerboundFcsSensorPowerPacket::toBytes)
+                .decoder(ServerboundFcsSensorPowerPacket::new)
+                .consumerMainThread(ServerboundFcsSensorPowerPacket::handle)
+                .add();
+        INSTANCE.messageBuilder(ServerboundSetTargetAffiliationPacket.class, id())
+                .encoder(ServerboundSetTargetAffiliationPacket::toBytes)
+                .decoder(ServerboundSetTargetAffiliationPacket::new)
+                .consumerMainThread(ServerboundSetTargetAffiliationPacket::handle)
+                .add();
     }
 
     // クライアントからのパケット送信ヘルパー

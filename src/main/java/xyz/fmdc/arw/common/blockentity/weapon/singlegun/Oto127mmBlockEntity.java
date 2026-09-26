@@ -46,12 +46,14 @@ public class Oto127mmBlockEntity extends AbstractSingleGunBlockEntity implements
     private static final float MIN_PITCH = -65.0f; // マイナスが仰角（上向き）
     private static final float MAX_PITCH = 15.0f;
 
+    // 実物初速 808 m/s (Minecraft: 1秒 = 20 ticks -> 808 / 20 = 40.4 blocks/tick)
+    private static final float MUZZLE_VELOCITY = 40.4f;
+
     public static final float FIRE_ANIM_DURATION = 1.0f;
     public static final float RELOAD_ANIM_DURATION = 2.33f;
 
     public static final int INVENTORY_SIZE = 9;
 
-    private int tickCounter = 0;
     private FiveInchAmmoType currentAmmo = FiveInchAmmoType.MK80_HE_PD;
     private UUID controllerPlayerUUID = null;
 
@@ -62,27 +64,17 @@ public class Oto127mmBlockEntity extends AbstractSingleGunBlockEntity implements
             setChanged();
         }
     };
-    private final LazyOptional<IItemHandler> itemHandler = LazyOptional.of(() -> this.inventory);
+    private final LazyOptional<IItemHandler> itemHandler = LazyOptional.of(() -> inventory);
 
     public Oto127mmBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlocks.OTO127MM.getBEType(), pos, state);
         this.limitYaw = true;
-        animationDurations.put("fire", FIRE_ANIM_DURATION);
-        animationDurations.put("reload", RELOAD_ANIM_DURATION);
+        this.animationDurations.put("fire", FIRE_ANIM_DURATION);
+        this.animationDurations.put("reload", RELOAD_ANIM_DURATION);
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, Oto127mmBlockEntity be) {
-        // 共通の武器旋回・アニメーション・クールダウン処理を実行
         be.tickSingleGun();
-        //be.currentPitch = -((float) be.tickCounter / 10) % 30;
-
-        // テスト用：発射処理
-        if (!level.isClientSide) {
-            if (be.tickCounter % 120 == 0) {
-                be.fire();
-            }
-        }
-        be.tickCounter++;
     }
 
     @Override
@@ -132,6 +124,15 @@ public class Oto127mmBlockEntity extends AbstractSingleGunBlockEntity implements
     @Override
     public SoundEvent getFireSound() {
         return ModSounds.OTO127_FIRE.get();
+    }
+
+    /**
+     * 初速パラメータ [blocks/tick]
+     * 実物初速 808 m/s (808 / 20 = 40.4 blocks/tick)
+     */
+    @Override
+    public float getMuzzleVelocity() {
+        return MUZZLE_VELOCITY;
     }
 
     @Override

@@ -16,11 +16,13 @@ import org.jetbrains.annotations.NotNull;
 import xyz.fmdc.arw.api.fcs.IFcsControllableWeapon;
 import xyz.fmdc.arw.api.fcs.IFcsNetworkNode;
 import xyz.fmdc.arw.api.fcs.IFcsSensorNode;
+import xyz.fmdc.arw.api.sensor.RadarScanRange;
 import xyz.fmdc.arw.common.blockentity.AbstractARWBlockEntity;
 import xyz.fmdc.arw.common.blockentity.weapon.AbstractSingleGunBlockEntity;
 import xyz.fmdc.arw.common.blockentity.console.TestConsoleBlockEntity;
 import xyz.fmdc.arw.common.blockentity.fcs.AbstractFcsCoreBlockEntity;
 import xyz.fmdc.arw.common.blockentity.sensor.HorizontalRadarBlockEntity;
+import xyz.fmdc.arw.common.blockentity.sensor.Ops39BlockEntity;
 import xyz.fmdc.arw.common.blockentity.sensor.Spq9bBlockEntity;
 import xyz.fmdc.arw.common.blockentity.vls.VlsBlockEntity;
 import xyz.fmdc.arw.common.blockentity.weapon.ARWCIWSBlockEntity;
@@ -30,6 +32,7 @@ import xyz.fmdc.arw.common.blockentity.weapon.ciws.PhalanxBlockEntity;
 import xyz.fmdc.arw.common.item.projectile.FiveInchShellItem;
 import xyz.fmdc.arw.network.PacketHandler;
 import xyz.fmdc.arw.network.ServerboundFcsCoreUnregisterPacket;
+import xyz.fmdc.arw.network.ServerboundFcsSensorPowerPacket;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,6 +60,7 @@ public class FcsCoreScreen extends Screen {
     private DeviceEntry selectedDevice = null;
     private int hoveredIndex = -1;
     private Button deleteButton;
+    private Button powerButton;
 
     // スクロール制御
     private int scrollOffset = 0;
@@ -109,13 +113,13 @@ public class FcsCoreScreen extends Screen {
         int detailX = listX + listWidth + GAP;
         int detailWidth = this.width - MARGIN - detailX;
 
-        // 詳細情報タブ内の下側に削除ボタンを配置
-        int deleteBtnWidth = Math.min(130, detailWidth - 20);
+        // 詳細情報タブ内の下側に削除ボタンおよび電源トグルボタンを配置
+        int deleteBtnWidth = Math.min(130, (detailWidth - 28) / 2);
         int deleteBtnHeight = 20;
         int deleteBtnX = detailX + 10;
         int deleteBtnY = contentY + contentHeight - deleteBtnHeight - 8;
 
-        this.deleteButton = this.addRenderableWidget(Button.builder(Component.literal("UNREGISTER / DELETE"), button -> {
+        this.deleteButton = this.addRenderableWidget(Button.builder(Component.literal("UNREGISTER"), button -> {
             if (selectedDevice != null) {
                 // サーバーへ登録解除パケットを送信
                 PacketHandler.sendToServer(new ServerboundFcsCoreUnregisterPacket(corePos, selectedDevice.uuid()));
@@ -124,6 +128,19 @@ public class FcsCoreScreen extends Screen {
                 clampScroll();
             }
         }).bounds(deleteBtnX, deleteBtnY, deleteBtnWidth, deleteBtnHeight).build());
+
+        int powerBtnWidth = Math.min(130, (detailWidth - 28) / 2);
+        int powerBtnX = deleteBtnX + deleteBtnWidth + 8;
+        this.powerButton = this.addRenderableWidget(Button.builder(Component.literal("POWER"), button -> {
+            if (selectedDevice != null && this.minecraft != null && this.minecraft.level != null) {
+                BlockEntity be = this.minecraft.level.getBlockEntity(selectedDevice.pos());
+                if (be instanceof IFcsSensorNode sensor) {
+                    boolean nextState = !sensor.isPowered();
+                    PacketHandler.sendToServer(new ServerboundFcsSensorPowerPacket(corePos, selectedDevice.uuid(), nextState));
+                    sensor.setPowered(nextState);
+                }
+            }
+        }).bounds(powerBtnX, deleteBtnY, powerBtnWidth, deleteBtnHeight).build());
     }
 
     private void clampScroll() {
@@ -140,6 +157,22 @@ public class FcsCoreScreen extends Screen {
         // 削除ボタンの活性・非活性状態を更新
         if (this.deleteButton != null) {
             this.deleteButton.active = (this.selectedDevice != null);
+        }
+
+        // 電源ボタンの表示・テキスト状態を更新
+        if (this.powerButton != null) {
+            Level level = (this.minecraft != null) ? this.minecraft.level : null;
+            BlockEntity be = (level != null && selectedDevice != null && selectedDevice.pos() != null && level.isLoaded(selectedDevice.pos()))
+                    ? level.getBlockEntity(selectedDevice.pos())
+                    : null;
+            if (be instanceof IFcsSensorNode sensor) {
+                this.powerButton.visible = true;
+                this.powerButton.active = true;
+                this.powerButton.setMessage(Component.literal(sensor.isPowered() ? "POWER: ON" : "POWER: OFF"));
+            } else {
+                this.powerButton.visible = false;
+                this.powerButton.active = false;
+            }
         }
 
         // 背景の半透明オーバーレイ
@@ -385,26 +418,68 @@ public class FcsCoreScreen extends Screen {
             boolean linked = ciws.getLinkedFcsCoreUuid() != null;
             drawDetailRow(guiGraphics, "STATUS:", linked ? "ONLINE / LINKED" : "OFFLINE", x + 10, textY, 0xFF6C8EA4, 0xFF00FF88);
 
-        } else if (be instanceof Spq9bBlockEntity) {
-            drawDetailRow(guiGraphics, "CATEGORY:", "Radar", x + 10, textY, 0xFF4DEEEA, 0xFFFFFFFF);
+        } else if (be instanceof Spq9bBlockEntity spq) {
+            drawDetailRow(guiGraphics, "CATEGORY:", "Radar (Pulse Doppler)", x + 10, textY, 0xFF4DEEEA, 0xFFFFFFFF);
             textY += lineGap;
 
-            drawDetailRow(guiGraphics, "SCAN SPEED:", "30 RPM (Continuous Rotation)", x + 10, textY, 0xFF6C8EA4, 0xFFCCDDEE);
+            RadarScanRange range = spq.getScanRange();
+            String rangeText = String.format("%dm (FOV: %.0f°, Elev: %.0f°~+%.0f°)", (int) range.maxRange(), range.horizontalFov(), range.minPitch(), range.maxPitch());
+            drawDetailRow(guiGraphics, "SCAN RANGE:", rangeText, x + 10, textY, 0xFF6C8EA4, 0xFFCCDDEE);
             textY += lineGap;
 
-            drawDetailRow(guiGraphics, "STATUS:", "ACTIVE / SCANNING", x + 10, textY, 0xFF6C8EA4, 0xFF00FF88);
+            drawDetailRow(guiGraphics, "POWER:", spq.isPowered() ? "ON" : "OFF", x + 10, textY, 0xFF6C8EA4, spq.isPowered() ? 0xFF00FF88 : 0xFFFF4444);
+            textY += lineGap;
+
+            drawDetailRow(guiGraphics, "SCAN SPEED:", "30 RPM (9.0°/tick)", x + 10, textY, 0xFF6C8EA4, 0xFFCCDDEE);
+            textY += lineGap;
+
+            drawDetailRow(guiGraphics, "BEAM WIDTH:", String.format("%.1f° (Narrow)", spq.getInstantaneousBeamHorizontal()), x + 10, textY, 0xFF6C8EA4, 0xFFCCDDEE);
+            textY += lineGap;
+
+            String statusText = !spq.isConnectedToFcs() ? "OFFLINE" : (spq.isPowered() ? "ACTIVE / SCANNING" : "STANDBY / POWER OFF");
+            int statusColor = !spq.isConnectedToFcs() ? 0xFF888888 : (spq.isPowered() ? 0xFF00FF88 : 0xFFFFCC00);
+            drawDetailRow(guiGraphics, "STATUS:", statusText, x + 10, textY, 0xFF6C8EA4, statusColor);
+
+        } else if (be instanceof Ops39BlockEntity ops) {
+            drawDetailRow(guiGraphics, "CATEGORY:", "Radar (Surface Search)", x + 10, textY, 0xFF4DEEEA, 0xFFFFFFFF);
+            textY += lineGap;
+
+            RadarScanRange range = ops.getScanRange();
+            String rangeText = String.format("%dm (FOV: %.0f°, Elev: %.0f°~+%.0f°)", (int) range.maxRange(), range.horizontalFov(), range.minPitch(), range.maxPitch());
+            drawDetailRow(guiGraphics, "SCAN RANGE:", rangeText, x + 10, textY, 0xFF6C8EA4, 0xFFCCDDEE);
+            textY += lineGap;
+
+            drawDetailRow(guiGraphics, "POWER:", ops.isPowered() ? "ON" : "OFF", x + 10, textY, 0xFF6C8EA4, ops.isPowered() ? 0xFF00FF88 : 0xFFFF4444);
+            textY += lineGap;
+
+            drawDetailRow(guiGraphics, "SCAN SPEED:", String.format("%.0f RPM (%.1f°/tick)", Ops39BlockEntity.RPM, Ops39BlockEntity.ROTATION_SPEED), x + 10, textY, 0xFF6C8EA4, 0xFFCCDDEE);
+            textY += lineGap;
+
+            drawDetailRow(guiGraphics, "BEAM WIDTH:", String.format("%.1f° (Surface Slot)", ops.getInstantaneousBeamHorizontal()), x + 10, textY, 0xFF6C8EA4, 0xFFCCDDEE);
+            textY += lineGap;
+
+            String statusText = !ops.isConnectedToFcs() ? "OFFLINE" : (ops.isPowered() ? "ACTIVE / SCANNING" : "STANDBY / POWER OFF");
+            int statusColor = !ops.isConnectedToFcs() ? 0xFF888888 : (ops.isPowered() ? 0xFF00FF88 : 0xFFFFCC00);
+            drawDetailRow(guiGraphics, "STATUS:", statusText, x + 10, textY, 0xFF6C8EA4, statusColor);
 
         } else if (be instanceof HorizontalRadarBlockEntity radar) {
             drawDetailRow(guiGraphics, "CATEGORY:", "Radar", x + 10, textY, 0xFF4DEEEA, 0xFFFFFFFF);
             textY += lineGap;
 
-            drawDetailRow(guiGraphics, "SCAN RANGE:", (int) radar.getScanRange() + " blocks", x + 10, textY, 0xFF6C8EA4, 0xFFCCDDEE);
+            RadarScanRange range = radar.getScanRange();
+            String rangeText = String.format("%dm (FOV: %.0f°)", (int) range.maxRange(), range.horizontalFov());
+            drawDetailRow(guiGraphics, "SCAN RANGE:", rangeText, x + 10, textY, 0xFF6C8EA4, 0xFFCCDDEE);
+            textY += lineGap;
+
+            drawDetailRow(guiGraphics, "POWER:", radar.isPowered() ? "ON" : "OFF", x + 10, textY, 0xFF6C8EA4, radar.isPowered() ? 0xFF00FF88 : 0xFFFF4444);
             textY += lineGap;
 
             drawDetailRow(guiGraphics, "DETECTED TARGETS:", radar.getDetectedTargets().size() + " tracks", x + 10, textY, 0xFF6C8EA4, 0xFFCCDDEE);
             textY += lineGap;
 
-            drawDetailRow(guiGraphics, "STATUS:", radar.isConnectedToFcs() ? "ONLINE / SCANNING" : "OFFLINE", x + 10, textY, 0xFF6C8EA4, 0xFF00FF88);
+            String statusText = !radar.isConnectedToFcs() ? "OFFLINE" : (radar.isPowered() ? "ONLINE / SCANNING" : "STANDBY / POWER OFF");
+            int statusColor = !radar.isConnectedToFcs() ? 0xFF888888 : (radar.isPowered() ? 0xFF00FF88 : 0xFFFFCC00);
+            drawDetailRow(guiGraphics, "STATUS:", statusText, x + 10, textY, 0xFF6C8EA4, statusColor);
 
         } else if (be instanceof VlsBlockEntity vls) {
             drawDetailRow(guiGraphics, "CATEGORY:", "VLS", x + 10, textY, 0xFF4DEEEA, 0xFFFFFFFF);
@@ -443,6 +518,9 @@ public class FcsCoreScreen extends Screen {
 
         } else if (be instanceof IFcsSensorNode sensorNode) {
             drawDetailRow(guiGraphics, "CATEGORY:", "Radar", x + 10, textY, 0xFF4DEEEA, 0xFFFFFFFF);
+            textY += lineGap;
+
+            drawDetailRow(guiGraphics, "POWER:", sensorNode.isPowered() ? "ON" : "OFF", x + 10, textY, 0xFF6C8EA4, sensorNode.isPowered() ? 0xFF00FF88 : 0xFFFF4444);
             textY += lineGap;
 
             drawDetailRow(guiGraphics, "DETECTED TARGETS:", sensorNode.getDetectedTargets().size() + " tracks", x + 10, textY, 0xFF6C8EA4, 0xFFCCDDEE);

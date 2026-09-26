@@ -7,7 +7,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import xyz.fmdc.arw.AntiRaidWeapons;
-import xyz.fmdc.arw.common.entity.AbstractMissileEntity;
 import xyz.fmdc.arw.registry.ModEntities;
 
 import java.util.List;
@@ -24,9 +23,18 @@ public class Rim66M2 extends AbstractMissileEntity {
     public Rim66M2(EntityType<? extends Rim66M2> type, Level level) {
         super(type, level);
 
+        // カタログ空力諸元 (RIM-66M-2)
+        this.diameter = 0.34;           // 直径 34.3cm
+        this.length = 4.72;             // 全長 4.72m
+        this.mass = 708.0;              // 発射質量 708kg
+        this.dragCoefficientZero = 0.22; // 超音速流線型ボディ
+        this.sideDragCoefficient = 1.15; // 円柱胴体側面抗力
+        this.liftSlope = 3.2;           // 長大な十字安定翼と制御翼による高揚力
+        this.stabilityFactor = 3.5;
+
         // 指定諸元
         this.maxSpeed = 60.0F;           // 最高移動速度 : 60.0m/tick
-        this.acceleration = 0.8F;       // 推力加速度 : 0.8 blocks/tick^2
+        this.acceleration = 0.8F;       // 推力加速度換算用 (0.8 blocks/tick^2 = 320 m/s^2)
         this.motorBurnTicks = 120;       // モーター燃焼時間 : 120 tick (6.0秒)
         this.maxLifeTicks = 2400;        // 最大寿命 : 2400 tick (120.0秒)
 

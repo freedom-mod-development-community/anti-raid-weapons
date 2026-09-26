@@ -152,8 +152,8 @@ public class RadarTest extends Screen {
         guiGraphics.fill(infoX - 5, infoY - 5, infoX + 160, infoY + 65, 0xCC000000);
         guiGraphics.renderOutline(infoX - 5, infoY - 5, 165, 70, 0xFF00FF00);
 
-        String entityTypeName = target.getEntity() != null
-                ? target.getEntity().getType().getDescription().getString()
+        String entityTypeName = target.getEntityTypeName() != null
+                ? target.getEntityTypeName()
                 : "Unknown";
 
         guiGraphics.drawString(this.font, "TRACKED TARGET", infoX, infoY, 0xFF00FF00, false);

@@ -8,6 +8,7 @@
   "block.arw.fcs_core": "FCS Core",
   "block.arw.mk13-gmls": "Mk.13 Missile Launcher",
   "block.arw.mk13_gmls": "Mk.13 Missile Launcher",
+  "block.arw.target_block": "Radar Target Block",
   "block.arw.test_console": "Test Console",
   "item.arw.fcs_connector": "FCS Connector",
 
