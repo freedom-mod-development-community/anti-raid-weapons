@@ -8,6 +8,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.RegistryObject;
 import xyz.fmdc.arw.AntiRaidWeapons;
 import xyz.fmdc.arw.common.entity.missile.Rim66M2;
+import xyz.fmdc.arw.common.entity.projectile.ClientDummyProjectileEntity;
 import xyz.fmdc.arw.common.entity.projectile.FiveInchShellEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 
@@ -37,6 +38,18 @@ public class ModEntities {
                             .clientTrackingRange(32) // 高速長距離迎撃のためトラッキング範囲を拡張
                             .updateInterval(1)
                             .build("rim_66m2")
+            );
+
+    // 3. クライアント描画専用ダミー飛翔体（Virtual Projectile Dummy）
+    public static final RegistryObject<EntityType<ClientDummyProjectileEntity>> CLIENT_DUMMY_PROJECTILE =
+            ENTITY_TYPES.register("client_dummy_projectile", () ->
+                    EntityType.Builder.<ClientDummyProjectileEntity>of(ClientDummyProjectileEntity::new, MobCategory.MISC)
+                            .sized(0.2F, 0.2F)
+                            .noSave()
+                            .fireImmune()
+                            .clientTrackingRange(16)
+                            .updateInterval(1)
+                            .build("client_dummy_projectile")
             );
 
     public static void register(IEventBus eventBus) {

@@ -18,6 +18,7 @@ import xyz.fmdc.arw.client.gui.Mk13GmlsScreen;
 import xyz.fmdc.arw.client.gui.Oto127mmScreen;
 import xyz.fmdc.arw.client.gui.screen.Uyq21Screen;
 import xyz.fmdc.arw.client.renderer.*;
+import xyz.fmdc.arw.client.renderer.entity.ClientDummyProjectileRenderer;
 import xyz.fmdc.arw.client.renderer.entity.Rim66M2Renderer;
 import xyz.fmdc.arw.registry.ModBlocks;
 import xyz.fmdc.arw.registry.ModEntities;
@@ -70,6 +71,7 @@ public class ClientModEvents {
         //entity
         event.registerEntityRenderer(ModEntities.FIVE_INCH_SHELL.get(), ThrownItemRenderer::new);
         event.registerEntityRenderer(ModEntities.RIM_66M2.get(), Rim66M2Renderer::new);
+        event.registerEntityRenderer(ModEntities.CLIENT_DUMMY_PROJECTILE.get(), ClientDummyProjectileRenderer::new);
     }
 
     @SubscribeEvent
@@ -115,7 +117,7 @@ public class ClientModEvents {
             ResourceLocation resourceLocation) {
 
         event.registerBlockEntityRenderer(
-                blockEntry.getBEType(), // または getBEType()
+                blockEntry.getBEType(),
                 ctx -> new BaseStaticRenderer<>(ctx, be -> GlbModelManager.INSTANCE.getFastModel(resourceLocation))
         );
     }

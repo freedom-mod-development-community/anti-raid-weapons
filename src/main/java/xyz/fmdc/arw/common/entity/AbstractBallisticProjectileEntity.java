@@ -20,6 +20,8 @@ import net.minecraft.world.phys.Vec3;
 import xyz.fmdc.arw.api.projectile.BallisticsEngine;
 import xyz.fmdc.arw.api.projectile.IBallisticProjectile;
 import xyz.fmdc.arw.api.projectile.telemetry.FlightTelemetryLogger;
+import xyz.fmdc.arw.api.projectile.virtual.VirtualProjectile;
+import xyz.fmdc.arw.common.projectile.virtual.VirtualProjectileManager;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -29,9 +31,12 @@ import java.util.UUID;
 /**
  * {@link IBallisticProjectile} を実装し、{@link BallisticsEngine} による現実的な外弾道計算を行う
  * 全ての飛翔体（砲弾・ミサイル等）の基底抽象Entity。
- * 1Tick刻みのフライトテレメトリCSV出力機能（{@link FlightTelemetryLogger}）および
- * 未ロードチャンク突入時のフリーズを防ぐ動的チャンクロード機構を統合しています。
+ *
+ * @deprecated サーバー負荷軽減および強制チャンクロードクラッシュの根本解決のため、
+ * 新アーキテクチャ {@link VirtualProjectile} および {@link VirtualProjectileManager} への移行が推奨されます。
+ * 本クラスでの強制チャンクロード（Ticket発行）はデフォルトで無効化されています。
  */
+@Deprecated
 public abstract class AbstractBallisticProjectileEntity extends ThrowableProjectile implements IBallisticProjectile {
 
     /** 弾道飛翔体用チャンクロードチケット定義（タイムアウト60ticks = 3秒のセーフティ付き） */
@@ -39,7 +44,8 @@ public abstract class AbstractBallisticProjectileEntity extends ThrowableProject
             TicketType.create("arw_ballistic_projectile", UUID::compareTo, 60);
     protected static final int CHUNK_LOAD_RADIUS = 2; // 半径2 -> 中心チャンクのチケットレベル31（ENTITY_TICKING）
 
-    protected boolean chunkLoadingEnabled = true;
+    /** 旧方式の強制チャンクロードはクラッシュ防止のためデフォルト無効 */
+    protected boolean chunkLoadingEnabled = false;
     private final Set<ChunkPos> activeChunkTickets = new HashSet<>();
 
     private static final EntityDataAccessor<Float> ORIENTATION_X =
@@ -78,41 +84,41 @@ public abstract class AbstractBallisticProjectileEntity extends ThrowableProject
 
     @Override
     public Vec3 getVelocityMetersPerSecond() {
+        // DeltaMovement は blocks/tick なので、20倍して m/s に換算
         return this.getDeltaMovement().scale(20.0);
     }
 
     @Override
     public void setVelocityMetersPerSecond(Vec3 velocity) {
+        // m/s を blocks/tick に換算して DeltaMovement に設定
         this.setDeltaMovement(velocity.scale(1.0 / 20.0));
     }
 
     @Override
     public Vec3 getOrientation() {
-        float x = this.entityData.get(ORIENTATION_X);
-        float y = this.entityData.get(ORIENTATION_Y);
-        float z = this.entityData.get(ORIENTATION_Z);
-        double lenSq = x * x + y * y + z * z;
-        if (lenSq < 1.0E-6) {
-            Vec3 rotDir = Vec3.directionFromRotation(this.getXRot(), this.getYRot());
-            return rotDir.lengthSqr() > 1.0E-6 ? rotDir.normalize() : new Vec3(0, 0, 1);
-        }
-        return new Vec3(x, y, z).normalize();
+        return new Vec3(
+                this.entityData.get(ORIENTATION_X),
+                this.entityData.get(ORIENTATION_Y),
+                this.entityData.get(ORIENTATION_Z)
+        );
     }
 
     @Override
     public void setOrientation(Vec3 orientation) {
-        Vec3 norm = orientation.lengthSqr() > 1.0E-6 ? orientation.normalize() : new Vec3(0, 0, 1);
+        Vec3 norm = orientation.normalize();
         this.entityData.set(ORIENTATION_X, (float) norm.x);
         this.entityData.set(ORIENTATION_Y, (float) norm.y);
         this.entityData.set(ORIENTATION_Z, (float) norm.z);
-        syncRotationFromOrientation(norm);
+
+        // 姿勢ベクトルからピッチとヨーを計算して同期
+        double pitch = Math.toDegrees(Math.asin(-norm.y));
+        double yaw = Math.toDegrees(Math.atan2(-norm.x, norm.z));
+        this.setXRot((float) pitch);
+        this.setYRot((float) yaw);
+        this.xRotO = (float) pitch;
+        this.yRotO = (float) yaw;
     }
 
-    /**
-     * 発射時の初速と弾軸姿勢を初期化します。
-     *
-     * @param motion 初速ベクトル [blocks/tick]
-     */
     public void setInitialMovement(Vec3 motion) {
         this.setDeltaMovement(motion);
         if (motion.lengthSqr() > 1.0E-6) {
@@ -120,73 +126,54 @@ public abstract class AbstractBallisticProjectileEntity extends ThrowableProject
         }
     }
 
-    @Override
-    public void setDeltaMovement(Vec3 motion) {
-        super.setDeltaMovement(motion);
-        // 初期状態など orientation が未設定の場合は初速ベクトルに合わせる
-        float ox = this.entityData.get(ORIENTATION_X);
-        float oy = this.entityData.get(ORIENTATION_Y);
-        float oz = this.entityData.get(ORIENTATION_Z);
-        if (ox * ox + oy * oy + oz * oz < 1.0E-6 && motion.lengthSqr() > 1.0E-6) {
-            setOrientation(motion.normalize());
-        }
-    }
-
     /**
-     * 弾軸姿勢ベクトルから Minecraft の Yaw / Pitch 回転角を同期します。
-     */
-    protected void syncRotationFromOrientation(Vec3 dir) {
-        double horizDist = Math.sqrt(dir.x * dir.x + dir.z * dir.z);
-        float targetYaw = (float) (Mth.atan2(dir.x, dir.z) * (180.0 / Math.PI));
-        float targetPitch = (float) (Mth.atan2(dir.y, horizDist) * (180.0 / Math.PI));
-        this.setYRot(targetYaw);
-        this.setXRot(targetPitch);
-    }
-
-    /**
-     * 進行方向先読みチャンク計算用の速度スケール係数を返します。
-     */
-    protected double getChunkLeadFactor() {
-        return 8.0;
-    }
-
-    /**
-     * 飛翔体周辺および進行方向先読みチャンクの動的チケット管理（未ロード領域突入によるフリーズ防止）
+     * 進行方向前方のチャンクを動的にロードし、未ロード領域突入によるフリーズ・デッドロックを防止します。
      */
     protected void updateChunkLoading() {
         if (!this.chunkLoadingEnabled || !(this.level() instanceof ServerLevel serverLevel)) {
             return;
         }
 
-        ChunkPos currentChunk = new ChunkPos(this.blockPosition());
-        Vec3 motion = this.getDeltaMovement();
-        ChunkPos leadChunk = new ChunkPos(BlockPos.containing(this.position().add(motion.scale(getChunkLeadFactor()))));
+        Vec3 pos = this.position();
+        Vec3 vel = this.getDeltaMovement();
+
+        // 現在位置と次Tickの予測位置のチャンク座標を計算
+        ChunkPos currentChunk = new ChunkPos(BlockPos.containing(pos));
+        ChunkPos nextChunk = new ChunkPos(BlockPos.containing(pos.add(vel)));
 
         Set<ChunkPos> desiredChunks = new HashSet<>();
         desiredChunks.add(currentChunk);
-        desiredChunks.add(leadChunk);
+        desiredChunks.add(nextChunk);
 
-        Iterator<ChunkPos> it = this.activeChunkTickets.iterator();
-        while (it.hasNext()) {
-            ChunkPos pos = it.next();
-            if (!desiredChunks.contains(pos)) {
-                serverLevel.getChunkSource().removeRegionTicket(PROJECTILE_CHUNK_TICKET, pos, CHUNK_LOAD_RADIUS, this.getUUID());
-                it.remove();
+        // 新規に必要なチャンクにチケットを発行
+        for (ChunkPos target : desiredChunks) {
+            if (!this.activeChunkTickets.contains(target)) {
+                serverLevel.getChunkSource().addRegionTicket(
+                        PROJECTILE_CHUNK_TICKET,
+                        target,
+                        CHUNK_LOAD_RADIUS,
+                        this.getUUID()
+                );
+                this.activeChunkTickets.add(target);
             }
         }
 
-        boolean periodicRefresh = (this.flightTicks % 20 == 0);
-        for (ChunkPos pos : desiredChunks) {
-            if (periodicRefresh || !this.activeChunkTickets.contains(pos)) {
-                serverLevel.getChunkSource().addRegionTicket(PROJECTILE_CHUNK_TICKET, pos, CHUNK_LOAD_RADIUS, this.getUUID());
-                this.activeChunkTickets.add(pos);
+        // 不要になった古いチャンクチケットを返還
+        Iterator<ChunkPos> it = this.activeChunkTickets.iterator();
+        while (it.hasNext()) {
+            ChunkPos posInSet = it.next();
+            if (!desiredChunks.contains(posInSet)) {
+                serverLevel.getChunkSource().removeRegionTicket(
+                        PROJECTILE_CHUNK_TICKET,
+                        posInSet,
+                        CHUNK_LOAD_RADIUS,
+                        this.getUUID()
+                );
+                it.remove();
             }
         }
     }
 
-    /**
-     * 付与した全てのチャンクチケットを確実に解放・クリーンアップします。
-     */
     public void clearChunkTickets() {
         if (!this.activeChunkTickets.isEmpty() && this.level() instanceof ServerLevel serverLevel) {
             for (ChunkPos pos : this.activeChunkTickets) {
@@ -250,90 +237,48 @@ public abstract class AbstractBallisticProjectileEntity extends ThrowableProject
             HitResult hitResult = ProjectileUtil.getHitResultOnMoveVector(this, this::canHitEntity);
             if (hitResult.getType() != HitResult.Type.MISS) {
                 this.onHit(hitResult);
-                return;
             }
-        } else {
-            // クライアント側: サーバー同期速度による移動と回転補間
-            Vec3 motion = this.getDeltaMovement();
-            this.setPos(this.getX() + motion.x, this.getY() + motion.y, this.getZ() + motion.z);
-            syncRotationFromOrientation(getOrientation());
         }
 
-        this.checkInsideBlocks();
-        this.hasImpulse = true;
-
-        this.yRotO = this.getYRot();
-        this.xRotO = this.getXRot();
+        // 姿勢の補間更新
+        this.updateRotation();
     }
 
     @Override
-    protected void onHitEntity(EntityHitResult result) {
-        super.onHitEntity(result);
+    protected void onHit(HitResult result) {
+        super.onHit(result);
         if (!this.level().isClientSide) {
-            String targetName = result.getEntity().getName().getString();
-            FlightTelemetryLogger.endSession(
-                    this.getUUID(),
-                    "HIT_ENTITY [" + targetName + "]",
-                    result.getLocation()
-            );
-        }
-    }
-
-    @Override
-    protected void onHitBlock(BlockHitResult result) {
-        super.onHitBlock(result);
-        if (!this.level().isClientSide) {
-            String blockInfo = result.getBlockPos().toShortString();
-            FlightTelemetryLogger.endSession(
-                    this.getUUID(),
-                    "HIT_BLOCK [" + blockInfo + "]",
-                    result.getLocation()
-            );
+            // テレメトリセッションの終了
+            FlightTelemetryLogger.endSession(this.getUUID(), result.getType().name(), result.getLocation());
+            clearChunkTickets();
         }
     }
 
     @Override
     public void remove(RemovalReason reason) {
         clearChunkTickets();
-        if (!this.level().isClientSide) {
-            FlightTelemetryLogger.endSession(this.getUUID(), "REMOVED_" + reason.name(), this.position());
-        }
         super.remove(reason);
-    }
-
-    @Override
-    public void onRemovedFromWorld() {
-        clearChunkTickets();
-        if (!this.level().isClientSide) {
-            FlightTelemetryLogger.endSession(this.getUUID(), "REMOVED_FROM_WORLD", this.position());
-        }
-        super.onRemovedFromWorld();
-    }
-
-    @Override
-    protected float getGravity() {
-        // 重力加速度は BallisticsEngine 側で計算するため Vanilla の重力二重加算を防止
-        return 0.0F;
     }
 
     @Override
     protected void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
-        Vec3 ori = getOrientation();
-        tag.putDouble("OriX", ori.x);
-        tag.putDouble("OriY", ori.y);
-        tag.putDouble("OriZ", ori.z);
         tag.putInt("FlightTicks", this.flightTicks);
+        tag.putDouble("OrientationX", this.entityData.get(ORIENTATION_X));
+        tag.putDouble("OrientationY", this.entityData.get(ORIENTATION_Y));
+        tag.putDouble("OrientationZ", this.entityData.get(ORIENTATION_Z));
         tag.putBoolean("ChunkLoadingEnabled", this.chunkLoadingEnabled);
     }
 
     @Override
     protected void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
-        if (tag.contains("OriX") && tag.contains("OriY") && tag.contains("OriZ")) {
-            setOrientation(new Vec3(tag.getDouble("OriX"), tag.getDouble("OriY"), tag.getDouble("OriZ")));
-        }
         this.flightTicks = tag.getInt("FlightTicks");
+        if (tag.contains("OrientationX")) {
+            this.entityData.set(ORIENTATION_X, (float) tag.getDouble("OrientationX"));
+            this.entityData.set(ORIENTATION_Y, (float) tag.getDouble("OrientationY"));
+            this.entityData.set(ORIENTATION_Z, (float) tag.getDouble("OrientationZ"));
+        }
         if (tag.contains("ChunkLoadingEnabled")) {
             this.chunkLoadingEnabled = tag.getBoolean("ChunkLoadingEnabled");
         }
