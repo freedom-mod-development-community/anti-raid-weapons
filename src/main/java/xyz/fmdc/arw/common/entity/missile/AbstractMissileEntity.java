@@ -1,4 +1,4 @@
-package xyz.fmdc.arw.common.entity;
+package xyz.fmdc.arw.common.entity.missile;
 
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -23,7 +23,7 @@ import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.Nullable;
 import xyz.fmdc.arw.AntiRaidWeapons;
 import xyz.fmdc.arw.api.projectile.telemetry.FlightTelemetryLogger;
-import xyz.fmdc.arw.common.entity.projectile.AbstractBallisticProjectileEntity;
+import xyz.fmdc.arw.common.entity.AbstractBallisticProjectileEntity;
 
 import java.util.List;
 import java.util.UUID;

@@ -26,7 +26,7 @@ import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xyz.fmdc.arw.common.blockentity.weapon.AbstractMissileLauncherBlockEntity;
-import xyz.fmdc.arw.common.entity.AbstractMissileEntity;
+import xyz.fmdc.arw.common.entity.missile.AbstractMissileEntity;
 import xyz.fmdc.arw.common.item.missile.Rim66m2Item;
 import xyz.fmdc.arw.client.gui.Mk13GmlsMenu;
 import xyz.fmdc.arw.registry.ModBlocks;

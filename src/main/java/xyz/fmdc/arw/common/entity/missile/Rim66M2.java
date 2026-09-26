@@ -7,7 +7,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import xyz.fmdc.arw.AntiRaidWeapons;
-import xyz.fmdc.arw.common.entity.AbstractMissileEntity;
 import xyz.fmdc.arw.registry.ModEntities;
 
 import java.util.List;

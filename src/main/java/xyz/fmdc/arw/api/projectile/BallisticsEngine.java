@@ -6,38 +6,83 @@ import net.minecraft.world.phys.Vec3;
 /**
  * 飛翔体（砲弾・ミサイル等）の物理挙動を計算するステートレスな外弾道物理計算エンジン.
  * <p>
- * 高度による空気密度変化、弾体姿勢と進行方向のズレ（迎角）に応じた円柱投影面積および抗力・揚力、
- * ウェザーベーン効果（進行方向への弾軸姿勢復元）、ロケット推力、重力を統合して計算します。
+ * マイクラ特有の圧縮・縮小スケールではなく、現実世界（1 block = 1 m）と等身大の1:1物理スケールを採用。
+ * 高度による国際標準大気（ISA）モデル、実地球スケールハイト（H ≈ 8500m）、音速・マッハ数に応じた超音速造波抗力、
+ * 弾体姿勢と進行方向のズレ（迎角）に応じた円柱投影面積および抗力・揚力、
+ * ウェザーベーン効果（進行方向への弾軸姿勢復元）、ロケット推力、地球標準重力（-9.80665 m/s^2）を統合して計算します。
  */
 public final class BallisticsEngine {
 
     /** Minecraft標準の海面高度（基準空気密度点） */
     public static final double SEA_LEVEL_Y = 63.0;
 
-    /** 海面基準空気密度 \rho_0 [kg/m^3] */
+    /** 海面基準空気密度 \rho_0 [kg/m^3] (国際標準大気 ISA: 15℃, 1013.25hPa) */
     public static final double RHO_SEA_LEVEL = 1.225;
 
     /**
-     * Minecraftの高度限界（約320m）に合わせた実用スケールハイト H [m].
-     * 地上〜成層圏の空気抵抗変化をゲーム内で体感できるよう、実地球（約8500m）より圧縮した値を使用。
+     * 実地球の標準大気スケールハイト H ≈ 8500.0 [m].
+     * マイクラ空間を縮小するのではなく、現実世界の1:1等身大スケールに基づいた指数関数的減衰を計算します。
      */
-    public static final double SCALE_HEIGHT = 2000.0;
+    public static final double SCALE_HEIGHT = 8500.0;
 
-    /** 重力加速度ベクトル [m/s^2] (Minecraft 1 block = 1 m) */
+    /** 重力加速度ベクトル [m/s^2] (Minecraft 1 block = 1 m, 地球標準重力 9.80665 m/s^2) */
     public static final Vec3 GRAVITY = new Vec3(0, -9.80665, 0);
+
+    /** 海面基準音速 a_0 [m/s] (ISA標準大気: 15℃, 288.15K) */
+    public static final double SPEED_OF_SOUND_SEA_LEVEL = 340.29;
 
     private BallisticsEngine() {}
 
     /**
      * 高度 y [m] における空気密度 \rho(y) [kg/m^3] を算出します。
-     * 指数関数的減衰モデル: \rho(y) = \rho_0 * \exp(- (y - y_0) / H)
+     * 国際標準大気（ISA）指数関数減衰モデル: \rho(y) = \rho_0 * \exp(- (y - y_0) / H)
      *
-     * @param altitudeY MinecraftのY座標
+     * @param altitudeY MinecraftのY座標 [m]
      * @return 空気密度 [kg/m^3]
      */
     public static double calculateAirDensity(double altitudeY) {
         double relativeAltitude = Math.max(0.0, altitudeY - SEA_LEVEL_Y);
         return RHO_SEA_LEVEL * Math.exp(-relativeAltitude / SCALE_HEIGHT);
+    }
+
+    /**
+     * 高度 y [m] における音速 a(y) [m/s] を算出します。
+     * 国際標準大気（ISA）の対流圏気温減率 L = 0.0065 K/m に準拠。
+     *
+     * @param altitudeY MinecraftのY座標 [m]
+     * @return 音速 [m/s]
+     */
+    public static double calculateSpeedOfSound(double altitudeY) {
+        double relativeAltitude = Math.max(0.0, altitudeY - SEA_LEVEL_Y);
+        // 対流圏気温 T(h) = T0 - L * h （圏界面 11,000m / 216.65K で下限クランプ）
+        double tempK = Math.max(216.65, 288.15 - 0.0065 * relativeAltitude);
+        // 音速 a = sqrt(\gamma * R * T) ≈ 20.0468 * sqrt(T)
+        return 20.0468 * Math.sqrt(tempK);
+    }
+
+    /**
+     * マッハ数 M に応じた外弾道学的な波抗力（造波抵抗）倍率を算出します。
+     * 亜音速から遷音速（音速の壁）、超音速域に至る実測抗力曲線（G1/G7弾道モデル準拠）を再現。
+     *
+     * @param mach マッハ数 (v / a)
+     * @return 抗力係数倍率 (1.0以上)
+     */
+    public static double calculateMachDragMultiplier(double mach) {
+        if (mach < 0.8) {
+            return 1.0;
+        } else if (mach < 1.05) {
+            // 遷音速急増域 (0.8 -> 1.05 で 1.0 -> 2.25 へ滑らかに上昇)
+            double t = (mach - 0.8) / 0.25;
+            double smooth = Math.sin(t * (Math.PI * 0.5));
+            return 1.0 + 1.25 * (smooth * smooth);
+        } else if (mach < 1.4) {
+            // 超音速直後ピーク減衰 (1.05 -> 1.4 で 2.25 -> 1.70 へ下降)
+            double t = (mach - 1.05) / 0.35;
+            return 2.25 - 0.55 * t;
+        } else {
+            // 高超音速漸近域 (マッハ数増加に伴い 1.0 に漸近)
+            return 1.0 + 1.1 / Math.sqrt(mach * mach - 0.75);
+        }
     }
 
     /**
@@ -85,8 +130,22 @@ public final class BallisticsEngine {
             double liftNewtons,
             double aoaDegrees,
             double airDensity,
-            double thrustNewtons
-    ) {}
+            double thrustNewtons,
+            double machNumber,
+            double speedOfSound
+    ) {
+        // 後方互換用コンストラクタ（6引数）
+        public StepResult(
+                BallisticsState state,
+                double dragNewtons,
+                double liftNewtons,
+                double aoaDegrees,
+                double airDensity,
+                double thrustNewtons
+        ) {
+            this(state, dragNewtons, liftNewtons, aoaDegrees, airDensity, thrustNewtons, 0.0, SPEED_OF_SOUND_SEA_LEVEL);
+        }
+    }
 
     /**
      * 状態とパラメータ、時間ステップ dt から次の物理状態および詳細な空力結果を計算します。
@@ -103,6 +162,8 @@ public final class BallisticsEngine {
 
         double speed = vel.length();
         double rho = calculateAirDensity(pos.y);
+        double soundSpeed = calculateSpeedOfSound(pos.y);
+        double mach = (soundSpeed > 1.0E-4) ? (speed / soundSpeed) : 0.0;
 
         // 投影面積の計算 (円柱モデル)
         double radius = params.diameter() * 0.5;
@@ -126,8 +187,12 @@ public final class BallisticsEngine {
             // 実効投影面積 A_eff(alpha)
             double aEff = aFront * Math.abs(cosAlpha) + aSide * sinAlpha;
 
-            // 合成抗力係数 Cd(alpha)
-            double cd = params.cd0() * (cosAlpha * cosAlpha) + params.cdSide() * (sinAlpha * sinAlpha);
+            // 実世界スケールのマッハ数造波抗力補正
+            double machDragMult = calculateMachDragMultiplier(mach);
+            double baseCd = params.cd0() * machDragMult;
+
+            // 合成抗力係数 Cd(alpha, Mach)
+            double cd = baseCd * (cosAlpha * cosAlpha) + params.cdSide() * (sinAlpha * sinAlpha);
 
             // 動圧 q = 0.5 * rho * v^2
             double q = 0.5 * rho * speed * speed;
@@ -180,7 +245,7 @@ public final class BallisticsEngine {
         }
 
         BallisticsState nextState = new BallisticsState(nextPos, nextVel, nextOrientation);
-        return new StepResult(nextState, dragNewtons, liftNewtons, aoaDegrees, rho, thrustNewtons);
+        return new StepResult(nextState, dragNewtons, liftNewtons, aoaDegrees, rho, thrustNewtons, mach, soundSpeed);
     }
 
     /**
