@@ -8,6 +8,10 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import xyz.fmdc.arw.common.entity.AbstractBallisticProjectileEntity;
 
+/**
+ * 砲弾の基底抽象Entity。
+ * 外弾道物理シミュレーションおよびチャンクロード機能は親クラス {@link AbstractBallisticProjectileEntity} により管理されます。
+ */
 public abstract class AbstractCannonProjectileEntity extends AbstractBallisticProjectileEntity {
 
     protected float explosionPower = 4.0f;
