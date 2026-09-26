@@ -27,30 +27,17 @@ import xyz.fmdc.arw.common.entity.AbstractBallisticProjectileEntity;
 
 import java.util.List;
 import java.util.UUID;
-import net.minecraft.core.BlockPos;
-import net.minecraft.server.level.TicketType;
-import net.minecraft.world.level.ChunkPos;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
 
 /**
  * ミサイル（誘導弾・ロケット推進弾）の基底抽象クラス.
  * 外弾道物理エンジン {@link xyz.fmdc.arw.api.projectile.BallisticsEngine} に基づき、
  * ロケットモーター推進、目標追尾誘導（迎角空力誘導）、近接信管、着弾爆発を管理します。
+ * チャンクロード機能は親クラス {@link AbstractBallisticProjectileEntity} により提供されます。
  */
 public abstract class AbstractMissileEntity extends AbstractBallisticProjectileEntity {
 
     private static final EntityDataAccessor<Boolean> IS_MOTOR_BURNING =
             SynchedEntityData.defineId(AbstractMissileEntity.class, EntityDataSerializers.BOOLEAN);
-
-    /** ミサイル用チャンクロードチケット定義（タイムアウト60ticks = 3秒のセーフティ付き） */
-    public static final TicketType<UUID> MISSILE_CHUNK_TICKET =
-            TicketType.create("arw_missile", UUID::compareTo, 60);
-    private static final int CHUNK_LOAD_RADIUS = 2; // 半径2 -> 中心チャンクのチケットレベル31（ENTITY_TICKING）
-
-    protected boolean chunkLoadingEnabled = true;
-    private final Set<ChunkPos> activeChunkTickets = new HashSet<>();
 
     protected float explosionPower = 6.0F;
     protected float directDamage = 100.0F;
@@ -204,7 +191,6 @@ public abstract class AbstractMissileEntity extends AbstractBallisticProjectileE
 
         // 飛行・推進制御（サーバー側）
         if (!this.level().isClientSide) {
-            updateChunkLoading();
             boolean motorActive = this.lifeTicks <= this.motorBurnTicks;
             if (isMotorBurning() != motorActive) {
                 setMotorBurning(motorActive);
@@ -221,7 +207,7 @@ public abstract class AbstractMissileEntity extends AbstractBallisticProjectileE
             }
         }
 
-        // 基底クラスの外弾道物理計算およびレイキャスト衝突判定を実行
+        // 基底クラスの外弾道物理計算、動的チャンクロードおよびレイキャスト衝突判定を実行
         super.tick();
 
         // 速度上限の適用
@@ -360,75 +346,6 @@ public abstract class AbstractMissileEntity extends AbstractBallisticProjectileE
     }
 
     /**
-     * ミサイル周辺および進行方向先読みチャンクの動的チケット管理（未ロード領域突入によるフリーズ防止）
-     */
-    protected void updateChunkLoading() {
-        if (!this.chunkLoadingEnabled || !(this.level() instanceof ServerLevel serverLevel)) {
-            return;
-        }
-
-        ChunkPos currentChunk = new ChunkPos(this.blockPosition());
-        Vec3 motion = this.getDeltaMovement();
-        ChunkPos leadChunk = new ChunkPos(BlockPos.containing(this.position().add(motion.scale(8.0))));
-
-        Set<ChunkPos> desiredChunks = new HashSet<>();
-        desiredChunks.add(currentChunk);
-        desiredChunks.add(leadChunk);
-
-        Iterator<ChunkPos> it = this.activeChunkTickets.iterator();
-        while (it.hasNext()) {
-            ChunkPos pos = it.next();
-            if (!desiredChunks.contains(pos)) {
-                serverLevel.getChunkSource().removeRegionTicket(MISSILE_CHUNK_TICKET, pos, CHUNK_LOAD_RADIUS, this.getUUID());
-                it.remove();
-            }
-        }
-
-        boolean periodicRefresh = (this.lifeTicks % 20 == 0);
-        for (ChunkPos pos : desiredChunks) {
-            if (periodicRefresh || !this.activeChunkTickets.contains(pos)) {
-                serverLevel.getChunkSource().addRegionTicket(MISSILE_CHUNK_TICKET, pos, CHUNK_LOAD_RADIUS, this.getUUID());
-                this.activeChunkTickets.add(pos);
-            }
-        }
-    }
-
-    /**
-     * 付与した全てのチャンクチケットを確実に解放・クリーンアップします。
-     */
-    protected void clearChunkTickets() {
-        if (!this.activeChunkTickets.isEmpty() && this.level() instanceof ServerLevel serverLevel) {
-            for (ChunkPos pos : this.activeChunkTickets) {
-                serverLevel.getChunkSource().removeRegionTicket(MISSILE_CHUNK_TICKET, pos, CHUNK_LOAD_RADIUS, this.getUUID());
-            }
-            this.activeChunkTickets.clear();
-        }
-    }
-
-    public boolean isChunkLoadingEnabled() {
-        return this.chunkLoadingEnabled;
-    }
-
-    public void setChunkLoadingEnabled(boolean enabled) {
-        this.chunkLoadingEnabled = enabled;
-        if (!enabled) {
-            clearChunkTickets();
-        }
-    }
-
-    @Override
-    public void onRemovedFromWorld() {
-        clearChunkTickets();
-        super.onRemovedFromWorld();
-    }
-
-    @Override
-    public void remove(RemovalReason reason) {
-        clearChunkTickets();
-        super.remove(reason);
-    }
-
-    /**
      * 起爆処理（爆発の発生およびエンティティ消滅）
      */
     public void explode() {
@@ -448,7 +365,6 @@ public abstract class AbstractMissileEntity extends AbstractBallisticProjectileE
     protected void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
         tag.putInt("LifeTicks", this.lifeTicks);
-        tag.putBoolean("ChunkLoadingEnabled", this.chunkLoadingEnabled);
         tag.putBoolean("MotorBurning", isMotorBurning());
         tag.putFloat("ExplosionPower", this.explosionPower);
         tag.putFloat("DirectDamage", this.directDamage);
@@ -466,9 +382,6 @@ public abstract class AbstractMissileEntity extends AbstractBallisticProjectileE
     protected void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
         this.lifeTicks = tag.getInt("LifeTicks");
-        if (tag.contains("ChunkLoadingEnabled")) {
-            this.chunkLoadingEnabled = tag.getBoolean("ChunkLoadingEnabled");
-        }
         if (tag.contains("MotorBurning")) {
             setMotorBurning(tag.getBoolean("MotorBurning"));
         }

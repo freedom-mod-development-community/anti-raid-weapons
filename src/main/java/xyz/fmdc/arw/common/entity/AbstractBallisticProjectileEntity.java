@@ -1,13 +1,17 @@
 package xyz.fmdc.arw.common.entity;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.TicketType;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.entity.projectile.ThrowableProjectile;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
@@ -17,12 +21,26 @@ import xyz.fmdc.arw.api.projectile.BallisticsEngine;
 import xyz.fmdc.arw.api.projectile.IBallisticProjectile;
 import xyz.fmdc.arw.api.projectile.telemetry.FlightTelemetryLogger;
 
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.UUID;
+
 /**
  * {@link IBallisticProjectile} を実装し、{@link BallisticsEngine} による現実的な外弾道計算を行う
  * 全ての飛翔体（砲弾・ミサイル等）の基底抽象Entity。
- * 1Tick刻みのフライトテレメトリCSV出力機能（{@link FlightTelemetryLogger}）を統合しています。
+ * 1Tick刻みのフライトテレメトリCSV出力機能（{@link FlightTelemetryLogger}）および
+ * 未ロードチャンク突入時のフリーズを防ぐ動的チャンクロード機構を統合しています。
  */
 public abstract class AbstractBallisticProjectileEntity extends ThrowableProjectile implements IBallisticProjectile {
+
+    /** 弾道飛翔体用チャンクロードチケット定義（タイムアウト60ticks = 3秒のセーフティ付き） */
+    public static final TicketType<UUID> PROJECTILE_CHUNK_TICKET =
+            TicketType.create("arw_ballistic_projectile", UUID::compareTo, 60);
+    protected static final int CHUNK_LOAD_RADIUS = 2; // 半径2 -> 中心チャンクのチケットレベル31（ENTITY_TICKING）
+
+    protected boolean chunkLoadingEnabled = true;
+    private final Set<ChunkPos> activeChunkTickets = new HashSet<>();
 
     private static final EntityDataAccessor<Float> ORIENTATION_X =
             SynchedEntityData.defineId(AbstractBallisticProjectileEntity.class, EntityDataSerializers.FLOAT);
@@ -125,11 +143,77 @@ public abstract class AbstractBallisticProjectileEntity extends ThrowableProject
         this.setXRot(targetPitch);
     }
 
+    /**
+     * 進行方向先読みチャンク計算用の速度スケール係数を返します。
+     */
+    protected double getChunkLeadFactor() {
+        return 8.0;
+    }
+
+    /**
+     * 飛翔体周辺および進行方向先読みチャンクの動的チケット管理（未ロード領域突入によるフリーズ防止）
+     */
+    protected void updateChunkLoading() {
+        if (!this.chunkLoadingEnabled || !(this.level() instanceof ServerLevel serverLevel)) {
+            return;
+        }
+
+        ChunkPos currentChunk = new ChunkPos(this.blockPosition());
+        Vec3 motion = this.getDeltaMovement();
+        ChunkPos leadChunk = new ChunkPos(BlockPos.containing(this.position().add(motion.scale(getChunkLeadFactor()))));
+
+        Set<ChunkPos> desiredChunks = new HashSet<>();
+        desiredChunks.add(currentChunk);
+        desiredChunks.add(leadChunk);
+
+        Iterator<ChunkPos> it = this.activeChunkTickets.iterator();
+        while (it.hasNext()) {
+            ChunkPos pos = it.next();
+            if (!desiredChunks.contains(pos)) {
+                serverLevel.getChunkSource().removeRegionTicket(PROJECTILE_CHUNK_TICKET, pos, CHUNK_LOAD_RADIUS, this.getUUID());
+                it.remove();
+            }
+        }
+
+        boolean periodicRefresh = (this.flightTicks % 20 == 0);
+        for (ChunkPos pos : desiredChunks) {
+            if (periodicRefresh || !this.activeChunkTickets.contains(pos)) {
+                serverLevel.getChunkSource().addRegionTicket(PROJECTILE_CHUNK_TICKET, pos, CHUNK_LOAD_RADIUS, this.getUUID());
+                this.activeChunkTickets.add(pos);
+            }
+        }
+    }
+
+    /**
+     * 付与した全てのチャンクチケットを確実に解放・クリーンアップします。
+     */
+    public void clearChunkTickets() {
+        if (!this.activeChunkTickets.isEmpty() && this.level() instanceof ServerLevel serverLevel) {
+            for (ChunkPos pos : this.activeChunkTickets) {
+                serverLevel.getChunkSource().removeRegionTicket(PROJECTILE_CHUNK_TICKET, pos, CHUNK_LOAD_RADIUS, this.getUUID());
+            }
+            this.activeChunkTickets.clear();
+        }
+    }
+
+    public boolean isChunkLoadingEnabled() {
+        return this.chunkLoadingEnabled;
+    }
+
+    public void setChunkLoadingEnabled(boolean enabled) {
+        this.chunkLoadingEnabled = enabled;
+        if (!enabled) {
+            clearChunkTickets();
+        }
+    }
+
     @Override
     public void tick() {
         this.baseTick();
 
         if (!this.level().isClientSide) {
+            updateChunkLoading();
+
             // 初回Tick: テレメトリセッション開始
             if (this.flightTicks == 0) {
                 FlightTelemetryLogger.startSession(
@@ -210,6 +294,7 @@ public abstract class AbstractBallisticProjectileEntity extends ThrowableProject
 
     @Override
     public void remove(RemovalReason reason) {
+        clearChunkTickets();
         if (!this.level().isClientSide) {
             FlightTelemetryLogger.endSession(this.getUUID(), "REMOVED_" + reason.name(), this.position());
         }
@@ -218,6 +303,7 @@ public abstract class AbstractBallisticProjectileEntity extends ThrowableProject
 
     @Override
     public void onRemovedFromWorld() {
+        clearChunkTickets();
         if (!this.level().isClientSide) {
             FlightTelemetryLogger.endSession(this.getUUID(), "REMOVED_FROM_WORLD", this.position());
         }
@@ -238,6 +324,7 @@ public abstract class AbstractBallisticProjectileEntity extends ThrowableProject
         tag.putDouble("OriY", ori.y);
         tag.putDouble("OriZ", ori.z);
         tag.putInt("FlightTicks", this.flightTicks);
+        tag.putBoolean("ChunkLoadingEnabled", this.chunkLoadingEnabled);
     }
 
     @Override
@@ -247,5 +334,8 @@ public abstract class AbstractBallisticProjectileEntity extends ThrowableProject
             setOrientation(new Vec3(tag.getDouble("OriX"), tag.getDouble("OriY"), tag.getDouble("OriZ")));
         }
         this.flightTicks = tag.getInt("FlightTicks");
+        if (tag.contains("ChunkLoadingEnabled")) {
+            this.chunkLoadingEnabled = tag.getBoolean("ChunkLoadingEnabled");
+        }
     }
 }
