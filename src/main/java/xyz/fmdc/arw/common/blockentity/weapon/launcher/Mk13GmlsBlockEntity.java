@@ -95,6 +95,7 @@ public class Mk13GmlsBlockEntity extends AbstractMissileLauncherBlockEntity impl
     @Override
     public void fire() {
         if (!canFire()) return;
+        if (!consumeRim66M2()) return;
         playAnimation("fire", FIRE_ANIM_DURATION);
         playAnimation("reload", RELOAD_ANIM_DURATION);
         launchMissile();
@@ -152,11 +153,12 @@ public class Mk13GmlsBlockEntity extends AbstractMissileLauncherBlockEntity impl
 
     @Override
     protected boolean canFire() {
-        // クールダウン完了かつ、指示された目標角度への旋回・俯仰が完了している（誤差許容範囲内）場合のみ発射可能
-        return this.cooldownTicks <= 0 && isAimAligned(AIM_TOLERANCE);
+        // クールダウン完了かつ、指示された目標角度への旋回・俯仰が完了しており、弾薬がある場合のみ発射可能
+        return this.cooldownTicks <= 0 && isAimAligned(AIM_TOLERANCE) && hasRim66M2();
     }
 
     @Override
+    @Deprecated(forRemoval = true)
     protected EntityType<? extends AbstractMissileEntity> getMissileEntityType() {
         return ModEntities.RIM_66M2.get();
     }
@@ -198,6 +200,27 @@ public class Mk13GmlsBlockEntity extends AbstractMissileLauncherBlockEntity impl
             }
         }
         return count;
+    }
+
+    /**
+     * インベントリから RIM-66M-2 アイテムを1つ消費します。
+     */
+    public boolean consumeRim66M2() {
+        for (int i = 0; i < this.inventory.getSlots(); i++) {
+            ItemStack stack = this.inventory.getStackInSlot(i);
+            if (!stack.isEmpty() && (stack.getItem() instanceof Rim66m2Item || stack.getItem() == ModItems.RIM_66M2.get())) {
+                stack.shrink(1);
+                if (stack.isEmpty()) {
+                    this.inventory.setStackInSlot(i, ItemStack.EMPTY);
+                }
+                setChanged();
+                if (this.level != null && !this.level.isClientSide) {
+                    syncToClient();
+                }
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

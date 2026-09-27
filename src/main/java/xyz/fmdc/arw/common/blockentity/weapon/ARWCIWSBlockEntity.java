@@ -8,22 +8,26 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
-import xyz.fmdc.arw.client.renderer.GenericFastGlbRenderer;
 import xyz.fmdc.arw.api.blockentity.IDirectionalBlockEntity;
 import xyz.fmdc.arw.api.blockentity.IYawPitchBarrelAnimatableModel;
+import xyz.fmdc.arw.common.projectile.virtual.CiwsProjectile;
+import xyz.fmdc.arw.client.renderer.GenericFastGlbRenderer;
 import xyz.fmdc.arw.common.blockentity.AbstractARWBlockEntity;
 import xyz.fmdc.arw.common.entity.projectile.FiveInchAmmoType;
-import xyz.fmdc.arw.common.entity.projectile.FiveInchShellEntity;
+import xyz.fmdc.arw.common.projectile.virtual.VirtualProjectileManager;
+import xyz.fmdc.arw.network.PacketHandler;
+import xyz.fmdc.arw.network.S2CSpawnVirtualProjectilePacket;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public abstract class ARWCIWSBlockEntity extends AbstractARWBlockEntity
         implements IYawPitchBarrelAnimatableModel, IDirectionalBlockEntity {
@@ -53,25 +57,14 @@ public abstract class ARWCIWSBlockEntity extends AbstractARWBlockEntity
 
     private int firingTimer = 0; // 残り発砲時間（Tick単位: 20 Tick = 1秒）
 
+    protected final Map<String, Float> animationDurations = new HashMap<>();
+    protected final Map<String, Long> runningAnimations = new HashMap<>();
+
     public ARWCIWSBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
     }
 
-    /**
-     * 右クリックなどで発砲を一定時間開始させるメソッド
-     * @param ticks 発砲を継続するTick数（5秒 = 100）
-     */
-    public void startFiringFor(int ticks) {
-        this.firingTimer = ticks;
-        if (!this.isFiringTarget) {
-            setFiring(true); // 発砲フラグを立ててクライアントと同期
-        }
-    }
-
     // --- 抽象プロパティ設定（子クラス側で指定） ---
-
-    /** 生成する砲弾の EntityType */
-    public abstract EntityType<FiveInchShellEntity> getShellEntityType();
 
     /** 使用する砲弾 Enum */
     public abstract FiveInchAmmoType getSelectedAmmoType();
@@ -79,9 +72,9 @@ public abstract class ARWCIWSBlockEntity extends AbstractARWBlockEntity
     /** 各アニメーションの再生時間（秒）を取得 */
     public abstract float getAnimationDuration(String animName);
 
-    /** 初速パラメータ */
+    /** 初速パラメータ [m/s] (900m/s = 45 blocks/tick) */
     public float getMuzzleVelocity() {
-        return 12.0F; // CIWS用に高速化
+        return 900.0F;
     }
 
     /** 射撃時の効果音 */
@@ -92,7 +85,7 @@ public abstract class ARWCIWSBlockEntity extends AbstractARWBlockEntity
     // --- 角度・位置ベクトルの計算 ---
 
     @Override
-    public Direction getFacing(){
+    public Direction getFacing() {
         return this.getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING);
     }
 
@@ -125,6 +118,10 @@ public abstract class ARWCIWSBlockEntity extends AbstractARWBlockEntity
 
     public boolean isFiring() {
         return this.isFiringTarget;
+    }
+
+    public void startFiringFor(int ticks) {
+        setFiringTimer(ticks);
     }
 
     // --- Tick 処理（ステート遷移 & 毎Tick発射） ---
@@ -160,7 +157,10 @@ public abstract class ARWCIWSBlockEntity extends AbstractARWBlockEntity
         this.setChanged();
     }
 
-    /** 毎Tick実行される1発ずつの発射処理 */
+    /**
+     * 毎Tick実行される発射処理。
+     * バニラEntityをスポーンさせず、Virtual Projectile方式によって毎秒75発のCIWS弾幕をラグなしで処理します。
+     */
     protected void executeTickFire(Level level) {
         Vec3 direction = getFiringDirection().normalize();
         Vec3 muzzlePos = Vec3.atCenterOf(this.worldPosition).add(getMuzzleOffset());
@@ -176,85 +176,109 @@ public abstract class ARWCIWSBlockEntity extends AbstractARWBlockEntity
                 pitchVariance
         );
 
-        if (!level.isClientSide) {
-            // 弾丸エンティティ生成
-            FiveInchShellEntity shell = new FiveInchShellEntity(getShellEntityType(), level);
-            shell.setPos(muzzlePos.x, muzzlePos.y, muzzlePos.z);
-            shell.setAmmoType(getSelectedAmmoType());
-            shell.setDeltaMovement(direction.scale(getMuzzleVelocity()));
-            level.addFreshEntity(shell);
+        if (!level.isClientSide && level instanceof ServerLevel serverLevel) {
+            // CIWS 弾の生成 (900m/s = 45ブロック/Tick, 寿命 10 Ticks, ダメージ 25.0F)
+            CiwsProjectile projectile = new CiwsProjectile(
+                    serverLevel.dimension(),
+                    this.uuid,
+                    muzzlePos,
+                    direction,
+                    getMuzzleVelocity(),
+                    10,
+                    25.0F
+            );
+
+            // サーバー側マネージャーへ登録（純粋なインメモリ計算）
+            VirtualProjectileManager.getInstance().register(projectile);
+
+            // クライアント側描画パケット送出
+            PacketHandler.sendToNear(
+                    serverLevel,
+                    muzzlePos,
+                    128.0,
+                    new S2CSpawnVirtualProjectilePacket(
+                            projectile.getProjectileId(),
+                            projectile.getProjectileTypeId(),
+                            muzzlePos,
+                            projectile.getVelocity(),
+                            projectile.getMaxAgeTicks(),
+                            new CompoundTag()
+                    )
+            );
 
             // マズルフラッシュ・軽度の煙エフェクト
-            if (level instanceof ServerLevel serverLevel) {
-                serverLevel.sendParticles(
-                        ParticleTypes.FLAME,
-                        muzzlePos.x, muzzlePos.y, muzzlePos.z,
-                        5, 0.2, 0.2, 0.2, 0.1
-                );
-                serverLevel.sendParticles(
-                        ParticleTypes.SMOKE,
-                        muzzlePos.x + direction.x * 0.5,
-                        muzzlePos.y + direction.y * 0.5,
-                        muzzlePos.z + direction.z * 0.5,
-                        3, 0.1, 0.1, 0.1, 0.05
-                );
-            }
+            serverLevel.sendParticles(
+                    ParticleTypes.FLAME,
+                    muzzlePos.x, muzzlePos.y, muzzlePos.z,
+                    5, 0.2, 0.2, 0.2, 0.1
+            );
+            serverLevel.sendParticles(
+                    ParticleTypes.SMOKE,
+                    muzzlePos.x + direction.x * 0.5,
+                    muzzlePos.y + direction.y * 0.5,
+                    muzzlePos.z + direction.z * 0.5,
+                    3, 0.1, 0.1, 0.1, 0.05
+            );
         }
     }
 
     // --- BaseNavalGunRenderer 連携用のアニメーション情報共有 ---
 
-    /**
-     * Rendererの render() から毎フレーム呼び出され、現在再生すべき Glb アニメーションを返す
-     */
+    @Override
     public List<GenericFastGlbRenderer.ActiveAnimation> getActiveAnimations(float partialTick) {
-        List<GenericFastGlbRenderer.ActiveAnimation> activeAnims = new ArrayList<>();
-        if (this.level == null) return activeAnims;
+        List<GenericFastGlbRenderer.ActiveAnimation> list = new ArrayList<>();
+        if (this.level == null) return list;
 
-        long currentTime = this.level.getGameTime();
-        float elapsedSeconds = (currentTime - this.stateStartTime + partialTick) / 20.0f;
-
-        switch (this.currentState) {
-            case START_FIRE:
-                activeAnims.add(new GenericFastGlbRenderer.ActiveAnimation("start_fire", elapsedSeconds, false));
-                break;
-
-            case FIRING:
-                // firing アニメーションをループ再生
-                float firingDuration = getAnimationDuration("firing");
-                float loopTime = (firingDuration > 0) ? (elapsedSeconds % firingDuration) : elapsedSeconds;
-                activeAnims.add(new GenericFastGlbRenderer.ActiveAnimation("firing", loopTime, true));
-                break;
-
-            case END_FIRE:
-                activeAnims.add(new GenericFastGlbRenderer.ActiveAnimation("end_fire", elapsedSeconds, false));
-                break;
-
-            case IDLE:
-            default:
-                break;
+        long currentGameTime = this.level.getGameTime();
+        for (Map.Entry<String, Long> entry : this.runningAnimations.entrySet()) {
+            String name = entry.getKey();
+            long startTime = entry.getValue();
+            float elapsedTicks = (float) (currentGameTime - startTime) + partialTick;
+            float elapsedSeconds = Math.max(0.0f, elapsedTicks / 20.0f);
+            list.add(new GenericFastGlbRenderer.ActiveAnimation(name, elapsedSeconds));
         }
-
-        return activeAnims;
+        return list;
     }
 
-    // --- NBT 保存・同期 ---
+    public float getBarrelAngle() {
+        return this.barrelAngle;
+    }
+
+    public void setFiringTimer(int ticks) {
+        this.firingTimer = ticks;
+        setFiring(true);
+    }
+
+    @Override
+    public float getRenderTargetYaw(float partialTick) {
+        return this.currentYaw;
+    }
+
+    @Override
+    public float getRenderTargetPitch(float partialTick) {
+        return this.currentPitch;
+    }
+
+    @Override
+    public float getRenderBarrelAng(float partialTick) {
+        return this.barrelAngle;
+    }
 
     @Override
     protected void saveAdditional(@NotNull CompoundTag tag) {
         super.saveAdditional(tag);
-        tag.putBoolean("IsFiringTarget", this.isFiringTarget);
-        tag.putInt("FiringState", this.currentState.ordinal());
-        tag.putFloat("CurrentYaw", this.currentYaw);
-        tag.putFloat("CurrentPitch", this.currentPitch);
+        tag.putFloat("Yaw", this.currentYaw);
+        tag.putFloat("Pitch", this.currentPitch);
+        tag.putBoolean("IsFiring", this.isFiringTarget);
+        tag.putInt("FiringTimer", this.firingTimer);
     }
 
     @Override
     public void load(@NotNull CompoundTag tag) {
         super.load(tag);
-        this.isFiringTarget = tag.getBoolean("IsFiringTarget");
-        this.currentState = FiringState.values()[tag.getInt("FiringState")];
-        this.currentYaw = tag.getFloat("CurrentYaw");
-        this.currentPitch = tag.getFloat("CurrentPitch");
+        this.currentYaw = tag.getFloat("Yaw");
+        this.currentPitch = tag.getFloat("Pitch");
+        this.isFiringTarget = tag.getBoolean("IsFiring");
+        this.firingTimer = tag.getInt("FiringTimer");
     }
 }

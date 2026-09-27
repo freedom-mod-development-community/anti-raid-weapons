@@ -8,7 +8,6 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.Containers;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleContainer;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -26,10 +25,8 @@ import org.jetbrains.annotations.Nullable;
 import xyz.fmdc.arw.api.control.IRemoteControllableWeapon;
 import xyz.fmdc.arw.common.blockentity.weapon.AbstractSingleGunBlockEntity;
 import xyz.fmdc.arw.common.entity.projectile.FiveInchAmmoType;
-import xyz.fmdc.arw.common.entity.projectile.FiveInchShellEntity;
 import xyz.fmdc.arw.client.gui.Oto127mmMenu;
 import xyz.fmdc.arw.registry.ModBlocks;
-import xyz.fmdc.arw.registry.ModEntities;
 import xyz.fmdc.arw.registry.ModSounds;
 
 import java.util.UUID;
@@ -95,11 +92,6 @@ public class Oto127mmBlockEntity extends AbstractSingleGunBlockEntity implements
     }
 
     @Override
-    public EntityType<FiveInchShellEntity> getShellEntityType() {
-        return ModEntities.FIVE_INCH_SHELL.get();
-    }
-
-    @Override
     public Vec3 getFiringDirection() {
         return Vec3.directionFromRotation(this.currentPitch, this.currentYaw + this.getFacing().toYRot()).normalize();
     }
@@ -133,6 +125,15 @@ public class Oto127mmBlockEntity extends AbstractSingleGunBlockEntity implements
     @Override
     public float getMuzzleVelocity() {
         return MUZZLE_VELOCITY;
+    }
+
+    /**
+     * 飛翔体の最大生存時間（タイムアウト） [ticks]
+     * 2400 ticks (120秒)
+     */
+    @Override
+    public int getProjectileMaxAgeTicks() {
+        return 2400;
     }
 
     @Override
@@ -181,6 +182,9 @@ public class Oto127mmBlockEntity extends AbstractSingleGunBlockEntity implements
     protected void saveAdditional(@NotNull CompoundTag tag) {
         super.saveAdditional(tag);
         tag.put("Inventory", this.inventory.serializeNBT());
+        if (this.controllerPlayerUUID != null) {
+            tag.putUUID("ControllerPlayerUUID", this.controllerPlayerUUID);
+        }
     }
 
     @Override
@@ -188,6 +192,9 @@ public class Oto127mmBlockEntity extends AbstractSingleGunBlockEntity implements
         super.load(tag);
         if (tag.contains("Inventory")) {
             this.inventory.deserializeNBT(tag.getCompound("Inventory"));
+        }
+        if (tag.hasUUID("ControllerPlayerUUID")) {
+            this.controllerPlayerUUID = tag.getUUID("ControllerPlayerUUID");
         }
     }
 
@@ -230,8 +237,13 @@ public class Oto127mmBlockEntity extends AbstractSingleGunBlockEntity implements
     public void handleRemoteInput(float yawInput, float pitchInput, boolean triggerFire) {
         setTargetYaw(yawInput);
         setTargetPitch(pitchInput);
-        if (triggerFire && canFire()) {
-            fire();
+        if (triggerFire) {
+            if (canFire() && isAimAligned(3.0f)) {
+                fire();
+                this.pendingFireRequest = false;
+            } else {
+                this.pendingFireRequest = true;
+            }
         }
     }
 

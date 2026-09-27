@@ -1,7 +1,7 @@
 package xyz.fmdc.arw.client;
 
 import net.minecraft.client.gui.screens.MenuScreens;
-import net.minecraft.client.renderer.entity.ThrownItemRenderer;
+import net.minecraft.client.renderer.entity.NoopRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.api.distmarker.Dist;
@@ -18,7 +18,7 @@ import xyz.fmdc.arw.client.gui.Mk13GmlsScreen;
 import xyz.fmdc.arw.client.gui.Oto127mmScreen;
 import xyz.fmdc.arw.client.gui.screen.Uyq21Screen;
 import xyz.fmdc.arw.client.renderer.*;
-import xyz.fmdc.arw.client.renderer.entity.Rim66M2Renderer;
+import xyz.fmdc.arw.client.renderer.entity.ClientDummyProjectileRenderer;
 import xyz.fmdc.arw.registry.ModBlocks;
 import xyz.fmdc.arw.registry.ModEntities;
 import xyz.fmdc.arw.registry.ModMenuTypes;
@@ -67,9 +67,10 @@ public class ClientModEvents {
                 MissileLauncherRenderer::new
         );
 
-        //entity
-        event.registerEntityRenderer(ModEntities.FIVE_INCH_SHELL.get(), ThrownItemRenderer::new);
-        event.registerEntityRenderer(ModEntities.RIM_66M2.get(), Rim66M2Renderer::new);
+        //entity (旧型EntityはNoopRendererを登録して描画負荷・リソースロードを排除)
+        event.registerEntityRenderer(ModEntities.FIVE_INCH_SHELL.get(), NoopRenderer::new);
+        event.registerEntityRenderer(ModEntities.RIM_66M2.get(), NoopRenderer::new);
+        event.registerEntityRenderer(ModEntities.CLIENT_DUMMY_PROJECTILE.get(), ClientDummyProjectileRenderer::new);
     }
 
     @SubscribeEvent
@@ -115,7 +116,7 @@ public class ClientModEvents {
             ResourceLocation resourceLocation) {
 
         event.registerBlockEntityRenderer(
-                blockEntry.getBEType(), // または getBEType()
+                blockEntry.getBEType(),
                 ctx -> new BaseStaticRenderer<>(ctx, be -> GlbModelManager.INSTANCE.getFastModel(resourceLocation))
         );
     }

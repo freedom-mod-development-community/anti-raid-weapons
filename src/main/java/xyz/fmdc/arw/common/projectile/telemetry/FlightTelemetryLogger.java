@@ -1,4 +1,4 @@
-package xyz.fmdc.arw.api.projectile.telemetry;
+package xyz.fmdc.arw.common.projectile.telemetry;
 
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
@@ -136,7 +136,7 @@ public final class FlightTelemetryLogger {
     }
 
     /**
-     * 飛翔体の射出時にテレメトリセッションを開始します。
+     * 飛翔体の射出時にテレメトリセッションを開始します（Entity版）。
      *
      * @param entity 飛翔体Entity
      * @param pos    初期位置
@@ -153,6 +153,22 @@ public final class FlightTelemetryLogger {
         if (typeName.isEmpty()) {
             typeName = entity.getClass().getSimpleName();
         }
+        startSession(uuid, typeName, pos, velMps, ori, pitch, yaw);
+    }
+
+    /**
+     * 仮想飛翔体（Virtual Projectile）またはエンティティ非依存の飛翔体射出時にテレメトリセッションを開始します。
+     *
+     * @param uuid     飛翔体のUUID
+     * @param typeName 飛翔体種別識別子（ファイル名プレフィックス）
+     * @param pos      初期位置
+     * @param velMps   初期速度 [m/s]
+     * @param ori      初期弾軸姿勢
+     * @param pitch    初期Pitch
+     * @param yaw      初期Yaw
+     */
+    public static void startSession(UUID uuid, String typeName, Vec3 pos, Vec3 velMps, Vec3 ori, float pitch, float yaw) {
+        if (!ENABLED) return;
 
         FlightSession session = new FlightSession(uuid, typeName);
         ACTIVE_SESSIONS.put(uuid, session);

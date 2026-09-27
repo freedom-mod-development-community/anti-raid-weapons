@@ -2,7 +2,6 @@ package xyz.fmdc.arw.common.blockentity.weapon.singlegun;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -10,9 +9,7 @@ import xyz.fmdc.arw.api.control.IDirectMannedWeapon;
 import xyz.fmdc.arw.client.renderer.GenericFastGlbRenderer;
 import xyz.fmdc.arw.api.blockentity.IYawPitchAnimatableModel;
 import xyz.fmdc.arw.common.entity.projectile.FiveInchAmmoType;
-import xyz.fmdc.arw.common.entity.projectile.FiveInchShellEntity;
 import xyz.fmdc.arw.registry.ModBlocks;
-import xyz.fmdc.arw.registry.ModEntities;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,12 +43,6 @@ public class WWIIAntiAircraftGunBlockEntity extends StandaloneManualWeaponBlockE
     @Override
     public FiveInchAmmoType getSelectedAmmoType() {
         return this.currentAmmo;
-    }
-
-    @Override
-    public EntityType<FiveInchShellEntity> getShellEntityType() {
-        // 登録済みの 5インチ砲弾 ModEntities.FIVE_INCH_SHELL.get() など
-        return ModEntities.FIVE_INCH_SHELL.get();
     }
 
     @Override

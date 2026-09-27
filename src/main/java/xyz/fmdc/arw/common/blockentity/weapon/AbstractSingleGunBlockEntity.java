@@ -4,35 +4,35 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
-import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
-import xyz.fmdc.arw.api.fcs.FiringSolution;
-import xyz.fmdc.arw.api.fcs.IFcsControllableWeapon;
-import xyz.fmdc.arw.client.renderer.GenericFastGlbRenderer;
 import xyz.fmdc.arw.api.blockentity.IDirectionalBlockEntity;
 import xyz.fmdc.arw.api.blockentity.IYawPitchAnimatableModel;
+import xyz.fmdc.arw.api.fcs.FiringSolution;
+import xyz.fmdc.arw.api.fcs.IFcsControllableWeapon;
+import xyz.fmdc.arw.common.projectile.virtual.BallisticShellProjectile;
+import xyz.fmdc.arw.client.renderer.GenericFastGlbRenderer;
 import xyz.fmdc.arw.common.blockentity.AbstractARWBlockEntity;
 import xyz.fmdc.arw.common.entity.projectile.FiveInchAmmoType;
-import xyz.fmdc.arw.common.entity.projectile.FiveInchShellEntity;
+import xyz.fmdc.arw.common.projectile.virtual.VirtualProjectileManager;
+import xyz.fmdc.arw.network.PacketHandler;
+import xyz.fmdc.arw.network.S2CSpawnVirtualProjectilePacket;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-//FCS対応近代兵装の基底.
+// FCS対応近代兵装の基底.
 public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntity
         implements IYawPitchAnimatableModel, IFcsControllableWeapon, IDirectionalBlockEntity {
 
@@ -42,10 +42,13 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
     protected float currentPitch = 0.0f;
     protected float prevPitch = 0.0f;
     protected boolean limitYaw = false;
-
     protected float targetYaw = 0.0f;
     protected float targetPitch = 0.0f;
     protected int cooldownTicks = 0;
+    protected boolean pendingFireRequest = false;
+
+    protected final Map<String, Float> animationDurations = new HashMap<>();
+    protected final Map<String, Long> runningAnimations = new HashMap<>();
 
     protected abstract float getYawTurnSpeed();
     protected abstract float getPitchTurnSpeed();
@@ -58,65 +61,82 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
         if (cooldownTicks > 0) {
             cooldownTicks--;
         }
+
         this.prevYaw = this.currentYaw;
         this.prevPitch = this.currentPitch;
 
-        updateRotation();
-        cleanUpAnimations();
-    }
-
-    protected void updateRotation() {
+        // 目標角への旋回（Yaw）
         float yawDiff = Mth.wrapDegrees(this.targetYaw - this.currentYaw);
-        float yawStep = Mth.clamp(yawDiff, -getYawTurnSpeed(), getYawTurnSpeed());
-        this.currentYaw = (this.limitYaw)?Mth.clamp(this.currentYaw + yawStep, getMinYaw(), getMaxYaw()):
-                Mth.wrapDegrees(this.currentYaw + yawStep);
-
-        float pitchDiff = Mth.wrapDegrees(this.targetPitch - this.currentPitch);
-        float pitchStep = Mth.clamp(pitchDiff, -getPitchTurnSpeed(), getPitchTurnSpeed());
-        this.currentPitch = Mth.clamp(this.currentPitch + pitchStep, getMinPitch(), getMaxPitch());
-    }
-
-    protected void cleanUpAnimations() {
-        if (this.level != null && !this.runningAnimations.isEmpty()) {
-            long currentTime = this.level.getGameTime();
-            this.runningAnimations.entrySet().removeIf(entry -> {
-                String animName = entry.getKey();
-                long startTime = entry.getValue();
-                float duration = this.animationDurations.getOrDefault(animName, 1.0f);
-                float elapsedSeconds = (currentTime - startTime) / 20.0f;
-                return elapsedSeconds >= duration;
-            });
+        float maxTurn = getYawTurnSpeed();
+        if (Math.abs(yawDiff) <= maxTurn) {
+            this.currentYaw = this.targetYaw;
+        } else {
+            this.currentYaw += Math.signum(yawDiff) * maxTurn;
         }
-    }
 
-    protected void playAnimation(String animName, float durationSeconds) {
-        if (this.level != null) {
-            this.animationDurations.put(animName, durationSeconds);
-            this.runningAnimations.put(animName, this.level.getGameTime());
-            if (!this.level.isClientSide) {
+        if (this.limitYaw) {
+            this.currentYaw = Mth.clamp(this.currentYaw, getMinYaw(), getMaxYaw());
+        }
+
+        // 目標角への仰俯角変更（Pitch）
+        float pitchDiff = this.targetPitch - this.currentPitch;
+        float maxPitch = getPitchTurnSpeed();
+        if (Math.abs(pitchDiff) <= maxPitch) {
+            this.currentPitch = this.targetPitch;
+        } else {
+            this.currentPitch += Math.signum(pitchDiff) * maxPitch;
+        }
+
+        this.currentPitch = Mth.clamp(this.currentPitch, getMinPitch(), getMaxPitch());
+
+        boolean wasMoving = Math.abs(this.currentYaw - this.prevYaw) > 0.001f || Math.abs(this.currentPitch - this.prevPitch) > 0.001f;
+        if (this.level != null && !this.level.isClientSide) {
+            boolean isMoving = Math.abs(Mth.wrapDegrees(this.targetYaw - this.currentYaw)) > 0.01f
+                    || Math.abs(this.targetPitch - this.currentPitch) > 0.01f;
+            if (wasMoving && !isMoving) {
+                // 目標角度到達時の確定同期
                 syncToClient();
+            } else if (isMoving && this.level.getGameTime() % 20 == 0) {
+                // 旋回進行中の定期同期（1秒ごと）
+                syncToClient();
+            }
+        }
+
+        // FCSまたはリモートからの射撃予約キューの消化（照準合致待ち）
+        if (this.pendingFireRequest) {
+            if (canFire() && isAimAligned(3.0f)) {
+                fire();
+                this.pendingFireRequest = false;
+            } else if (this.cooldownTicks > 0) {
+                this.pendingFireRequest = false;
             }
         }
     }
 
     public void setTargetYaw(float yaw) {
-        this.targetYaw = (this.limitYaw) ? Mth.clamp(yaw, getMinYaw(), getMaxYaw()) : Mth.wrapDegrees(yaw);
+        float clampedYaw = (this.limitYaw) ? Mth.clamp(yaw, getMinYaw(), getMaxYaw()) : Mth.wrapDegrees(yaw);
+        if (Math.abs(this.targetYaw - clampedYaw) > 0.01f) {
+            this.targetYaw = clampedYaw;
+            if (this.level != null && !this.level.isClientSide) {
+                syncToClient();
+            }
+        }
     }
 
     public void setTargetPitch(float pitch) {
-        this.targetPitch = Mth.clamp(pitch, getMinPitch(), getMaxPitch());
+        float clampedPitch = Mth.clamp(pitch, getMinPitch(), getMaxPitch());
+        if (Math.abs(this.targetPitch - clampedPitch) > 0.01f) {
+            this.targetPitch = clampedPitch;
+            if (this.level != null && !this.level.isClientSide) {
+                syncToClient();
+            }
+        }
     }
 
-    // --- 子クラスで定義・オーバーライドする抽象メソッド群 ---
-
-    /** 使用する砲弾の Enum（重量や爆薬量などのパラメータ保持用） */
+    public abstract Vec3 getFiringDirection();
     public abstract FiveInchAmmoType getSelectedAmmoType();
 
-    /** 生成する砲弾エンティティの EntityType */
-    public abstract EntityType<FiveInchShellEntity> getShellEntityType();
-
-    /** 砲身の向きベクトル（正規化済み） */
-    public abstract Vec3 getFiringDirection();
+    protected abstract boolean canFire();
 
     /** ブロックの中心から砲口（マズル）までの相対位置オフセット */
     public abstract Vec3 getMuzzleOffset();
@@ -129,23 +149,41 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
         return SoundEvents.GENERIC_EXPLODE;
     }
 
-    /** 初速パラメータ */
+    /** 初速パラメータ [blocks/tick] */
     public float getMuzzleVelocity() {
         return 8.0F;
     }
 
+    /** 飛翔体の最大生存時間（タイムアウト） [ticks] (デフォルト: 2400 ticks / 120秒) */
+    public int getProjectileMaxAgeTicks() {
+        return 2400;
+    }
+
     public abstract void fire();
+
+    public void playAnimation(String animName, float durationSeconds) {
+        if (this.level != null) {
+            this.animationDurations.put(animName, durationSeconds);
+            this.runningAnimations.put(animName, this.level.getGameTime());
+            if (!this.level.isClientSide) {
+                syncToClient();
+            }
+        }
+    }
+
     /**
      * 主砲発射メソッド（子クラスからはこれを呼び出すだけ）
+     * 仮想飛翔体（Virtual Projectile）方式に完全統合され、チャンクロード要求を行わずに長距離砲戦を実現します。
      */
     public void fireProcess() {
         if (this.level == null || this.cooldownTicks > 0) {
             return;
         }
+
         // クールダウン開始
         this.cooldownTicks = getMaxCooldownTicks();
 
-        Vec3 direction = getFiringDirection();
+        Vec3 direction = getFiringDirection().normalize();
         Vec3 muzzlePos = Vec3.atBottomCenterOf(this.worldPosition).add(getMuzzleOffset());
 
         // 1. サウンド再生
@@ -158,19 +196,39 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
                 0.5F
         );
 
-        // 2. 弾丸エンティティ生成 & エフェクト（サーバー側）
-        if (!this.level.isClientSide) {
-            FiveInchShellEntity shell = new FiveInchShellEntity(getShellEntityType(), this.level);
-            shell.setPos(muzzlePos.x, muzzlePos.y, muzzlePos.z);
-            shell.setAmmoType(getSelectedAmmoType());
-            shell.setInitialMovement(direction.scale(getMuzzleVelocity()));
+        // 2. 仮想飛翔体の生成 & サーバー側マネージャー登録
+        if (this.level instanceof ServerLevel serverLevel) {
+            float muzzleVelocityMps = getMuzzleVelocity() * 20.0F; // blocks/tick -> m/s
+            BallisticShellProjectile shell = BallisticShellProjectile.create5Inch(
+                    serverLevel.dimension(),
+                    this.uuid,
+                    muzzlePos,
+                    direction,
+                    muzzleVelocityMps,
+                    getSelectedAmmoType(),
+                    getProjectileMaxAgeTicks()
+            );
 
-            this.level.addFreshEntity(shell);
+            // サーバー側マネージャーへ登録（インメモリ計算）
+            VirtualProjectileManager.getInstance().register(shell);
 
-            // マズルフラッシュと大爆煙の同期発生
-            if (this.level instanceof ServerLevel serverLevel) {
-                spawnMuzzleEffects(serverLevel, muzzlePos, direction);
-            }
+            // クライアント側描画用ダミーEntity生成パケットを周辺プレイヤーへ送信
+            PacketHandler.sendToNear(
+                    serverLevel,
+                    muzzlePos,
+                    256.0,
+                    new S2CSpawnVirtualProjectilePacket(
+                            shell.getProjectileId(),
+                            shell.getProjectileTypeId(),
+                            muzzlePos,
+                            shell.getVelocity(),
+                            shell.getMaxAgeTicks(),
+                            new CompoundTag()
+                    )
+            );
+
+            // マズルフラッシュと大爆煙のエフェクト
+            spawnMuzzleEffects(serverLevel, muzzlePos, direction);
         }
 
         this.setChanged();
@@ -190,7 +248,6 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
             double rx = (serverLevel.random.nextDouble() - 0.5) * 2.0;
             double ry = (serverLevel.random.nextDouble() - 0.5) * 2.0;
             double rz = (serverLevel.random.nextDouble() - 0.5) * 2.0;
-
             serverLevel.sendParticles(
                     ParticleTypes.CAMPFIRE_COSY_SMOKE,
                     muzzlePos.x + direction.x * 1.5,
@@ -208,9 +265,36 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
     public AbstractSingleGunBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
     }
+
     @Override
-    public Direction getFacing(){
+    public Direction getFacing() {
         return this.getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING);
+    }
+
+    /**
+     * ワールド絶対方位角（度）を、ブロックの設置向きを基準としたローカル相対方位角（度: -180〜+180）に変換します。
+     */
+    public float worldYawToLocalYaw(float worldYaw) {
+        Direction facing = getFacing();
+        float facingYaw = facing != null ? facing.toYRot() : 0.0f;
+        return Mth.wrapDegrees(worldYaw - facingYaw);
+    }
+
+    /**
+     * 指示された目標角度への旋回・俯仰が許容誤差（度）以内に到達しているかを判定します。
+     */
+    public boolean isAimAligned(float tolerance) {
+        float yawDiff = Math.abs(Mth.wrapDegrees(this.targetYaw - this.currentYaw));
+        float pitchDiff = Math.abs(Mth.wrapDegrees(this.targetPitch - this.currentPitch));
+        return yawDiff <= tolerance && pitchDiff <= tolerance;
+    }
+
+    public boolean isAimAligned() {
+        return isAimAligned(2.0f);
+    }
+
+    public void requestFire() {
+        this.pendingFireRequest = true;
     }
 
     @Override
@@ -257,90 +341,52 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
     @Override
     public void applyFiringSolution(FiringSolution solution) {
         if (solution == null) return;
-        // solution.targetYaw() はワールド絶対Yaw（度: 0=北(Z-), 90=東(X+), 180=南(Z+), 270=西(X-)）
-        // ブロックの currentYaw は Facing に対するローカル相対角（0=正面）
-        // したがって、Facing の角度を減算してローカル目標Yawに変換する
-        float localTargetYaw = Mth.wrapDegrees(solution.targetYaw() - this.getFacing().toYRot());
-        setTargetYaw(localTargetYaw);
+        setTargetYaw(worldYawToLocalYaw(solution.targetYaw()));
         setTargetPitch(solution.targetPitch());
-
-        // 旋回追従が完了して目標を指向しており、かつ canFire() の場合にのみ発射
-        if (solution.allowFire() && isAimedAtTarget() && canFire()) {
-            fire();
+        if (solution.allowFire()) {
+            this.pendingFireRequest = true;
         }
     }
 
-    /**
-     * 砲塔および砲身が目標方向（targetYaw, targetPitch）を指向しているか判定
-     */
-    public boolean isAimedAtTarget() {
-        return isAimedAtTarget(2.0f, 2.0f);
+    public float getCurrentYaw() {
+        return this.currentYaw;
     }
 
-    public boolean isAimedAtTarget(float yawToleranceDeg, float pitchToleranceDeg) {
-        float yawDiff = Math.abs(Mth.wrapDegrees(this.targetYaw - this.currentYaw));
-        float pitchDiff = Math.abs(Mth.wrapDegrees(this.targetPitch - this.currentPitch));
-        return yawDiff <= yawToleranceDeg && pitchDiff <= pitchToleranceDeg;
+    public float getCurrentPitch() {
+        return this.currentPitch;
     }
 
-    protected abstract boolean canFire();
+    public float getTargetYaw() {
+        return this.targetYaw;
+    }
+
+    public float getTargetPitch() {
+        return this.targetPitch;
+    }
+
+    public int getCooldownTicks() {
+        return this.cooldownTicks;
+    }
 
     @Override
     protected void saveAdditional(@NotNull CompoundTag tag) {
         super.saveAdditional(tag);
-        tag.putFloat("Yaw", this.currentYaw);
-        tag.putFloat("Pitch", this.currentPitch);
+        tag.putFloat("CurrentYaw", this.currentYaw);
+        tag.putFloat("CurrentPitch", this.currentPitch);
         tag.putFloat("TargetYaw", this.targetYaw);
         tag.putFloat("TargetPitch", this.targetPitch);
-        tag.putBoolean("FcsConnected", this.isFcsConnected);
-
-        ListTag animList = new ListTag();
-        for (Map.Entry<String, Long> entry : this.runningAnimations.entrySet()) {
-            CompoundTag animTag = new CompoundTag();
-            animTag.putString("Name", entry.getKey());
-            animTag.putLong("Start", entry.getValue());
-            animTag.putFloat("Duration", this.animationDurations.getOrDefault(entry.getKey(), 1.0f));
-            animList.add(animTag);
-        }
-        tag.put("RunningAnims", animList);
+        tag.putInt("CooldownTicks", this.cooldownTicks);
+        tag.putBoolean("PendingFire", this.pendingFireRequest);
     }
 
     @Override
     public void load(@NotNull CompoundTag tag) {
         super.load(tag);
-        this.currentYaw = tag.getFloat("Yaw");
-        this.currentPitch = tag.getFloat("Pitch");
+        this.currentYaw = tag.getFloat("CurrentYaw");
+        this.currentPitch = tag.getFloat("CurrentPitch");
         this.targetYaw = tag.getFloat("TargetYaw");
         this.targetPitch = tag.getFloat("TargetPitch");
-
-        this.runningAnimations.clear();
-        if (tag.contains("RunningAnims", Tag.TAG_LIST)) {
-            ListTag animList = tag.getList("RunningAnims", Tag.TAG_COMPOUND);
-            for (int i = 0; i < animList.size(); i++) {
-                CompoundTag animTag = animList.getCompound(i);
-                this.runningAnimations.put(animTag.getString("Name"), animTag.getLong("Start"));
-                this.animationDurations.put(animTag.getString("Name"), animTag.getFloat("Duration"));
-            }
-        }
-        this.isFcsConnected = tag.getBoolean("FcsConnected");
-    }
-
-    @Override
-    public void onDataPacket(net.minecraft.network.Connection net, ClientboundBlockEntityDataPacket pkt) {
-        CompoundTag tag = pkt.getTag();
-        if (tag != null) {
-            if (tag.contains("TargetYaw")) this.targetYaw = tag.getFloat("TargetYaw");
-            if (tag.contains("TargetPitch")) this.targetPitch = tag.getFloat("TargetPitch");
-
-            this.runningAnimations.clear();
-            if (tag.contains("RunningAnims", Tag.TAG_LIST)) {
-                ListTag animList = tag.getList("RunningAnims", Tag.TAG_COMPOUND);
-                for (int i = 0; i < animList.size(); i++) {
-                    CompoundTag animTag = animList.getCompound(i);
-                    this.runningAnimations.put(animTag.getString("Name"), animTag.getLong("Start"));
-                    this.animationDurations.put(animTag.getString("Name"), animTag.getFloat("Duration"));
-                }
-            }
-        }
+        this.cooldownTicks = tag.getInt("CooldownTicks");
+        this.pendingFireRequest = tag.getBoolean("PendingFire");
     }
 }

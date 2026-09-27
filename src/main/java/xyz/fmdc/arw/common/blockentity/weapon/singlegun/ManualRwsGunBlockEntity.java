@@ -1,16 +1,13 @@
 package xyz.fmdc.arw.common.blockentity.weapon.singlegun;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import xyz.fmdc.arw.api.control.IRemoteControllableWeapon;
 import xyz.fmdc.arw.common.blockentity.weapon.AbstractSingleGunBlockEntity;
 import xyz.fmdc.arw.common.entity.projectile.FiveInchAmmoType;
-import xyz.fmdc.arw.common.entity.projectile.FiveInchShellEntity;
 import xyz.fmdc.arw.registry.ModBlocks;
-import xyz.fmdc.arw.registry.ModEntities;
 
 /**
  * FCSの自動追従機能を持たず、遠隔カメラ映像越しにプレイヤーが直接マウス等で動かす小口径RWS
@@ -40,12 +37,6 @@ public class ManualRwsGunBlockEntity extends AbstractSingleGunBlockEntity implem
     @Override
     public FiveInchAmmoType getSelectedAmmoType() {
         return this.currentAmmo;
-    }
-
-    @Override
-    public EntityType<FiveInchShellEntity> getShellEntityType() {
-        // 登録済みの 5インチ砲弾 ModEntities.FIVE_INCH_SHELL.get() など
-        return ModEntities.FIVE_INCH_SHELL.get();
     }
 
     @Override
@@ -79,7 +70,7 @@ public class ManualRwsGunBlockEntity extends AbstractSingleGunBlockEntity implem
 
     @Override public boolean isBeingRemoteControlled() { return this.controllingPlayer != null; }
     @Override public void startRemoteControl(Player player) { this.controllingPlayer = player; }
-    @Override public void stopRemoteControl(Player player) { this.controllingPlayer = null; }
+    @Override public void stopRemoteControl(Player player) { this.controllingPlayer = player; }
 
     @Override
     public void handleRemoteInput(float yawInput, float pitchInput, boolean triggerFire) {

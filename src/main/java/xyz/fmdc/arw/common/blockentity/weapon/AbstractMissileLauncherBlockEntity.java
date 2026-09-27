@@ -20,13 +20,17 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import xyz.fmdc.arw.api.blockentity.IYawPitchAnimatableModel;
 import xyz.fmdc.arw.api.control.IRemoteControllableWeapon;
 import xyz.fmdc.arw.api.fcs.FiringSolution;
 import xyz.fmdc.arw.api.fcs.IFcsControllableWeapon;
 import xyz.fmdc.arw.client.renderer.GenericFastGlbRenderer;
-import xyz.fmdc.arw.api.blockentity.IYawPitchAnimatableModel;
 import xyz.fmdc.arw.common.blockentity.AbstractARWBlockEntity;
 import xyz.fmdc.arw.common.entity.missile.AbstractMissileEntity;
+import xyz.fmdc.arw.common.projectile.virtual.GuidedMissileProjectile;
+import xyz.fmdc.arw.common.projectile.virtual.VirtualProjectileManager;
+import xyz.fmdc.arw.network.PacketHandler;
+import xyz.fmdc.arw.network.S2CSpawnVirtualProjectilePacket;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +39,7 @@ import java.util.UUID;
 
 /**
  * 旋回・俯仰制御可能なミサイルランチャー（誘導弾発射機）の基底クラス.
- * FCS連携、遠隔操作、アニメーション管理、ミサイルエンティティ生成、発射制御などの共通ロジックを提供します。
+ * Virtual Projectile方式により、30km先への超長距離射撃を未ロード領域を飛び越えて実現します。
  */
 public abstract class AbstractMissileLauncherBlockEntity extends AbstractARWBlockEntity
         implements IYawPitchAnimatableModel, IFcsControllableWeapon, IRemoteControllableWeapon {
@@ -52,126 +56,66 @@ public abstract class AbstractMissileLauncherBlockEntity extends AbstractARWBloc
     protected int cooldownTicks = 0;
 
     protected UUID controllerPlayerUUID = null;
+    @Nullable
+    protected UUID lockedTargetUuid = null;
 
     public AbstractMissileLauncherBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
     }
 
     // --- 旋回性能パラメータ（子クラスで実装） ---
-
-    /** 1Tickあたりに回転できる最大Yaw角度（度/tick） */
     protected abstract float getYawTurnSpeed();
-
-    /** 1Tickあたりに回転できる最大Pitch角度（度/tick） */
     protected abstract float getPitchTurnSpeed();
-
-    /** 最小Yaw角度（度） */
     protected abstract float getMinYaw();
-
-    /** 最大Yaw角度（度） */
     protected abstract float getMaxYaw();
-
-    /** 最小Pitch角度（度、負の値が仰角/上向き） */
     protected abstract float getMinPitch();
-
-    /** 最大Pitch角度（度、正の値が俯角/下向き） */
     protected abstract float getMaxPitch();
 
-    /**
-     * モデル描画時のPitchオフセット（度単位）。
-     * 例えばGLBモデルの初期姿勢が直立（上向き）している場合、正の値を返して水平方向へ下げる補正を行います。
-     */
+    public abstract Vec3 getLaunchPosition();
+    public abstract Vec3 getLaunchOffset();
+    public abstract int getMaxCooldownTicks();
+
     public float getPitchModelOffset() {
         return 0.0f;
     }
 
-    // --- クールダウン & 発射定義（子クラスで実装） ---
-
-    /** 再装填/発射間隔時間（Tick単位 / 20ticks = 1秒） */
-    public abstract int getMaxCooldownTicks();
-
-    /** 発射可能条件（装填完了、弾薬装填状態など） */
-    protected abstract boolean canFire();
-
-    /** 発射アクション実行（アニメーション再生やlaunchMissile()呼び出し） */
-    public abstract void fire();
-
-    /**
-     * ブロック中心からミサイル発射点（レール/セル先端）までの相対位置オフセット
-     */
-    public abstract Vec3 getLaunchOffset();
-
-    /**
-     * ミサイル発射地点のワールド絶対座標を取得します。
-     * デフォルトはブロック中心座標 + getLaunchOffset() です。
-     * ランチャー上の描画モデルと完全に位置を一致させる場合は子クラスでオーバーライドします。
-     */
-    public Vec3 getLaunchPosition() {
-        return Vec3.atCenterOf(this.worldPosition).add(getLaunchOffset());
+    public void tickMissileLauncher() {
+        tickLauncher();
     }
 
-    // --- ランチャー共通更新処理 ---
-
-    /**
-     * 毎Tick呼び出されるランチャー共通の更新処理
-     */
-    public void tickMissileLauncher() {
-        if (this.cooldownTicks > 0) {
-            this.cooldownTicks--;
+    public void tickLauncher() {
+        if (cooldownTicks > 0) {
+            cooldownTicks--;
         }
+
         this.prevYaw = this.currentYaw;
         this.prevPitch = this.currentPitch;
 
-        updateRotation();
-        cleanUpAnimations();
-    }
-
-    /**
-     * 目標角へのスムーズな旋回処理
-     */
-    protected void updateRotation() {
         float yawDiff = Mth.wrapDegrees(this.targetYaw - this.currentYaw);
-        float yawStep = Mth.clamp(yawDiff, -getYawTurnSpeed(), getYawTurnSpeed());
-        this.currentYaw = (this.limitYaw)
-                ? Mth.clamp(this.currentYaw + yawStep, getMinYaw(), getMaxYaw())
-                : Mth.wrapDegrees(this.currentYaw + yawStep);
-
-        float pitchDiff = Mth.wrapDegrees(this.targetPitch - this.currentPitch);
-        float pitchStep = Mth.clamp(pitchDiff, -getPitchTurnSpeed(), getPitchTurnSpeed());
-        this.currentPitch = Mth.clamp(this.currentPitch + pitchStep, getMinPitch(), getMaxPitch());
-    }
-
-    /**
-     * 終了したアニメーションの自動クリーンアップ
-     */
-    protected void cleanUpAnimations() {
-        if (this.level != null && !this.runningAnimations.isEmpty()) {
-            long currentTime = this.level.getGameTime();
-            this.runningAnimations.entrySet().removeIf(entry -> {
-                String animName = entry.getKey();
-                long startTime = entry.getValue();
-                float duration = this.animationDurations.getOrDefault(animName, 1.0f);
-                float elapsedSeconds = (currentTime - startTime) / 20.0f;
-                return elapsedSeconds >= duration;
-            });
+        float maxYawTurn = getYawTurnSpeed();
+        if (Math.abs(yawDiff) <= maxYawTurn) {
+            this.currentYaw = this.targetYaw;
+        } else {
+            this.currentYaw += Math.signum(yawDiff) * maxYawTurn;
         }
+        if (this.limitYaw) {
+            this.currentYaw = Mth.clamp(this.currentYaw, getMinYaw(), getMaxYaw());
+        }
+
+        float pitchDiff = this.targetPitch - this.currentPitch;
+        float maxPitchTurn = getPitchTurnSpeed();
+        if (Math.abs(pitchDiff) <= maxPitchTurn) {
+            this.currentPitch = this.targetPitch;
+        } else {
+            this.currentPitch += Math.signum(pitchDiff) * maxPitchTurn;
+        }
+        this.currentPitch = Mth.clamp(this.currentPitch, getMinPitch(), getMaxPitch());
     }
 
-    /**
-     * 指定アニメーションが現在再生中かどうかを判定します。
-     */
-    public boolean isAnimationRunning(String animName) {
-        if (this.level == null) return false;
-        Long startTime = this.runningAnimations.get(animName);
-        if (startTime == null) return false;
-        float duration = this.animationDurations.getOrDefault(animName, 1.0f);
-        float elapsedSeconds = (this.level.getGameTime() - startTime) / 20.0f;
-        return elapsedSeconds < duration;
-    }
+    protected abstract boolean canFire();
 
-    /**
-     * アニメーションの再生開始
-     */
+    public abstract void fire();
+
     protected void playAnimation(String animName, float durationSeconds) {
         if (this.level != null) {
             this.animationDurations.put(animName, durationSeconds);
@@ -206,12 +150,6 @@ public abstract class AbstractMissileLauncherBlockEntity extends AbstractARWBloc
         return this.targetPitch;
     }
 
-    /**
-     * 現在の旋回・俯仰角が目標角度に到達しているか判定します。
-     *
-     * @param tolerance 許容角度誤差（度）
-     * @return 許容範囲内であれば true
-     */
     public boolean isAimAligned(float tolerance) {
         float yawDiff = Math.abs(Mth.wrapDegrees(this.targetYaw - this.currentYaw));
         float pitchDiff = Math.abs(Mth.wrapDegrees(this.targetPitch - this.currentPitch));
@@ -230,31 +168,20 @@ public abstract class AbstractMissileLauncherBlockEntity extends AbstractARWBloc
         this.cooldownTicks = cooldownTicks;
     }
 
-    /**
-     * 発射方向ベクトル（正規化済み）
-     */
     public Vec3 getFiringDirection() {
         return Vec3.directionFromRotation(this.currentPitch, this.currentYaw);
     }
 
-    /**
-     * 発射時の効果音（デフォルトは爆発音）
-     */
     public SoundEvent getLaunchSound() {
         return SoundEvents.GENERIC_EXPLODE;
     }
 
-    /**
-     * ミサイル発射時の初期初速（ブロック単位/tick、デフォルト: 1.0）
-     */
     protected float getInitialLaunchVelocity() {
         return 1.0F;
     }
 
-    /**
-     * 発射するミサイルエンティティの生成（子クラスでオーバーライド可能）
-     */
     @Nullable
+    @Deprecated(forRemoval = true)
     protected AbstractMissileEntity createMissileEntity(Level level, Vec3 launchPos, Vec3 direction) {
         EntityType<? extends AbstractMissileEntity> entityType = getMissileEntityType();
         if (entityType != null) {
@@ -263,10 +190,8 @@ public abstract class AbstractMissileLauncherBlockEntity extends AbstractARWBloc
         return null;
     }
 
-    /**
-     * 発射するミサイルのEntityType（createMissileEntityをオーバーライドしない場合に使用）
-     */
     @Nullable
+    @Deprecated(forRemoval = true)
     protected EntityType<? extends AbstractMissileEntity> getMissileEntityType() {
         return null;
     }
@@ -293,11 +218,9 @@ public abstract class AbstractMissileLauncherBlockEntity extends AbstractARWBloc
                 0.8F
         );
 
-        // 2. サーバー側エフェクト & エンティティ生成 & クライアント同期
-        if (!this.level.isClientSide) {
-            if (this.level instanceof ServerLevel serverLevel) {
-                spawnLaunchEffects(serverLevel, launchPos, direction);
-            }
+        // 2. サーバー側エフェクト & 仮想ミサイル登録 & クライアント同期
+        if (!this.level.isClientSide && this.level instanceof ServerLevel serverLevel) {
+            spawnLaunchEffects(serverLevel, launchPos, direction);
             spawnMissileEntity(launchPos, direction);
             syncToClient();
         }
@@ -306,16 +229,36 @@ public abstract class AbstractMissileLauncherBlockEntity extends AbstractARWBloc
     }
 
     /**
-     * ミサイルエンティティの生成とワールドへのスポーン
+     * 仮想飛翔体（Virtual Projectile）方式でのミサイル登録
      */
     protected void spawnMissileEntity(Vec3 launchPos, Vec3 direction) {
         if (this.level instanceof ServerLevel serverLevel) {
-            AbstractMissileEntity missile = createMissileEntity(serverLevel, launchPos, direction);
-            if (missile != null) {
-                missile.setPos(launchPos.x, launchPos.y, launchPos.z);
-                missile.setInitialMovement(direction.scale(getInitialLaunchVelocity()));
-                serverLevel.addFreshEntity(missile);
-            }
+            // Virtual Projectile として RIM-66M-2 ミサイルを生成
+            GuidedMissileProjectile missile = GuidedMissileProjectile.createRim66M2(
+                    serverLevel.dimension(),
+                    this.uuid,
+                    this.lockedTargetUuid,
+                    launchPos,
+                    direction
+            );
+
+            // サーバー側マネージャーへ登録
+            VirtualProjectileManager.getInstance().register(missile);
+
+            // クライアント側描画パケット送出
+            PacketHandler.sendToNear(
+                    serverLevel,
+                    launchPos,
+                    256.0,
+                    new S2CSpawnVirtualProjectilePacket(
+                            missile.getProjectileId(),
+                            missile.getProjectileTypeId(),
+                            launchPos,
+                            missile.getVelocity(),
+                            missile.getMaxAgeTicks(),
+                            new CompoundTag()
+                    )
+            );
         }
     }
 
@@ -323,14 +266,12 @@ public abstract class AbstractMissileLauncherBlockEntity extends AbstractARWBloc
      * ミサイル発射特有のエフェクト（ロケット点火の炎・バックブラスト煙）
      */
     protected void spawnLaunchEffects(ServerLevel serverLevel, Vec3 launchPos, Vec3 direction) {
-        // 発射点周囲のロケット炎
         serverLevel.sendParticles(
                 ParticleTypes.FLAME,
                 launchPos.x, launchPos.y, launchPos.z,
                 25, 0.4, 0.4, 0.4, 0.2
         );
 
-        // ロケット後方・周囲への濃い煙（バックブラスト）
         Vec3 backDir = direction.scale(-1.0);
         for (int i = 0; i < 40; i++) {
             double rx = (serverLevel.random.nextDouble() - 0.5) * 1.5;
@@ -355,12 +296,12 @@ public abstract class AbstractMissileLauncherBlockEntity extends AbstractARWBloc
 
     @Override
     public float getRenderTargetYaw(float partialTick) {
-        return currentYaw;//Mth.rotLerp(partialTick, this.prevYaw, this.currentYaw);
+        return currentYaw;
     }
 
     @Override
     public float getRenderTargetPitch(float partialTick) {
-        return currentPitch;//Mth.rotLerp(partialTick, this.prevPitch, this.currentPitch) + getPitchModelOffset();
+        return currentPitch;
     }
 
     @Override
@@ -407,6 +348,10 @@ public abstract class AbstractMissileLauncherBlockEntity extends AbstractARWBloc
         }
     }
 
+    public void setLockedTargetUuid(@Nullable UUID targetUuid) {
+        this.lockedTargetUuid = targetUuid;
+    }
+
     // --- IRemoteControllableWeapon の実装 ---
 
     @Override
@@ -445,95 +390,29 @@ public abstract class AbstractMissileLauncherBlockEntity extends AbstractARWBloc
         return new AABB(this.worldPosition).inflate(5.0);
     }
 
-    // --- NBT 保存 & 同期 ---
-
     @Override
     protected void saveAdditional(@NotNull CompoundTag tag) {
         super.saveAdditional(tag);
-        tag.putFloat("Yaw", this.currentYaw);
-        tag.putFloat("Pitch", this.currentPitch);
+        tag.putFloat("CurrentYaw", this.currentYaw);
+        tag.putFloat("CurrentPitch", this.currentPitch);
         tag.putFloat("TargetYaw", this.targetYaw);
         tag.putFloat("TargetPitch", this.targetPitch);
-        tag.putBoolean("FcsConnected", this.isFcsConnected);
         tag.putInt("CooldownTicks", this.cooldownTicks);
-        if (this.controllerPlayerUUID != null) {
-            tag.putUUID("ControllerPlayerUUID", this.controllerPlayerUUID);
+        if (this.lockedTargetUuid != null) {
+            tag.putUUID("LockedTargetUuid", this.lockedTargetUuid);
         }
-
-        ListTag animList = new ListTag();
-        for (Map.Entry<String, Long> entry : this.runningAnimations.entrySet()) {
-            CompoundTag animTag = new CompoundTag();
-            animTag.putString("Name", entry.getKey());
-            animTag.putLong("Start", entry.getValue());
-            animTag.putFloat("Duration", this.animationDurations.getOrDefault(entry.getKey(), 1.0f));
-            animList.add(animTag);
-        }
-        tag.put("RunningAnims", animList);
     }
 
     @Override
     public void load(@NotNull CompoundTag tag) {
         super.load(tag);
-        this.currentYaw = tag.getFloat("Yaw");
-        this.currentPitch = tag.getFloat("Pitch");
+        this.currentYaw = tag.getFloat("CurrentYaw");
+        this.currentPitch = tag.getFloat("CurrentPitch");
         this.targetYaw = tag.getFloat("TargetYaw");
         this.targetPitch = tag.getFloat("TargetPitch");
-        this.isFcsConnected = tag.getBoolean("FcsConnected");
         this.cooldownTicks = tag.getInt("CooldownTicks");
-        if (tag.hasUUID("ControllerPlayerUUID")) {
-            this.controllerPlayerUUID = tag.getUUID("ControllerPlayerUUID");
-        } else {
-            this.controllerPlayerUUID = null;
-        }
-
-        this.runningAnimations.clear();
-        if (tag.contains("RunningAnims", Tag.TAG_LIST)) {
-            ListTag animList = tag.getList("RunningAnims", Tag.TAG_COMPOUND);
-            for (int i = 0; i < animList.size(); i++) {
-                CompoundTag animTag = animList.getCompound(i);
-                this.runningAnimations.put(animTag.getString("Name"), animTag.getLong("Start"));
-                this.animationDurations.put(animTag.getString("Name"), animTag.getFloat("Duration"));
-            }
-        }
-    }
-
-    @Override
-    public void onDataPacket(net.minecraft.network.Connection net, ClientboundBlockEntityDataPacket pkt) {
-        CompoundTag tag = pkt.getTag();
-        if (tag != null) {
-            if (tag.contains("TargetYaw")) this.targetYaw = tag.getFloat("TargetYaw");
-            if (tag.contains("TargetPitch")) this.targetPitch = tag.getFloat("TargetPitch");
-            if (tag.contains("CooldownTicks")) this.cooldownTicks = tag.getInt("CooldownTicks");
-
-            this.runningAnimations.clear();
-            if (tag.contains("RunningAnims", Tag.TAG_LIST)) {
-                ListTag animList = tag.getList("RunningAnims", Tag.TAG_COMPOUND);
-                for (int i = 0; i < animList.size(); i++) {
-                    CompoundTag animTag = animList.getCompound(i);
-                    this.runningAnimations.put(animTag.getString("Name"), animTag.getLong("Start"));
-                    this.animationDurations.put(animTag.getString("Name"), animTag.getFloat("Duration"));
-                }
-            }
-        }
-    }
-
-    @Override
-    public void handleUpdateTag(CompoundTag tag) {
-        super.handleUpdateTag(tag);
-        if (tag != null) {
-            if (tag.contains("TargetYaw")) this.targetYaw = tag.getFloat("TargetYaw");
-            if (tag.contains("TargetPitch")) this.targetPitch = tag.getFloat("TargetPitch");
-            if (tag.contains("CooldownTicks")) this.cooldownTicks = tag.getInt("CooldownTicks");
-
-            this.runningAnimations.clear();
-            if (tag.contains("RunningAnims", Tag.TAG_LIST)) {
-                ListTag animList = tag.getList("RunningAnims", Tag.TAG_COMPOUND);
-                for (int i = 0; i < animList.size(); i++) {
-                    CompoundTag animTag = animList.getCompound(i);
-                    this.runningAnimations.put(animTag.getString("Name"), animTag.getLong("Start"));
-                    this.animationDurations.put(animTag.getString("Name"), animTag.getFloat("Duration"));
-                }
-            }
+        if (tag.hasUUID("LockedTargetUuid")) {
+            this.lockedTargetUuid = tag.getUUID("LockedTargetUuid");
         }
     }
 }

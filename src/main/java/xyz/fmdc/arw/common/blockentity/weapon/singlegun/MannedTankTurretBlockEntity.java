@@ -1,16 +1,13 @@
 package xyz.fmdc.arw.common.blockentity.weapon.singlegun;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import xyz.fmdc.arw.api.control.IDirectMannedWeapon;
 import xyz.fmdc.arw.common.blockentity.weapon.AbstractSingleGunBlockEntity;
 import xyz.fmdc.arw.common.entity.projectile.FiveInchAmmoType;
-import xyz.fmdc.arw.common.entity.projectile.FiveInchShellEntity;
 import xyz.fmdc.arw.registry.ModBlocks;
-import xyz.fmdc.arw.registry.ModEntities;
 
 /**
  * 砲手として砲塔内に乗り込みつつ、FCSからリアルタイムに偏差計算アシスト（FiringSolution）を受けて射撃する近代戦車砲
@@ -40,12 +37,6 @@ public class MannedTankTurretBlockEntity extends AbstractSingleGunBlockEntity im
     @Override
     public FiveInchAmmoType getSelectedAmmoType() {
         return this.currentAmmo;
-    }
-
-    @Override
-    public EntityType<FiveInchShellEntity> getShellEntityType() {
-        // 登録済みの 5インチ砲弾 ModEntities.FIVE_INCH_SHELL.get() など
-        return ModEntities.FIVE_INCH_SHELL.get();
     }
 
     @Override
