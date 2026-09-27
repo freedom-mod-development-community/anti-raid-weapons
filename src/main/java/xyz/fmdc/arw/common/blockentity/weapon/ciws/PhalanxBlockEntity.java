@@ -1,16 +1,13 @@
 package xyz.fmdc.arw.common.blockentity.weapon.ciws;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import xyz.fmdc.arw.api.blockentity.IDirectionalBlockEntity;
 import xyz.fmdc.arw.api.fcs.FiringSolution;
 import xyz.fmdc.arw.api.fcs.IFcsControllableWeapon;
 import xyz.fmdc.arw.common.blockentity.weapon.ARWCIWSBlockEntity;
 import xyz.fmdc.arw.common.entity.projectile.FiveInchAmmoType;
-import xyz.fmdc.arw.common.entity.projectile.FiveInchShellEntity;
 import xyz.fmdc.arw.registry.ModBlocks;
-import xyz.fmdc.arw.registry.ModEntities;
 
 import java.util.UUID;
 
@@ -34,12 +31,6 @@ public class PhalanxBlockEntity extends ARWCIWSBlockEntity implements IDirection
      */
     public String getFiringAnimationName() {
         return "phalanx_fire";
-    }
-
-    @Override
-    @Deprecated(forRemoval = true)
-    public EntityType<FiveInchShellEntity> getShellEntityType() {
-        return ModEntities.FIVE_INCH_SHELL.get();
     }
 
     @Override

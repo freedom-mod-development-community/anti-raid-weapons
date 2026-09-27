@@ -8,7 +8,6 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.Containers;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleContainer;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -26,10 +25,8 @@ import org.jetbrains.annotations.Nullable;
 import xyz.fmdc.arw.api.control.IRemoteControllableWeapon;
 import xyz.fmdc.arw.common.blockentity.weapon.AbstractSingleGunBlockEntity;
 import xyz.fmdc.arw.common.entity.projectile.FiveInchAmmoType;
-import xyz.fmdc.arw.common.entity.projectile.FiveInchShellEntity;
 import xyz.fmdc.arw.client.gui.Oto127mmMenu;
 import xyz.fmdc.arw.registry.ModBlocks;
-import xyz.fmdc.arw.registry.ModEntities;
 import xyz.fmdc.arw.registry.ModSounds;
 
 import java.util.UUID;
@@ -92,12 +89,6 @@ public class Oto127mmBlockEntity extends AbstractSingleGunBlockEntity implements
     public void setSelectedAmmoType(FiveInchAmmoType ammoType) {
         this.currentAmmo = ammoType;
         this.setChanged();
-    }
-
-    @Override
-    @Deprecated(forRemoval = true)
-    public EntityType<FiveInchShellEntity> getShellEntityType() {
-        return ModEntities.FIVE_INCH_SHELL.get();
     }
 
     @Override

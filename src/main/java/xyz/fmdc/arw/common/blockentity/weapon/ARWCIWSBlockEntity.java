@@ -8,7 +8,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -21,7 +20,6 @@ import xyz.fmdc.arw.common.projectile.virtual.CiwsProjectile;
 import xyz.fmdc.arw.client.renderer.GenericFastGlbRenderer;
 import xyz.fmdc.arw.common.blockentity.AbstractARWBlockEntity;
 import xyz.fmdc.arw.common.entity.projectile.FiveInchAmmoType;
-import xyz.fmdc.arw.common.entity.projectile.FiveInchShellEntity;
 import xyz.fmdc.arw.common.projectile.virtual.VirtualProjectileManager;
 import xyz.fmdc.arw.network.PacketHandler;
 import xyz.fmdc.arw.network.S2CSpawnVirtualProjectilePacket;
@@ -67,14 +65,6 @@ public abstract class ARWCIWSBlockEntity extends AbstractARWBlockEntity
     }
 
     // --- 抽象プロパティ設定（子クラス側で指定） ---
-
-    /** 生成する砲弾の EntityType（互換用）
-     * @deprecated 仮想飛翔体への完全移行に伴い非推奨です
-     */
-    @Deprecated(forRemoval = true)
-    public EntityType<FiveInchShellEntity> getShellEntityType() {
-        return null;
-    }
 
     /** 使用する砲弾 Enum */
     public abstract FiveInchAmmoType getSelectedAmmoType();

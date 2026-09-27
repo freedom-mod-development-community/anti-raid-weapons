@@ -9,7 +9,6 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -23,7 +22,6 @@ import xyz.fmdc.arw.common.projectile.virtual.BallisticShellProjectile;
 import xyz.fmdc.arw.client.renderer.GenericFastGlbRenderer;
 import xyz.fmdc.arw.common.blockentity.AbstractARWBlockEntity;
 import xyz.fmdc.arw.common.entity.projectile.FiveInchAmmoType;
-import xyz.fmdc.arw.common.entity.projectile.FiveInchShellEntity;
 import xyz.fmdc.arw.common.projectile.virtual.VirtualProjectileManager;
 import xyz.fmdc.arw.network.PacketHandler;
 import xyz.fmdc.arw.network.S2CSpawnVirtualProjectilePacket;
@@ -137,12 +135,6 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
 
     public abstract Vec3 getFiringDirection();
     public abstract FiveInchAmmoType getSelectedAmmoType();
-
-    /** @deprecated 仮想飛翔体への完全移行に伴い非推奨です */
-    @Deprecated(forRemoval = true)
-    public EntityType<FiveInchShellEntity> getShellEntityType() {
-        return null;
-    }
 
     protected abstract boolean canFire();
 
