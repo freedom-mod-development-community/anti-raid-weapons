@@ -1,4 +1,4 @@
-package xyz.fmdc.arw.api.projectile.virtual;
+package xyz.fmdc.arw.common.projectile.virtual;
 
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
@@ -6,12 +6,13 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import xyz.fmdc.arw.AntiRaidWeapons;
-import xyz.fmdc.arw.api.projectile.BallisticsEngine;
+import xyz.fmdc.arw.common.projectile.telemetry.FlightTelemetryLogger;
+import xyz.fmdc.arw.common.projectile.virtual.util.ProjectileRaycastHelper;
+import xyz.fmdc.arw.common.projectile.virtual.util.SafeExplosionHelper;
 import xyz.fmdc.arw.network.PacketHandler;
 import xyz.fmdc.arw.network.S2CDestroyVirtualProjectilePacket;
 
@@ -29,6 +30,7 @@ public class GuidedMissileProjectile extends VirtualProjectile {
     private UUID targetEntityUuid;
     private Vec3 lastKnownTargetPos = null;
     private boolean isTargetLost = false;
+    private boolean sessionStarted = false;
 
     // ミサイル運動・誘導パラメータ
     private final float maxSpeedMps;        // 最高速度 [m/s] (例: 1200 m/s = 60m/tick)
@@ -117,13 +119,37 @@ public class GuidedMissileProjectile extends VirtualProjectile {
         double currentSpeed = this.velocity.length();
         Vec3 forward = (currentSpeed > 1.0E-4) ? this.velocity.scale(1.0 / currentSpeed) : new Vec3(0, 1, 0);
 
+        double pitch = Math.toDegrees(Math.asin(-forward.y));
+        double yaw = Math.toDegrees(Math.atan2(-forward.x, forward.z));
+
+        // 初回Tick: テレメトリセッション開始 & 発射ログ
+        if (!this.sessionStarted) {
+            this.sessionStarted = true;
+            FlightTelemetryLogger.startSession(
+                    this.projectileId,
+                    "GuidedMissile_RIM66M2",
+                    this.position,
+                    this.velocity,
+                    forward,
+                    (float) pitch,
+                    (float) yaw
+            );
+            AntiRaidWeapons.LOGGER.info(
+                    "[VirtualProjectile] Missile [{}] launched towards target [{}] at ({}, {}, {}) with initial velocity {} m/s",
+                    this.projectileId, this.targetEntityUuid, this.position.x, this.position.y, this.position.z, currentSpeed
+            );
+        }
+
         // 1. ロケット推力による加速 (燃焼期間中)
+        double thrustN = 0.0;
         if (this.ageTicks < this.motorBurnTicks) {
             currentSpeed = Math.min(this.maxSpeedMps, currentSpeed + this.motorAcceleration * 0.05);
+            thrustN = this.motorAcceleration * 700.0; // 概算質量700kg
         }
 
         // 2. 誘導計算（目標探索 & フェイルセーフ）
         Vec3 desiredDirection = forward;
+        String event = "";
         if (!this.isTargetLost && this.targetEntityUuid != null) {
             Entity target = findTargetSafe(level, this.targetEntityUuid);
 
@@ -158,7 +184,8 @@ public class GuidedMissileProjectile extends VirtualProjectile {
                 // フェイルセーフ: NPEを防ぎ、慣性直進モードへ安全に移行
                 this.isTargetLost = true;
                 this.targetEntityUuid = null;
-                AntiRaidWeapons.LOGGER.debug("Missile [{}] lost target entity. Switching to ballistic inertial straight flight.", this.projectileId);
+                event = "TARGET_LOST";
+                AntiRaidWeapons.LOGGER.info("[VirtualProjectile] Missile [{}] lost target entity. Switching to ballistic inertial straight flight.", this.projectileId);
             }
         }
 
@@ -189,6 +216,22 @@ public class GuidedMissileProjectile extends VirtualProjectile {
 
         // 4. 位置更新
         this.position = this.position.add(this.velocity.scale(1.0 / 20.0));
+
+        // 1Tickテレメトリデータの記録
+        FlightTelemetryLogger.recordTick(
+                this.projectileId,
+                this.ageTicks,
+                this.position,
+                this.velocity,
+                forward,
+                (float) pitch,
+                (float) yaw,
+                1.225,
+                thrustN,
+                0.0,
+                0.0,
+                event
+        );
 
         // 5. 近接信管（Proximity Fuse）判定
         checkProximityFuse(level);
@@ -241,17 +284,22 @@ public class GuidedMissileProjectile extends VirtualProjectile {
 
         if (!nearby.isEmpty()) {
             LivingEntity target = nearby.get(0);
-            AntiRaidWeapons.LOGGER.info("Missile [{}] proximity fuse triggered near [{}]", this.projectileId, target.getName().getString());
-            explodeAtPosition(level, this.position);
+            AntiRaidWeapons.LOGGER.info("[VirtualProjectile] Missile [{}] proximity fuse triggered near [{}] at ({}, {}, {})",
+                    this.projectileId, target.getName().getString(), this.position.x, this.position.y, this.position.z);
+            explodeAtPosition(level, this.position, "PROXIMITY_FUSE");
         }
     }
 
     @Override
     public void onHit(ServerLevel level, HitResult hitResult) {
-        explodeAtPosition(level, hitResult.getLocation());
+        explodeAtPosition(level, hitResult.getLocation(), hitResult.getType().name());
     }
 
-    private void explodeAtPosition(ServerLevel level, Vec3 hitPos) {
+    private void explodeAtPosition(ServerLevel level, Vec3 hitPos, String reason) {
+        AntiRaidWeapons.LOGGER.info("[VirtualProjectile] Missile [{}] detonated (reason: {}) at ({}, {}, {})",
+                this.projectileId, reason, hitPos.x, hitPos.y, hitPos.z);
+        FlightTelemetryLogger.endSession(this.projectileId, reason, hitPos);
+
         // カスケード防止安全爆発
         SafeExplosionHelper.explodeSafe(
                 level,
@@ -277,9 +325,18 @@ public class GuidedMissileProjectile extends VirtualProjectile {
     }
 
     @Override
+    protected void onExpired(ServerLevel level) {
+        AntiRaidWeapons.LOGGER.info("[VirtualProjectile] Missile [{}] reached max lifetime ({} ticks). Discarding at ({}, {}, {})",
+                this.projectileId, this.maxAgeTicks, this.position.x, this.position.y, this.position.z);
+        FlightTelemetryLogger.endSession(this.projectileId, "TIMEOUT", this.position);
+        super.onExpired(level);
+    }
+
+    @Override
     public void onServerStopping() {
+        FlightTelemetryLogger.endSession(this.projectileId, "SERVER_STOP", this.position);
         super.onServerStopping();
         // フェイルセーフ5: 母艦FCS等へロスト通知を発行（非同期デッドロック防止）
-        AntiRaidWeapons.LOGGER.info("Missile [{}] purged on server stop/level unload.", this.projectileId);
+        AntiRaidWeapons.LOGGER.info("[VirtualProjectile] Missile [{}] purged on server stop/level unload.", this.projectileId);
     }
 }

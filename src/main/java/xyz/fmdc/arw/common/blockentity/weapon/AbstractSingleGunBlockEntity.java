@@ -4,9 +4,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
-import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
@@ -22,7 +19,7 @@ import xyz.fmdc.arw.api.blockentity.IDirectionalBlockEntity;
 import xyz.fmdc.arw.api.blockentity.IYawPitchAnimatableModel;
 import xyz.fmdc.arw.api.fcs.FiringSolution;
 import xyz.fmdc.arw.api.fcs.IFcsControllableWeapon;
-import xyz.fmdc.arw.api.projectile.virtual.BallisticShellProjectile;
+import xyz.fmdc.arw.common.projectile.virtual.BallisticShellProjectile;
 import xyz.fmdc.arw.client.renderer.GenericFastGlbRenderer;
 import xyz.fmdc.arw.common.blockentity.AbstractARWBlockEntity;
 import xyz.fmdc.arw.common.entity.projectile.FiveInchAmmoType;
@@ -47,10 +44,10 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
     protected float currentPitch = 0.0f;
     protected float prevPitch = 0.0f;
     protected boolean limitYaw = false;
-
     protected float targetYaw = 0.0f;
     protected float targetPitch = 0.0f;
     protected int cooldownTicks = 0;
+    protected boolean pendingFireRequest = false;
 
     protected final Map<String, Float> animationDurations = new HashMap<>();
     protected final Map<String, Long> runningAnimations = new HashMap<>();
@@ -78,6 +75,7 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
         } else {
             this.currentYaw += Math.signum(yawDiff) * maxTurn;
         }
+
         if (this.limitYaw) {
             this.currentYaw = Mth.clamp(this.currentYaw, getMinYaw(), getMaxYaw());
         }
@@ -90,12 +88,42 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
         } else {
             this.currentPitch += Math.signum(pitchDiff) * maxPitch;
         }
+
         this.currentPitch = Mth.clamp(this.currentPitch, getMinPitch(), getMaxPitch());
+
+        boolean wasMoving = Math.abs(this.currentYaw - this.prevYaw) > 0.001f || Math.abs(this.currentPitch - this.prevPitch) > 0.001f;
+        if (this.level != null && !this.level.isClientSide) {
+            boolean isMoving = Math.abs(Mth.wrapDegrees(this.targetYaw - this.currentYaw)) > 0.01f
+                    || Math.abs(this.targetPitch - this.currentPitch) > 0.01f;
+            if (wasMoving && !isMoving) {
+                // 目標角度到達時の確定同期
+                syncToClient();
+            } else if (isMoving && this.level.getGameTime() % 20 == 0) {
+                // 旋回進行中の定期同期（1秒ごと）
+                syncToClient();
+            }
+        }
+
+        // FCSまたはリモートからの射撃予約キューの消化（照準合致待ち）
+        if (this.pendingFireRequest) {
+            if (canFire() && isAimAligned(3.0f)) {
+                fire();
+                this.pendingFireRequest = false;
+            } else if (this.cooldownTicks > 0) {
+                this.pendingFireRequest = false;
+            }
+        }
     }
 
     public abstract Vec3 getFiringDirection();
     public abstract FiveInchAmmoType getSelectedAmmoType();
-    public abstract EntityType<FiveInchShellEntity> getShellEntityType();
+
+    /** @deprecated 仮想飛翔体への完全移行に伴い非推奨です */
+    @Deprecated(forRemoval = true)
+    public EntityType<FiveInchShellEntity> getShellEntityType() {
+        return null;
+    }
+
     protected abstract boolean canFire();
 
     /** ブロックの中心から砲口（マズル）までの相対位置オフセット */
@@ -112,6 +140,11 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
     /** 初速パラメータ [blocks/tick] */
     public float getMuzzleVelocity() {
         return 8.0F;
+    }
+
+    /** 飛翔体の最大生存時間（タイムアウト） [ticks] (デフォルト: 2400 ticks / 120秒) */
+    public int getProjectileMaxAgeTicks() {
+        return 2400;
     }
 
     public abstract void fire();
@@ -134,6 +167,7 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
         if (this.level == null || this.cooldownTicks > 0) {
             return;
         }
+
         // クールダウン開始
         this.cooldownTicks = getMaxCooldownTicks();
 
@@ -159,7 +193,8 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
                     muzzlePos,
                     direction,
                     muzzleVelocityMps,
-                    getSelectedAmmoType()
+                    getSelectedAmmoType(),
+                    getProjectileMaxAgeTicks()
             );
 
             // サーバー側マネージャーへ登録（インメモリ計算）
@@ -201,7 +236,6 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
             double rx = (serverLevel.random.nextDouble() - 0.5) * 2.0;
             double ry = (serverLevel.random.nextDouble() - 0.5) * 2.0;
             double rz = (serverLevel.random.nextDouble() - 0.5) * 2.0;
-
             serverLevel.sendParticles(
                     ParticleTypes.CAMPFIRE_COSY_SMOKE,
                     muzzlePos.x + direction.x * 1.5,
@@ -223,6 +257,32 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
     @Override
     public Direction getFacing() {
         return this.getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING);
+    }
+
+    /**
+     * ワールド絶対方位角（度）を、ブロックの設置向きを基準としたローカル相対方位角（度: -180〜+180）に変換します。
+     */
+    public float worldYawToLocalYaw(float worldYaw) {
+        Direction facing = getFacing();
+        float facingYaw = facing != null ? facing.toYRot() : 0.0f;
+        return Mth.wrapDegrees(worldYaw - facingYaw);
+    }
+
+    /**
+     * 指示された目標角度への旋回・俯仰が許容誤差（度）以内に到達しているかを判定します。
+     */
+    public boolean isAimAligned(float tolerance) {
+        float yawDiff = Math.abs(Mth.wrapDegrees(this.targetYaw - this.currentYaw));
+        float pitchDiff = Math.abs(Mth.wrapDegrees(this.targetPitch - this.currentPitch));
+        return yawDiff <= tolerance && pitchDiff <= tolerance;
+    }
+
+    public boolean isAimAligned() {
+        return isAimAligned(2.0f);
+    }
+
+    public void requestFire() {
+        this.pendingFireRequest = true;
     }
 
     @Override
@@ -269,15 +329,70 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
     @Override
     public void applyFiringSolution(FiringSolution solution) {
         if (solution == null) return;
-        setTargetYaw((float) solution.targetYaw());
-        setTargetPitch((float) solution.targetPitch());
+        setTargetYaw(worldYawToLocalYaw(solution.targetYaw()));
+        setTargetPitch(solution.targetPitch());
+        if (solution.allowFire()) {
+            this.pendingFireRequest = true;
+        }
     }
 
     public void setTargetYaw(float targetYaw) {
-        this.targetYaw = targetYaw;
+        if (Math.abs(this.targetYaw - targetYaw) > 0.01f) {
+            this.targetYaw = targetYaw;
+            if (this.level != null && !this.level.isClientSide) {
+                syncToClient();
+            }
+        }
     }
 
     public void setTargetPitch(float targetPitch) {
-        this.targetPitch = targetPitch;
+        if (Math.abs(this.targetPitch - targetPitch) > 0.01f) {
+            this.targetPitch = targetPitch;
+            if (this.level != null && !this.level.isClientSide) {
+                syncToClient();
+            }
+        }
+    }
+
+    public float getCurrentYaw() {
+        return this.currentYaw;
+    }
+
+    public float getCurrentPitch() {
+        return this.currentPitch;
+    }
+
+    public float getTargetYaw() {
+        return this.targetYaw;
+    }
+
+    public float getTargetPitch() {
+        return this.targetPitch;
+    }
+
+    public int getCooldownTicks() {
+        return this.cooldownTicks;
+    }
+
+    @Override
+    protected void saveAdditional(@NotNull CompoundTag tag) {
+        super.saveAdditional(tag);
+        tag.putFloat("CurrentYaw", this.currentYaw);
+        tag.putFloat("CurrentPitch", this.currentPitch);
+        tag.putFloat("TargetYaw", this.targetYaw);
+        tag.putFloat("TargetPitch", this.targetPitch);
+        tag.putInt("CooldownTicks", this.cooldownTicks);
+        tag.putBoolean("PendingFire", this.pendingFireRequest);
+    }
+
+    @Override
+    public void load(@NotNull CompoundTag tag) {
+        super.load(tag);
+        this.currentYaw = tag.getFloat("CurrentYaw");
+        this.currentPitch = tag.getFloat("CurrentPitch");
+        this.targetYaw = tag.getFloat("TargetYaw");
+        this.targetPitch = tag.getFloat("TargetPitch");
+        this.cooldownTicks = tag.getInt("CooldownTicks");
+        this.pendingFireRequest = tag.getBoolean("PendingFire");
     }
 }

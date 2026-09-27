@@ -210,6 +210,7 @@ public abstract class AbstractYukkyMissileLauncherBlockEntity extends AbstractAR
      * 発射するミサイルエンティティの生成（子クラスでオーバーライド可能）
      */
     @Nullable
+    @Deprecated(forRemoval = true)
     protected AbstractMissileEntity createMissileEntity(Level level, Vec3 launchPos, Vec3 direction) {
         EntityType<? extends AbstractMissileEntity> entityType = getMissileEntityType();
         if (entityType != null) {
@@ -222,6 +223,7 @@ public abstract class AbstractYukkyMissileLauncherBlockEntity extends AbstractAR
      * 発射するミサイルのEntityType（createMissileEntityをオーバーライドしない場合に使用）
      */
     @Nullable
+    @Deprecated(forRemoval = true)
     protected EntityType<? extends AbstractMissileEntity> getMissileEntityType() {
         return null;
     }
@@ -261,17 +263,11 @@ public abstract class AbstractYukkyMissileLauncherBlockEntity extends AbstractAR
     }
 
     /**
-     * ミサイルエンティティの生成とワールドへのスポーン
+     * 旧方式ミサイルエンティティの生成とワールドへのスポーン（非推奨）
      */
+    @Deprecated(forRemoval = true)
     protected void spawnMissileEntity(Vec3 launchPos, Vec3 direction) {
-        if (this.level instanceof ServerLevel serverLevel) {
-            AbstractMissileEntity missile = createMissileEntity(serverLevel, launchPos, direction);
-            if (missile != null) {
-                missile.setPos(launchPos.x, launchPos.y, launchPos.z);
-                missile.setInitialMovement(direction.scale(getInitialLaunchVelocity()));
-                serverLevel.addFreshEntity(missile);
-            }
-        }
+        // 旧Entityの新規スポーンは行わない（Virtual Projectileへ移行）
     }
 
     /**

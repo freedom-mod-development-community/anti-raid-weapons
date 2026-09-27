@@ -2,12 +2,8 @@ package xyz.fmdc.arw;
 
 import net.minecraft.world.phys.Vec3;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-import xyz.fmdc.arw.api.projectile.telemetry.FlightTelemetryLogger;
+import xyz.fmdc.arw.common.projectile.telemetry.FlightTelemetryLogger;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
 

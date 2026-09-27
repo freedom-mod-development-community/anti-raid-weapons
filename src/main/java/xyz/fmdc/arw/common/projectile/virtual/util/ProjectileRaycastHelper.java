@@ -1,4 +1,4 @@
-package xyz.fmdc.arw.api.projectile.virtual;
+package xyz.fmdc.arw.common.projectile.virtual.util;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerChunkCache;

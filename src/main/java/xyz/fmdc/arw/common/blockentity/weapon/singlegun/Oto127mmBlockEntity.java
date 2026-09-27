@@ -95,6 +95,7 @@ public class Oto127mmBlockEntity extends AbstractSingleGunBlockEntity implements
     }
 
     @Override
+    @Deprecated(forRemoval = true)
     public EntityType<FiveInchShellEntity> getShellEntityType() {
         return ModEntities.FIVE_INCH_SHELL.get();
     }
@@ -133,6 +134,15 @@ public class Oto127mmBlockEntity extends AbstractSingleGunBlockEntity implements
     @Override
     public float getMuzzleVelocity() {
         return MUZZLE_VELOCITY;
+    }
+
+    /**
+     * 飛翔体の最大生存時間（タイムアウト） [ticks]
+     * 2400 ticks (120秒)
+     */
+    @Override
+    public int getProjectileMaxAgeTicks() {
+        return 2400;
     }
 
     @Override
@@ -181,6 +191,9 @@ public class Oto127mmBlockEntity extends AbstractSingleGunBlockEntity implements
     protected void saveAdditional(@NotNull CompoundTag tag) {
         super.saveAdditional(tag);
         tag.put("Inventory", this.inventory.serializeNBT());
+        if (this.controllerPlayerUUID != null) {
+            tag.putUUID("ControllerPlayerUUID", this.controllerPlayerUUID);
+        }
     }
 
     @Override
@@ -188,6 +201,9 @@ public class Oto127mmBlockEntity extends AbstractSingleGunBlockEntity implements
         super.load(tag);
         if (tag.contains("Inventory")) {
             this.inventory.deserializeNBT(tag.getCompound("Inventory"));
+        }
+        if (tag.hasUUID("ControllerPlayerUUID")) {
+            this.controllerPlayerUUID = tag.getUUID("ControllerPlayerUUID");
         }
     }
 
@@ -230,8 +246,13 @@ public class Oto127mmBlockEntity extends AbstractSingleGunBlockEntity implements
     public void handleRemoteInput(float yawInput, float pitchInput, boolean triggerFire) {
         setTargetYaw(yawInput);
         setTargetPitch(pitchInput);
-        if (triggerFire && canFire()) {
-            fire();
+        if (triggerFire) {
+            if (canFire() && isAimAligned(3.0f)) {
+                fire();
+                this.pendingFireRequest = false;
+            } else {
+                this.pendingFireRequest = true;
+            }
         }
     }
 

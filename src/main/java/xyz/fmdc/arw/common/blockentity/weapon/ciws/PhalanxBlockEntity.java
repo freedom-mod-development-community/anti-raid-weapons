@@ -37,6 +37,7 @@ public class PhalanxBlockEntity extends ARWCIWSBlockEntity implements IDirection
     }
 
     @Override
+    @Deprecated(forRemoval = true)
     public EntityType<FiveInchShellEntity> getShellEntityType() {
         return ModEntities.FIVE_INCH_SHELL.get();
     }

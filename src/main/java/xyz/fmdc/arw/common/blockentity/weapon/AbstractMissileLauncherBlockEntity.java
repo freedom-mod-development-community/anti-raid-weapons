@@ -24,10 +24,10 @@ import xyz.fmdc.arw.api.blockentity.IYawPitchAnimatableModel;
 import xyz.fmdc.arw.api.control.IRemoteControllableWeapon;
 import xyz.fmdc.arw.api.fcs.FiringSolution;
 import xyz.fmdc.arw.api.fcs.IFcsControllableWeapon;
-import xyz.fmdc.arw.api.projectile.virtual.GuidedMissileProjectile;
 import xyz.fmdc.arw.client.renderer.GenericFastGlbRenderer;
 import xyz.fmdc.arw.common.blockentity.AbstractARWBlockEntity;
 import xyz.fmdc.arw.common.entity.missile.AbstractMissileEntity;
+import xyz.fmdc.arw.common.projectile.virtual.GuidedMissileProjectile;
 import xyz.fmdc.arw.common.projectile.virtual.VirtualProjectileManager;
 import xyz.fmdc.arw.network.PacketHandler;
 import xyz.fmdc.arw.network.S2CSpawnVirtualProjectilePacket;
@@ -181,6 +181,7 @@ public abstract class AbstractMissileLauncherBlockEntity extends AbstractARWBloc
     }
 
     @Nullable
+    @Deprecated(forRemoval = true)
     protected AbstractMissileEntity createMissileEntity(Level level, Vec3 launchPos, Vec3 direction) {
         EntityType<? extends AbstractMissileEntity> entityType = getMissileEntityType();
         if (entityType != null) {
@@ -190,6 +191,7 @@ public abstract class AbstractMissileLauncherBlockEntity extends AbstractARWBloc
     }
 
     @Nullable
+    @Deprecated(forRemoval = true)
     protected EntityType<? extends AbstractMissileEntity> getMissileEntityType() {
         return null;
     }

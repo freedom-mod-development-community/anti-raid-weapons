@@ -6,8 +6,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 import xyz.fmdc.arw.AntiRaidWeapons;
-import xyz.fmdc.arw.api.projectile.virtual.IVirtualProjectile;
-import xyz.fmdc.arw.api.projectile.virtual.VirtualProjectile;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;

@@ -17,7 +17,7 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import xyz.fmdc.arw.api.blockentity.IDirectionalBlockEntity;
 import xyz.fmdc.arw.api.blockentity.IYawPitchBarrelAnimatableModel;
-import xyz.fmdc.arw.api.projectile.virtual.CiwsProjectile;
+import xyz.fmdc.arw.common.projectile.virtual.CiwsProjectile;
 import xyz.fmdc.arw.client.renderer.GenericFastGlbRenderer;
 import xyz.fmdc.arw.common.blockentity.AbstractARWBlockEntity;
 import xyz.fmdc.arw.common.entity.projectile.FiveInchAmmoType;
@@ -68,8 +68,13 @@ public abstract class ARWCIWSBlockEntity extends AbstractARWBlockEntity
 
     // --- 抽象プロパティ設定（子クラス側で指定） ---
 
-    /** 生成する砲弾の EntityType（互換用） */
-    public abstract EntityType<FiveInchShellEntity> getShellEntityType();
+    /** 生成する砲弾の EntityType（互換用）
+     * @deprecated 仮想飛翔体への完全移行に伴い非推奨です
+     */
+    @Deprecated(forRemoval = true)
+    public EntityType<FiveInchShellEntity> getShellEntityType() {
+        return null;
+    }
 
     /** 使用する砲弾 Enum */
     public abstract FiveInchAmmoType getSelectedAmmoType();

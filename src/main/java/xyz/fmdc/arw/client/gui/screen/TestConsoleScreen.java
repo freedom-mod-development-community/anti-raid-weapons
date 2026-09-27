@@ -352,11 +352,11 @@ public class TestConsoleScreen extends Screen {
         if (mc.level != null && mc.level.isLoaded(selectedWeapon.pos())) {
             BlockEntity be = mc.level.getBlockEntity(selectedWeapon.pos());
             if (be instanceof AbstractMissileLauncherBlockEntity launcher) {
-                this.targetYaw = launcher.getCurrentYaw();
-                this.targetPitch = launcher.getCurrentPitch();
+                this.targetYaw = launcher.getTargetYaw();
+                this.targetPitch = launcher.getTargetPitch();
             } else if (be instanceof AbstractSingleGunBlockEntity gun) {
-                this.targetYaw = gun.getRenderTargetYaw(1.0f);
-                this.targetPitch = gun.getRenderTargetPitch(1.0f);
+                this.targetYaw = gun.getTargetYaw();
+                this.targetPitch = gun.getTargetPitch();
             }
             updateEditBoxValues();
             sendControlPacket(false);

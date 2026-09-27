@@ -47,8 +47,12 @@ public abstract class AbstractMissileItem extends Item {
         this.caliber = caliber;
     }
 
+    /**
+     * @deprecated 仮想飛翔体への完全移行に伴い非推奨です
+     */
+    @Deprecated(forRemoval = true)
     public EntityType<? extends AbstractMissileEntity> getMissileEntityType() {
-        return this.entityTypeSupplier.get();
+        return this.entityTypeSupplier != null ? this.entityTypeSupplier.get() : null;
     }
 
     public double getLengthMeters() {

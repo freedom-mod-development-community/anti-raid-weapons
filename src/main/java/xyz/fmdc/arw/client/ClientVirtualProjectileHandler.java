@@ -7,6 +7,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.phys.Vec3;
+import xyz.fmdc.arw.AntiRaidWeapons;
 import xyz.fmdc.arw.common.entity.projectile.ClientDummyProjectileEntity;
 import xyz.fmdc.arw.registry.ModEntities;
 
@@ -38,6 +39,13 @@ public final class ClientVirtualProjectileHandler {
         ClientLevel level = mc.level;
         if (level == null) return;
 
+        AntiRaidWeapons.LOGGER.info(
+                "[ClientVirtualProjectileHandler] Received S2CSpawnVirtualProjectilePacket: id={}, type={}, pos=({}, {}, {})",
+                projectileId,
+                ClientDummyProjectileEntity.getTypeName(projectileType),
+                initialPos.x, initialPos.y, initialPos.z
+        );
+
         ClientDummyProjectileEntity dummy = new ClientDummyProjectileEntity(
                 ModEntities.CLIENT_DUMMY_PROJECTILE.get(),
                 level
@@ -55,9 +63,21 @@ public final class ClientVirtualProjectileHandler {
         Minecraft mc = Minecraft.getInstance();
         ClientLevel level = mc.level;
 
+        String reasonStr = switch (destroyReason) {
+            case 0 -> "HIT";
+            case 1 -> "AIR_BURST";
+            case 2 -> "TIMEOUT";
+            default -> "REASON_" + destroyReason;
+        };
+
         ClientDummyProjectileEntity dummy = ACTIVE_CLIENT_PROJECTILES.remove(projectileId);
+        AntiRaidWeapons.LOGGER.info(
+                "[ClientVirtualProjectileHandler] Received S2CDestroyVirtualProjectilePacket: id={}, reason={}, hitPos=({}, {}, {}), dummyPresent={}",
+                projectileId, reasonStr, hitPosition.x, hitPosition.y, hitPosition.z, (dummy != null)
+        );
+
         if (dummy != null) {
-            dummy.discard();
+            dummy.onImpact(hitPosition, destroyReason);
         }
 
         if (level == null) return;

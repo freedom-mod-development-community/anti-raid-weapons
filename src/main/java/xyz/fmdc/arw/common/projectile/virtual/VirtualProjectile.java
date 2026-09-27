@@ -1,4 +1,4 @@
-package xyz.fmdc.arw.api.projectile.virtual;
+package xyz.fmdc.arw.common.projectile.virtual;
 
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
@@ -7,6 +7,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
+import xyz.fmdc.arw.api.projectile.virtual.IVirtualProjectile;
+import xyz.fmdc.arw.common.projectile.virtual.util.ProjectileRaycastHelper;
 
 import java.util.UUID;
 import java.util.function.Predicate;

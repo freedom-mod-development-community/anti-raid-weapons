@@ -238,6 +238,9 @@ public class Uyq21Screen extends AbstractContainerScreen<EmptyMenu> {
             FiringSolution sol = FiringSolution.calculateForWeapon(wpn.blockEntity(), tgt);
 
             float curYaw = sol.targetYaw();
+            if (wpn.blockEntity() instanceof AbstractSingleGunBlockEntity gun) {
+                curYaw = gun.worldYawToLocalYaw(sol.targetYaw());
+            }
             float curPitch = sol.targetPitch();
 
             // 前回送信角度との差分をチェック（閾値: 0.1度以上、または初回）
@@ -523,9 +526,13 @@ public class Uyq21Screen extends AbstractContainerScreen<EmptyMenu> {
             // FiringSolution による弾道見越し角・重力補正を適用
             FiringSolution solution = FiringSolution.calculateForWeapon(wpn.blockEntity(), tgt);
             BlockPos wPos = wpn.pos();
+            float sendYaw = solution.targetYaw();
+            if (wpn.blockEntity() instanceof AbstractSingleGunBlockEntity gun) {
+                sendYaw = gun.worldYawToLocalYaw(solution.targetYaw());
+            }
 
             // サーバーへ発射制御パケットを送信
-            PacketHandler.sendToServer(new ServerboundWeaponControlPacket(wPos, solution.targetYaw(), solution.targetPitch(), true));
+            PacketHandler.sendToServer(new ServerboundWeaponControlPacket(wPos, sendYaw, solution.targetPitch(), true));
         }
     }
 
@@ -589,7 +596,7 @@ public class Uyq21Screen extends AbstractContainerScreen<EmptyMenu> {
                     BlockPos pos = positions.get(uuid);
                     if (pos == null || !level.isLoaded(pos)) continue;
                     BlockEntity be = level.getBlockEntity(pos);
-                    if (be instanceof IFcsControllableWeapon) {
+                    if (be instanceof AbstractSingleGunBlockEntity || be instanceof AbstractMissileLauncherBlockEntity) {
                         String name = level.getBlockState(pos).getBlock().getName().getString();
                         String category = categorizeWeapon(be);
                         connectedWeapons.add(new WeaponDisplayEntry(uuid, name, pos, category, be));

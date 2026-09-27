@@ -49,6 +49,7 @@ public class WWIIAntiAircraftGunBlockEntity extends StandaloneManualWeaponBlockE
     }
 
     @Override
+    @Deprecated(forRemoval = true)
     public EntityType<FiveInchShellEntity> getShellEntityType() {
         // 登録済みの 5インチ砲弾 ModEntities.FIVE_INCH_SHELL.get() など
         return ModEntities.FIVE_INCH_SHELL.get();
