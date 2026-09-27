@@ -113,6 +113,13 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
                 this.pendingFireRequest = false;
             }
         }
+        
+    public void setTargetYaw(float yaw) {
+        this.targetYaw = (this.limitYaw) ? Mth.clamp(yaw, getMinYaw(), getMaxYaw()) : Mth.wrapDegrees(yaw);
+    }
+
+    public void setTargetPitch(float pitch) {
+        this.targetPitch = Mth.clamp(pitch, getMinPitch(), getMaxPitch());
     }
 
     public abstract Vec3 getFiringDirection();
