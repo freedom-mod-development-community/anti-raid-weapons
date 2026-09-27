@@ -113,13 +113,26 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
                 this.pendingFireRequest = false;
             }
         }
-        
+    }
+
     public void setTargetYaw(float yaw) {
-        this.targetYaw = (this.limitYaw) ? Mth.clamp(yaw, getMinYaw(), getMaxYaw()) : Mth.wrapDegrees(yaw);
+        float clampedYaw = (this.limitYaw) ? Mth.clamp(yaw, getMinYaw(), getMaxYaw()) : Mth.wrapDegrees(yaw);
+        if (Math.abs(this.targetYaw - clampedYaw) > 0.01f) {
+            this.targetYaw = clampedYaw;
+            if (this.level != null && !this.level.isClientSide) {
+                syncToClient();
+            }
+        }
     }
 
     public void setTargetPitch(float pitch) {
-        this.targetPitch = Mth.clamp(pitch, getMinPitch(), getMaxPitch());
+        float clampedPitch = Mth.clamp(pitch, getMinPitch(), getMaxPitch());
+        if (Math.abs(this.targetPitch - clampedPitch) > 0.01f) {
+            this.targetPitch = clampedPitch;
+            if (this.level != null && !this.level.isClientSide) {
+                syncToClient();
+            }
+        }
     }
 
     public abstract Vec3 getFiringDirection();
@@ -340,24 +353,6 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
         setTargetPitch(solution.targetPitch());
         if (solution.allowFire()) {
             this.pendingFireRequest = true;
-        }
-    }
-
-    public void setTargetYaw(float targetYaw) {
-        if (Math.abs(this.targetYaw - targetYaw) > 0.01f) {
-            this.targetYaw = targetYaw;
-            if (this.level != null && !this.level.isClientSide) {
-                syncToClient();
-            }
-        }
-    }
-
-    public void setTargetPitch(float targetPitch) {
-        if (Math.abs(this.targetPitch - targetPitch) > 0.01f) {
-            this.targetPitch = targetPitch;
-            if (this.level != null && !this.level.isClientSide) {
-                syncToClient();
-            }
         }
     }
 
