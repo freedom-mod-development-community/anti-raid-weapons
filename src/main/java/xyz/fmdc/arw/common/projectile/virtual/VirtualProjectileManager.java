@@ -38,6 +38,31 @@ public final class VirtualProjectileManager {
     }
 
     /**
+     * 指定ディメンションのアクティブな仮想飛翔体マップを取得します。
+     * レーダー走査や外部追尾システムから参照されます。
+     *
+     * @param dimKey ディメンションキー
+     * @return 飛翔体UUIDとインスタンスのマップ（未変更ビュー）
+     */
+    public Map<UUID, VirtualProjectile> getProjectiles(ResourceKey<Level> dimKey) {
+        Map<UUID, VirtualProjectile> active = this.activeProjectiles.get(dimKey);
+        if (this.pendingAdditions.isEmpty()) {
+            return active != null ? Collections.unmodifiableMap(active) : Collections.emptyMap();
+        }
+
+        Map<UUID, VirtualProjectile> combined = new HashMap<>();
+        if (active != null) {
+            combined.putAll(active);
+        }
+        for (VirtualProjectile p : this.pendingAdditions) {
+            if (p.getDimension().equals(dimKey)) {
+                combined.put(p.getProjectileId(), p);
+            }
+        }
+        return Collections.unmodifiableMap(combined);
+    }
+
+    /**
      * サーバーTick（ServerTickEvent.Phase.END）で呼び出され、全ディメンションの飛翔体を更新します。
      */
     public void tick(MinecraftServer server) {
@@ -46,7 +71,7 @@ public final class VirtualProjectileManager {
         while ((newProj = this.pendingAdditions.poll()) != null) {
             Map<UUID, VirtualProjectile> dimMap = this.activeProjectiles.computeIfAbsent(
                     newProj.getDimension(),
-                    k -> new HashMap<>()
+                    k -> new ConcurrentHashMap<>()
             );
             dimMap.put(newProj.getProjectileId(), newProj);
         }

@@ -4,6 +4,9 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
+import xyz.fmdc.arw.common.projectile.virtual.BallisticShellProjectile;
+import xyz.fmdc.arw.common.projectile.virtual.GuidedMissileProjectile;
+import xyz.fmdc.arw.common.projectile.virtual.VirtualProjectile;
 
 import java.util.UUID;
 
@@ -18,6 +21,7 @@ public class TrackedTarget {
     private Vec3 lastKnownVelocity;
     private long lastSeenGameTime;
     private TargetAffiliation affiliation = TargetAffiliation.UNKNOWN;
+    private TargetType targetType = TargetType.UNKNOWN;
 
     // サーバー側：Entity からスナップショットを生成
     public TrackedTarget(Entity entity, long gameTime) {
@@ -27,6 +31,26 @@ public class TrackedTarget {
         this.lastKnownVelocity = entity.getDeltaMovement();
         this.lastSeenGameTime = gameTime;
         this.affiliation = TargetAffiliation.UNKNOWN;
+        this.targetType = TargetType.ENTITY;
+    }
+
+    // サーバー側：VirtualProjectile からスナップショットを生成
+    public TrackedTarget(VirtualProjectile projectile, long gameTime) {
+        this.entityId = projectile.getProjectileId();
+        this.lastKnownPos = projectile.getPosition();
+        this.lastKnownVelocity = projectile.getVelocity();
+        this.lastSeenGameTime = gameTime;
+        this.affiliation = projectile.getAffiliation();
+        if (projectile instanceof GuidedMissileProjectile) {
+            this.targetType = TargetType.MISSILE;
+            this.entityTypeName = "Missile";
+        } else if (projectile instanceof BallisticShellProjectile) {
+            this.targetType = TargetType.SHELL;
+            this.entityTypeName = "Shell";
+        } else {
+            this.targetType = TargetType.PROJECTILE;
+            this.entityTypeName = "Projectile";
+        }
     }
 
     // クライアント側：S2Cパケットから生成（後方互換）
@@ -36,18 +60,31 @@ public class TrackedTarget {
 
     // クライアント側：S2Cパケットから生成（識別情報付き）
     public TrackedTarget(UUID uuid, String name, Vec3 pos, Vec3 velocity, long gameTime, TargetAffiliation affiliation) {
+        this(uuid, name, pos, velocity, gameTime, affiliation, TargetType.UNKNOWN);
+    }
+
+    // クライアント側：S2Cパケットから生成（識別情報・目標種別付き）
+    public TrackedTarget(UUID uuid, String name, Vec3 pos, Vec3 velocity, long gameTime, TargetAffiliation affiliation, TargetType targetType) {
         this.entityId = uuid;
         this.entityTypeName = name;
         this.lastKnownPos = pos;
         this.lastKnownVelocity = velocity;
         this.lastSeenGameTime = gameTime;
         this.affiliation = affiliation != null ? affiliation : TargetAffiliation.UNKNOWN;
+        this.targetType = targetType != null ? targetType : TargetType.UNKNOWN;
     }
 
     public void update(Entity entity, long gameTime) {
         this.lastKnownPos = entity.position();
         this.lastKnownVelocity = entity.getDeltaMovement();
         this.lastSeenGameTime = gameTime;
+    }
+
+    public void update(VirtualProjectile projectile, long gameTime) {
+        this.lastKnownPos = projectile.getPosition();
+        this.lastKnownVelocity = projectile.getVelocity();
+        this.lastSeenGameTime = gameTime;
+        this.affiliation = projectile.getAffiliation();
     }
 
     // クライアント側でのパケット更新用
@@ -97,5 +134,19 @@ public class TrackedTarget {
 
     public void setAffiliation(TargetAffiliation affiliation) {
         this.affiliation = affiliation != null ? affiliation : TargetAffiliation.UNKNOWN;
+    }
+
+    public TargetType getTargetType() {
+        return targetType != null ? targetType : TargetType.UNKNOWN;
+    }
+
+    public void setTargetType(TargetType targetType) {
+        this.targetType = targetType != null ? targetType : TargetType.UNKNOWN;
+    }
+
+    public boolean isVirtualProjectile() {
+        return this.targetType == TargetType.PROJECTILE
+                || this.targetType == TargetType.MISSILE
+                || this.targetType == TargetType.SHELL;
     }
 }

@@ -8,6 +8,7 @@ import net.minecraft.world.level.material.MapColor;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegistryObject;
 import xyz.fmdc.arw.AntiRaidWeapons;
 import xyz.fmdc.arw.common.block.console.TestConsoleBlock;
 import xyz.fmdc.arw.common.block.console.Uyq21Block;
@@ -82,6 +83,7 @@ public class ModBlocks {
             new BlockEntry<>("atago", () -> new AtagoBlock(defaultProps()), AtagoBlockEntity::new);
     public static final BlockEntry<Oto127mmBlock, Oto127mmBlockEntity> OTO127MM =
             new BlockEntry<>("oto127mm", () -> new Oto127mmBlock(defaultProps()), Oto127mmBlockEntity::new);
+    public static final RegistryObject<Oto127mmBlock> OTO_127MM_BLOCK = OTO127MM.block;
     public static final BlockEntry<Mk45mod4Block, Mk45Mod4BlockEntity> MK45_MOD4 =
             new BlockEntry<>("mk45mod4", () -> new Mk45mod4Block(defaultProps()), Mk45Mod4BlockEntity::new);
     public static final BlockEntry<phalanxBlock, PhalanxBlockEntity> PHALANX =

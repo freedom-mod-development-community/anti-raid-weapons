@@ -10,6 +10,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import xyz.fmdc.arw.AntiRaidWeapons;
+import xyz.fmdc.arw.api.TargetAffiliation;
 import xyz.fmdc.arw.common.projectile.telemetry.FlightTelemetryLogger;
 import xyz.fmdc.arw.common.projectile.virtual.util.ProjectileRaycastHelper;
 import xyz.fmdc.arw.common.projectile.virtual.util.SafeExplosionHelper;
@@ -61,7 +62,29 @@ public class GuidedMissileProjectile extends VirtualProjectile {
             float explosionPower,
             float directDamage
     ) {
-        super(projectileId, dimension, ownerUuid, initialPosition, initialVelocity, maxAgeTicks);
+        this(projectileId, dimension, ownerUuid, targetEntityUuid, initialPosition, initialVelocity,
+                maxSpeedMps, motorAcceleration, motorBurnTicks, maxAgeTicks, turnRate,
+                proximityFuseRadius, explosionPower, directDamage, TargetAffiliation.FRIENDLY);
+    }
+
+    public GuidedMissileProjectile(
+            UUID projectileId,
+            ResourceKey<Level> dimension,
+            @Nullable UUID ownerUuid,
+            @Nullable UUID targetEntityUuid,
+            Vec3 initialPosition,
+            Vec3 initialVelocity,
+            float maxSpeedMps,
+            float motorAcceleration,
+            int motorBurnTicks,
+            int maxAgeTicks,
+            float turnRate,
+            double proximityFuseRadius,
+            float explosionPower,
+            float directDamage,
+            TargetAffiliation affiliation
+    ) {
+        super(projectileId, dimension, ownerUuid, initialPosition, initialVelocity, maxAgeTicks, affiliation);
         this.targetEntityUuid = targetEntityUuid;
         this.maxSpeedMps = maxSpeedMps;
         this.motorAcceleration = motorAcceleration;
@@ -78,6 +101,17 @@ public class GuidedMissileProjectile extends VirtualProjectile {
             @Nullable UUID targetEntityUuid,
             Vec3 initialPosition,
             Vec3 initialDirection
+    ) {
+        return createRim66M2(dimension, ownerUuid, targetEntityUuid, initialPosition, initialDirection, TargetAffiliation.FRIENDLY);
+    }
+
+    public static GuidedMissileProjectile createRim66M2(
+            ResourceKey<Level> dimension,
+            @Nullable UUID ownerUuid,
+            @Nullable UUID targetEntityUuid,
+            Vec3 initialPosition,
+            Vec3 initialDirection,
+            TargetAffiliation affiliation
     ) {
         Vec3 dir = initialDirection.normalize();
         Vec3 initVel = dir.scale(100.0); // 初速 100m/s
@@ -96,13 +130,19 @@ public class GuidedMissileProjectile extends VirtualProjectile {
                 0.15F,   // 旋回性能
                 6.0,     // 近接信管作動半径 6m
                 8.0F,    // 爆発威力
-                200.0F   // 直撃ダメージ
+                200.0F,  // 直撃ダメージ
+                affiliation
         );
     }
 
     @Override
     public byte getProjectileTypeId() {
         return 2; // MISSILE
+    }
+
+    @Override
+    public boolean isRadarDetectable() {
+        return true;
     }
 
     @Nullable
@@ -118,16 +158,15 @@ public class GuidedMissileProjectile extends VirtualProjectile {
     protected void updateMotion(ServerLevel level) {
         double currentSpeed = this.velocity.length();
         Vec3 forward = (currentSpeed > 1.0E-4) ? this.velocity.scale(1.0 / currentSpeed) : new Vec3(0, 1, 0);
-
         double pitch = Math.toDegrees(Math.asin(-forward.y));
         double yaw = Math.toDegrees(Math.atan2(-forward.x, forward.z));
 
-        // 初回Tick: テレメトリセッション開始 & 発射ログ
+        // 飛行開始セッションの記録
         if (!this.sessionStarted) {
             this.sessionStarted = true;
             FlightTelemetryLogger.startSession(
                     this.projectileId,
-                    "GuidedMissile_RIM66M2",
+                    "RIM-66M-2",
                     this.position,
                     this.velocity,
                     forward,
@@ -135,57 +174,62 @@ public class GuidedMissileProjectile extends VirtualProjectile {
                     (float) yaw
             );
             AntiRaidWeapons.LOGGER.info(
-                    "[VirtualProjectile] Missile [{}] launched towards target [{}] at ({}, {}, {}) with initial velocity {} m/s",
-                    this.projectileId, this.targetEntityUuid, this.position.x, this.position.y, this.position.z, currentSpeed
+                    "[VirtualProjectile] RIM-66 missile [{}] launched towards target [{}] at ({}, {}, {})",
+                    this.projectileId, this.targetEntityUuid, this.position.x, this.position.y, this.position.z
             );
         }
 
-        // 1. ロケット推力による加速 (燃焼期間中)
+        // 1. 推力と速度の計算 (ブースト/サステイン期間)
         double thrustN = 0.0;
         if (this.ageTicks < this.motorBurnTicks) {
-            currentSpeed = Math.min(this.maxSpeedMps, currentSpeed + this.motorAcceleration * 0.05);
-            thrustN = this.motorAcceleration * 700.0; // 概算質量700kg
+            double accelPerTick = this.motorAcceleration / 20.0;
+            currentSpeed = Math.min(this.maxSpeedMps, currentSpeed + accelPerTick);
+            thrustN = this.motorAcceleration * 700.0; // 参考推力 (SM-2質量 約700kg)
         }
 
-        // 2. 誘導計算（目標探索 & フェイルセーフ）
+        // 2. 比例航法 (PN) による目標追尾
         Vec3 desiredDirection = forward;
         String event = "";
-        if (!this.isTargetLost && this.targetEntityUuid != null) {
-            Entity target = findTargetSafe(level, this.targetEntityUuid);
 
+        if (this.targetEntityUuid != null && !this.isTargetLost) {
+            Entity target = findTargetSafe(level, this.targetEntityUuid);
             if (target != null && target.isAlive()) {
-                // 目標の有効性を確認
-                Vec3 targetPos = target.position().add(0, target.getEyeHeight() * 0.5, 0);
+                Vec3 targetPos = target.position().add(0, target.getBbHeight() * 0.5, 0);
                 this.lastKnownTargetPos = targetPos;
 
-                // 比例航法 (PN: Proportional Navigation)
-                Vec3 losVector = targetPos.subtract(this.position);
-                double range = losVector.length();
+                Vec3 r = targetPos.subtract(this.position);
+                double dist = r.length();
 
-                if (range > 1.0E-3) {
-                    Vec3 losUnit = losVector.scale(1.0 / range);
+                if (dist > 1.0E-3) {
+                    Vec3 los = r.normalize();
 
                     if (this.prevLosVector != null) {
-                        // 視線角速度 (LOS Rate) の計算
-                        Vec3 losDelta = losUnit.subtract(this.prevLosVector).scale(20.0); // dLOS/dt
-                        // 指令加速度 a_cmd = N * V_closing * dLOS/dt
-                        Vec3 pAccel = losDelta.scale(PN_GAIN * currentSpeed);
-                        Vec3 targetVel = forward.scale(currentSpeed).add(pAccel.scale(0.05));
-                        if (targetVel.lengthSqr() > 1.0E-4) {
-                            desiredDirection = targetVel.normalize();
+                        // 視線回転角速度 (LOS Rate) の計算
+                        Vec3 omega = this.prevLosVector.cross(los).scale(20.0); // rad/s
+                        // 比例航法加速度指令: a_cmd = N * V * (omega x los)
+                        Vec3 aCmd = los.cross(omega).scale(-PN_GAIN * currentSpeed);
+                        Vec3 dv = aCmd.scale(1.0 / 20.0);
+                        Vec3 newVel = this.velocity.add(dv);
+                        if (newVel.lengthSqr() > 1.0E-4) {
+                            desiredDirection = newVel.normalize();
                         }
-                    } else {
-                        desiredDirection = losUnit;
                     }
-                    this.prevLosVector = losUnit;
+                    this.prevLosVector = los;
                 }
             } else {
-                // 目標ロスト（異次元移動、死亡、または未ロード領域へ離脱）
-                // フェイルセーフ: NPEを防ぎ、慣性直進モードへ安全に移行
+                // 目標ロスト: 最終確認座標への慣性直進フォールバック
                 this.isTargetLost = true;
-                this.targetEntityUuid = null;
                 event = "TARGET_LOST";
-                AntiRaidWeapons.LOGGER.info("[VirtualProjectile] Missile [{}] lost target entity. Switching to ballistic inertial straight flight.", this.projectileId);
+                if (this.lastKnownTargetPos != null) {
+                    Vec3 fallbackDir = this.lastKnownTargetPos.subtract(this.position);
+                    if (fallbackDir.lengthSqr() > 1.0E-4) {
+                        desiredDirection = fallbackDir.normalize();
+                    }
+                }
+                AntiRaidWeapons.LOGGER.warn(
+                        "[VirtualProjectile] Target [{}] lost for missile [{}]. Falling back to inertial flight.",
+                        this.targetEntityUuid, this.projectileId
+                );
             }
         }
 

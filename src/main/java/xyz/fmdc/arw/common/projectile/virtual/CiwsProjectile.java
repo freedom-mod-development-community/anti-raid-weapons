@@ -14,7 +14,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import xyz.fmdc.arw.AntiRaidWeapons;
-import xyz.fmdc.arw.common.projectile.telemetry.FlightTelemetryLogger;
+import xyz.fmdc.arw.api.TargetAffiliation;
 import xyz.fmdc.arw.common.projectile.virtual.util.ProjectileRaycastHelper;
 import xyz.fmdc.arw.network.PacketHandler;
 import xyz.fmdc.arw.network.S2CDestroyVirtualProjectilePacket;
@@ -29,7 +29,7 @@ import java.util.UUID;
 public class CiwsProjectile extends VirtualProjectile {
 
     private final float directDamage;
-    private boolean sessionStarted = false;
+    private boolean initialLogged = false;
 
     public CiwsProjectile(
             UUID projectileId,
@@ -40,7 +40,20 @@ public class CiwsProjectile extends VirtualProjectile {
             int maxAgeTicks,
             float directDamage
     ) {
-        super(projectileId, dimension, ownerUuid, initialPosition, initialVelocity, maxAgeTicks);
+        this(projectileId, dimension, ownerUuid, initialPosition, initialVelocity, maxAgeTicks, directDamage, TargetAffiliation.FRIENDLY);
+    }
+
+    public CiwsProjectile(
+            UUID projectileId,
+            ResourceKey<Level> dimension,
+            @Nullable UUID ownerUuid,
+            Vec3 initialPosition,
+            Vec3 initialVelocity,
+            int maxAgeTicks,
+            float directDamage,
+            TargetAffiliation affiliation
+    ) {
+        super(projectileId, dimension, ownerUuid, initialPosition, initialVelocity, maxAgeTicks, affiliation);
         this.directDamage = directDamage;
     }
 
@@ -60,7 +73,30 @@ public class CiwsProjectile extends VirtualProjectile {
                 initialPosition,
                 direction.normalize().scale(speedMps),
                 maxAgeTicks,
-                directDamage
+                directDamage,
+                TargetAffiliation.FRIENDLY
+        );
+    }
+
+    public CiwsProjectile(
+            ResourceKey<Level> dimension,
+            @Nullable UUID ownerUuid,
+            Vec3 initialPosition,
+            Vec3 direction,
+            float speedMps,
+            int maxAgeTicks,
+            float directDamage,
+            TargetAffiliation affiliation
+    ) {
+        this(
+                UUID.randomUUID(),
+                dimension,
+                ownerUuid,
+                initialPosition,
+                direction.normalize().scale(speedMps),
+                maxAgeTicks,
+                directDamage,
+                affiliation
         );
     }
 
@@ -70,53 +106,28 @@ public class CiwsProjectile extends VirtualProjectile {
     }
 
     @Override
-    protected void updateMotion(ServerLevel level) {
-        double currentSpeed = this.velocity.length();
-        Vec3 forward = (currentSpeed > 1.0E-4) ? this.velocity.scale(1.0 / currentSpeed) : new Vec3(0, 0, 1);
-        double pitch = Math.toDegrees(Math.asin(-forward.y));
-        double yaw = Math.toDegrees(Math.atan2(-forward.x, forward.z));
+    public boolean isRadarDetectable() {
+        return false; // CIWS弾はレーダー探知除外
+    }
 
-        if (!this.sessionStarted) {
-            this.sessionStarted = true;
-            FlightTelemetryLogger.startSession(
-                    this.projectileId,
-                    "Ciws_Bullet",
-                    this.position,
-                    this.velocity,
-                    forward,
-                    (float) pitch,
-                    (float) yaw
-            );
+    @Override
+    protected void updateMotion(ServerLevel level) {
+        if (!this.initialLogged) {
+            this.initialLogged = true;
             AntiRaidWeapons.LOGGER.debug(
                     "[VirtualProjectile] CIWS bullet [{}] fired at ({}, {}, {}) with velocity {} m/s",
-                    this.projectileId, this.position.x, this.position.y, this.position.z, currentSpeed
+                    this.projectileId, this.position.x, this.position.y, this.position.z, this.velocity.length()
             );
         }
 
-        // 直進移動 (m/s -> 1Tickあたりの移動量)
+        // 等速直線運動 (重力・空気抵抗は近距離のため無視)
         Vec3 step = this.velocity.scale(1.0 / 20.0);
         this.position = this.position.add(step);
-
-        FlightTelemetryLogger.recordTick(
-                this.projectileId,
-                this.ageTicks,
-                this.position,
-                this.velocity,
-                forward,
-                (float) pitch,
-                (float) yaw,
-                1.225,
-                0.0,
-                0.0,
-                0.0,
-                ""
-        );
 
         // ロード領域外（未ロードチャンク）に出た場合は即座に消滅
         int chunkX = (int) Math.floor(this.position.x) >> 4;
         int chunkZ = (int) Math.floor(this.position.z) >> 4;
         if (!ProjectileRaycastHelper.isChunkSafeAndTicking(level, chunkX, chunkZ)) {
-            FlightTelemetryLogger.endSession(this.projectileId, "UNLOADED_CHUNK", this.position);
             markDead();
         }
     }
@@ -125,37 +136,33 @@ public class CiwsProjectile extends VirtualProjectile {
     public void onHit(ServerLevel level, HitResult hitResult) {
         Vec3 hitPos = hitResult.getLocation();
 
-        if (hitResult instanceof EntityHitResult entityHit) {
-            Entity target = entityHit.getEntity();
-            DamageSource damageSource = level.damageSources().thrown(null, null);
-            target.hurt(damageSource, this.directDamage);
-
-            // 被弾エフェクト・金属打撃音
+        // 1. ブロック命中時の効果
+        if (hitResult instanceof BlockHitResult blockHit) {
+            BlockPos bpos = blockHit.getBlockPos();
             level.playSound(
                     null,
-                    BlockPos.containing(hitPos),
-                    SoundEvents.ITEM_BREAK,
-                    SoundSource.NEUTRAL,
-                    1.5F,
-                    1.8F
-            );
-            AntiRaidWeapons.LOGGER.info("[VirtualProjectile] CIWS bullet [{}] hit entity '{}' at ({}, {}, {})",
-                    this.projectileId, target.getName().getString(), hitPos.x, hitPos.y, hitPos.z);
-        } else if (hitResult instanceof BlockHitResult blockHit) {
-            // 地形への着弾音とパーティクル
-            level.playSound(
-                    null,
-                    blockHit.getBlockPos(),
+                    bpos,
                     SoundEvents.STONE_HIT,
-                    SoundSource.NEUTRAL,
+                    SoundSource.BLOCKS,
                     1.0F,
-                    1.5F
+                    1.2F
             );
-            AntiRaidWeapons.LOGGER.debug("[VirtualProjectile] CIWS bullet [{}] hit block at ({}, {}, {})",
-                    this.projectileId, hitPos.x, hitPos.y, hitPos.z);
         }
 
-        FlightTelemetryLogger.endSession(this.projectileId, hitResult.getType().name(), hitPos);
+        // 2. エンティティ命中時のダメージ処理
+        if (hitResult instanceof EntityHitResult entityHit && entityHit.getEntity() != null) {
+            Entity target = entityHit.getEntity();
+            DamageSource ds = level.damageSources().generic();
+            target.hurt(ds, this.directDamage);
+            AntiRaidWeapons.LOGGER.debug(
+                    "[VirtualProjectile] CIWS bullet [{}] hit entity [{}] for {} damage at ({}, {}, {})",
+                    this.projectileId, target.getName().getString(), this.directDamage, hitPos.x, hitPos.y, hitPos.z
+            );
+        } else {
+            AntiRaidWeapons.LOGGER.debug(
+                    "[VirtualProjectile] CIWS bullet [{}] hit terrain at ({}, {}, {})",
+                    this.projectileId, hitPos.x, hitPos.y, hitPos.z);
+        }
 
         // 周囲のクライアントへ着弾破棄パケットを同期待ちなしで送信
         PacketHandler.sendToNear(
@@ -164,17 +171,5 @@ public class CiwsProjectile extends VirtualProjectile {
                 128.0,
                 new S2CDestroyVirtualProjectilePacket(this.projectileId, hitPos, (byte) 0)
         );
-    }
-
-    @Override
-    protected void onExpired(ServerLevel level) {
-        FlightTelemetryLogger.endSession(this.projectileId, "TIMEOUT", this.position);
-        super.onExpired(level);
-    }
-
-    @Override
-    public void onServerStopping() {
-        FlightTelemetryLogger.endSession(this.projectileId, "SERVER_STOP", this.position);
-        super.onServerStopping();
     }
 }

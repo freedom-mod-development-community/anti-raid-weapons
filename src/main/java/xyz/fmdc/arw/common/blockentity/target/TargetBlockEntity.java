@@ -15,6 +15,7 @@ import org.jetbrains.annotations.Nullable;
 import xyz.fmdc.arw.AntiRaidWeapons;
 import xyz.fmdc.arw.api.RadarTargetManager;
 import xyz.fmdc.arw.api.TargetAffiliation;
+import xyz.fmdc.arw.api.TargetType;
 import xyz.fmdc.arw.api.TrackedTarget;
 import xyz.fmdc.arw.common.blockentity.AbstractARWBlockEntity;
 import xyz.fmdc.arw.registry.ModBlocks;
@@ -55,7 +56,8 @@ public class TargetBlockEntity extends AbstractARWBlockEntity {
                 getTargetCenterPos(),
                 Vec3.ZERO,
                 gameTime,
-                this.defaultAffiliation
+                this.defaultAffiliation,
+                TargetType.BLOCK
         );
     }
 

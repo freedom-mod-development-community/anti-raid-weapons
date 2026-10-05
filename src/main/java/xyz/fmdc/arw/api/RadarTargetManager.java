@@ -9,17 +9,21 @@ import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import xyz.fmdc.arw.api.projectile.virtual.IVirtualProjectile;
 import xyz.fmdc.arw.common.blockentity.target.TargetBlockEntity;
 import xyz.fmdc.arw.common.entity.missile.AbstractMissileEntity;
+import xyz.fmdc.arw.common.projectile.virtual.VirtualProjectile;
+import xyz.fmdc.arw.common.projectile.virtual.VirtualProjectileManager;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * サーバー側でワールド内のレーダー探知対象（エンティティおよび標的用ブロック）を一元管理するマスターマネージャ。
+ * サーバー側でワールド内のレーダー探知対象（エンティティ、標的用ブロック、仮想飛翔体）を一元管理するマスターマネージャー。
  * メモリリークおよびワールド停止・保存時のクローズ競合を防止するため、Entity インスタンス実体への強参照は保持せず、
  * プリミティブな Entity ID (int) と UUID のみを追跡する。
- * また、標的用ブロック (TargetBlockEntity) も管理し、レーダーによる探知および破壊監視を提供する。
+ * また、標的用ブロック (TargetBlockEntity) およびインメモリ仮想飛翔体 (VirtualProjectile) も管理し、
+ * レーダーによる探知および破壊監視を提供する。
  */
 public class RadarTargetManager {
     public static final RadarTargetManager INSTANCE = new RadarTargetManager();
@@ -106,7 +110,8 @@ public class RadarTargetManager {
 
     /**
      * AABB粗絞り込みクエリメソッド。
-     * 指定されたAABB内の生存Entityおよびアクティブな標的用ブロックから TrackedTarget スナップショットリストを生成して返す。
+     * 指定されたAABB内の生存Entity、アクティブな標的用ブロック、および探知可能な仮想飛翔体から
+     * TrackedTarget スナップショットリストを生成して返す。
      * 不等式による高速バウンディングボックス内外判定を行う。
      */
     public List<TrackedTarget> queryCandidatesInAABB(ServerLevel level, AABB aabb) {
@@ -145,7 +150,23 @@ public class RadarTargetManager {
             }
         }
 
-        // 3. 古い破壊ログキャッシュの定期クリーンアップ (100ticks以上経過したもの)
+        // 3. 仮想飛翔体 (Virtual Projectile) の走査
+        Map<UUID, VirtualProjectile> projs = VirtualProjectileManager.getInstance().getProjectiles(level.dimension());
+        if (projs != null && !projs.isEmpty()) {
+            for (VirtualProjectile proj : projs.values()) {
+                if (proj == null || proj.isDead() || !proj.isRadarDetectable()) continue;
+
+                Vec3 pos = proj.getPosition();
+                if (pos != null &&
+                    pos.x >= aabb.minX && pos.x <= aabb.maxX &&
+                    pos.y >= aabb.minY && pos.y <= aabb.maxY &&
+                    pos.z >= aabb.minZ && pos.z <= aabb.maxZ) {
+                    candidates.add(new TrackedTarget(proj, gameTime));
+                }
+            }
+        }
+
+        // 4. 古い破壊ログキャッシュの定期クリーンアップ (100ticks以上経過したもの)
         destroyedBlockTimes.entrySet().removeIf(entry -> (gameTime - entry.getValue()) > 100);
 
         return candidates;
@@ -200,9 +221,9 @@ public class RadarTargetManager {
     }
 
     /**
-     * 監視対象Entity IDセットの取得
+     * 仮想飛翔体がレーダー探知対象かどうかの判定。
      */
-    public IntSet getTargetEntityIdSet() {
-        return activeEntityIds;
+    public boolean isRadarDetectable(IVirtualProjectile projectile) {
+        return projectile != null && !projectile.isDead() && projectile.isRadarDetectable();
     }
 }
