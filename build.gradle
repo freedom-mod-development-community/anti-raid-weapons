@@ -199,6 +199,6 @@ tasks.register('copyGameTestStructures', Copy) {
     into 'run/gameteststructures'
 }
 
-afterEvaluate {
-    tasks.findByName('prepareRunGameTestServer')?.dependsOn('copyGameTestStructures')
+tasks.matching { it.name in ['runGameTestServer', 'prepareRunGameTestServer'] }.configureEach {
+    dependsOn 'copyGameTestStructures'
 }
