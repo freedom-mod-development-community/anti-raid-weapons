@@ -78,7 +78,7 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
             this.currentYaw = Mth.clamp(this.currentYaw, getMinYaw(), getMaxYaw());
         }
 
-        // 目標角への仰俯角変更（Pitch）
+        // 目標角への俯仰角変更（Pitch）
         float pitchDiff = this.targetPitch - this.currentPitch;
         float maxPitch = getPitchTurnSpeed();
         if (Math.abs(pitchDiff) <= maxPitch) {
@@ -356,6 +356,16 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
         return this.currentPitch;
     }
 
+    public void setCurrentYaw(float currentYaw) {
+        this.currentYaw = currentYaw;
+        this.prevYaw = currentYaw;
+    }
+
+    public void setCurrentPitch(float currentPitch) {
+        this.currentPitch = currentPitch;
+        this.prevPitch = currentPitch;
+    }
+
     public float getTargetYaw() {
         return this.targetYaw;
     }
@@ -366,6 +376,10 @@ public abstract class AbstractSingleGunBlockEntity extends AbstractARWBlockEntit
 
     public int getCooldownTicks() {
         return this.cooldownTicks;
+    }
+
+    public boolean isPendingFire() {
+        return this.pendingFireRequest;
     }
 
     @Override

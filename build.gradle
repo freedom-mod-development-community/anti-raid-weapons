@@ -37,7 +37,8 @@ minecraft {
     // enableEclipsePrepareRuns = true
     // enableIdeaPrepareRuns = true
 
-    // This property allows configuring Gradle's ProcessResources task(s) to run on IDE output locations before launching the game.\n    // It is REQUIRED to be set to true for this template to function.
+    // This property allows configuring Gradle's ProcessResources task(s) to run on IDE output locations before launching the game.
+    // It is REQUIRED to be set to true for this template to function.
     // See https://docs.gradle.org/current/dsl/org.gradle.language.jvm.tasks.ProcessResources.html
     copyIdeResources = true
 
@@ -94,7 +95,16 @@ minecraft {
         // By default, the server will crash when no gametests are provided.
         // The gametest system is also enabled by default for other run configs under the /test command.
         gameTestServer {
-            property 'forge.enabledGameTestNamespaces', mod_id
+            workingDirectory project.file('run')
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+            property 'forge.enabledGameTestNamespaces', 'arw'
+
+            mods {
+                arw {
+                    source sourceSets.main
+                }
+            }
         }
 
         data {
@@ -182,4 +192,13 @@ tasks.withType(JavaCompile).configureEach {
 
 test {
     useJUnitPlatform()
+}
+
+tasks.register('copyGameTestStructures', Copy) {
+    from 'src/main/resources/data/arw/structures'
+    into 'run/gameteststructures'
+}
+
+tasks.matching { it.name in ['runGameTestServer', 'prepareRunGameTestServer'] }.configureEach {
+    dependsOn 'copyGameTestStructures'
 }

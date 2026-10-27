@@ -171,10 +171,10 @@ public class Mk13GmlsBlockEntity extends AbstractMissileLauncherBlockEntity impl
     @Override protected float getMinPitch() { return MIN_PITCH; }
     @Override protected float getMaxPitch() { return MAX_PITCH; }
 
-    @Override
-    public float getPitchModelOffset() {
-        return 90.0f; // 設置時・初期姿勢で直立しているpitchモデルを90度下げる補正
-    }
+    //@Override
+    //public float getPitchModelOffset() {
+    //    return 90.0f; // 設置時・初期姿勢で直立しているpitchモデルを90度下げる補正
+    //}
 
     // --- インベントリ & Capability ---
     public ItemStackHandler getInventory() {

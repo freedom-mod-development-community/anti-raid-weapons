@@ -9,6 +9,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import xyz.fmdc.arw.AntiRaidWeapons;
+import xyz.fmdc.arw.api.TargetAffiliation;
 import xyz.fmdc.arw.api.projectile.BallisticsEngine;
 import xyz.fmdc.arw.common.projectile.telemetry.FlightTelemetryLogger;
 import xyz.fmdc.arw.common.projectile.virtual.util.SafeExplosionHelper;
@@ -21,7 +22,7 @@ import java.util.UUID;
 /**
  * 5インチ艦砲などの通常砲弾用の仮想飛翔体（Virtual Projectile）。
  * <p>
- * {@link BallisticsEngine} によるISA標準大気密度減衰・遷音速波抵抗・重力を含む外弾道計算を
+ * {@link BallisticsEngine} によるISA標準大気密度減衰・遷移音速波抵抗・重力を加味する外弾道計算を
  * サーバー側インメモリで正確に継続しながら飛行します。
  * 未ロードチャンク上空を通過する際はブロック・エンティティの走査（レイキャスト）やチャンク強制ロードを安全にスキップし、
  * ロード済みチャンクへの突入・着弾時に {@link SafeExplosionHelper} を介してカスケード地形破壊を防止しつつ安全に爆発します。
@@ -57,7 +58,7 @@ public class BallisticShellProjectile extends VirtualProjectile {
      * @param initialOrientation 初期の弾頭姿勢ベクトル（単位ベクトル）
      * @param params BallisticsEngine に渡す外弾道物理パラメータ
      * @param ammoType 5インチ砲弾の弾種
-     * @param explosionPower 着弾時の爆発力
+     * @param explosionPower 着弾時の爆発威力
      * @param directDamage 直撃時の直接ダメージ
      * @param maxAgeTicks 最大生存期間 [ticks]（タイムアウトで安全に破棄）
      */
@@ -74,7 +75,25 @@ public class BallisticShellProjectile extends VirtualProjectile {
             float directDamage,
             int maxAgeTicks
     ) {
-        super(projectileId, dimension, ownerUuid, initialPosition, initialVelocity, maxAgeTicks);
+        this(projectileId, dimension, ownerUuid, initialPosition, initialVelocity, initialOrientation,
+                params, ammoType, explosionPower, directDamage, maxAgeTicks, TargetAffiliation.FRIENDLY);
+    }
+
+    public BallisticShellProjectile(
+            UUID projectileId,
+            ResourceKey<Level> dimension,
+            @Nullable UUID ownerUuid,
+            Vec3 initialPosition,
+            Vec3 initialVelocity,
+            Vec3 initialOrientation,
+            BallisticsEngine.BallisticsParams params,
+            FiveInchAmmoType ammoType,
+            float explosionPower,
+            float directDamage,
+            int maxAgeTicks,
+            TargetAffiliation affiliation
+    ) {
+        super(projectileId, dimension, ownerUuid, initialPosition, initialVelocity, maxAgeTicks, affiliation);
         this.orientation = initialOrientation.lengthSqr() > 1.0E-6 ? initialOrientation.normalize() : initialVelocity.normalize();
         this.params = params;
         this.ammoType = ammoType;
@@ -101,7 +120,7 @@ public class BallisticShellProjectile extends VirtualProjectile {
             float muzzleVelocityMps,
             FiveInchAmmoType ammoType
     ) {
-        return create5Inch(dimension, ownerUuid, initialPosition, initialDirection, muzzleVelocityMps, ammoType, 2400);
+        return create5Inch(dimension, ownerUuid, initialPosition, initialDirection, muzzleVelocityMps, ammoType, 2400, TargetAffiliation.FRIENDLY);
     }
 
     /**
@@ -124,6 +143,19 @@ public class BallisticShellProjectile extends VirtualProjectile {
             float muzzleVelocityMps,
             FiveInchAmmoType ammoType,
             int maxAgeTicks
+    ) {
+        return create5Inch(dimension, ownerUuid, initialPosition, initialDirection, muzzleVelocityMps, ammoType, maxAgeTicks, TargetAffiliation.FRIENDLY);
+    }
+
+    public static BallisticShellProjectile create5Inch(
+            ResourceKey<Level> dimension,
+            @Nullable UUID ownerUuid,
+            Vec3 initialPosition,
+            Vec3 initialDirection,
+            float muzzleVelocityMps,
+            FiveInchAmmoType ammoType,
+            int maxAgeTicks,
+            TargetAffiliation affiliation
     ) {
         Vec3 dir = initialDirection.normalize();
         Vec3 vel = dir.scale(muzzleVelocityMps);
@@ -162,7 +194,8 @@ public class BallisticShellProjectile extends VirtualProjectile {
                 ammoType,
                 power,
                 damage,
-                maxAgeTicks
+                maxAgeTicks,
+                affiliation
         );
     }
 
@@ -176,11 +209,17 @@ public class BallisticShellProjectile extends VirtualProjectile {
         return 1; // 5-INCH SHELL
     }
 
+    @Override
+    public boolean isRadarDetectable() {
+        return true;
+    }
+
     /**
      * 砲弾の弾頭姿勢単位ベクトルを取得します。
      *
      * @return 姿勢ベクトル
      */
+    @Override
     public Vec3 getOrientation() {
         return this.orientation;
     }
@@ -197,7 +236,7 @@ public class BallisticShellProjectile extends VirtualProjectile {
     /**
      * 1Tickごとの弾道運動を計算します。
      * <p>
-     * ISA大気モデル・遷音速波抵抗・重力を加味してインメモリで位置・速度・姿勢を更新し、
+     * ISA大気モデル・遷移音速波抵抗・重力を加味してインメモリで位置・速度・姿勢を更新し、
      * テレメトリロガーへ状態を記録します。
      *
      * @param level 発射先サーバーワールド
@@ -309,6 +348,8 @@ public class BallisticShellProjectile extends VirtualProjectile {
                 256.0,
                 new S2CDestroyVirtualProjectilePacket(this.projectileId, hitPos, (byte) 0)
         );
+
+        markDead();
     }
 
     /**
@@ -332,6 +373,7 @@ public class BallisticShellProjectile extends VirtualProjectile {
                 128.0,
                 new S2CDestroyVirtualProjectilePacket(this.projectileId, this.position, (byte) 2)
         );
+        super.onExpired(level);
     }
 
     /**

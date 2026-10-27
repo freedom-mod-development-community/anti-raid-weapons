@@ -7,6 +7,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
+import xyz.fmdc.arw.api.TargetAffiliation;
 import xyz.fmdc.arw.api.projectile.virtual.IVirtualProjectile;
 import xyz.fmdc.arw.common.projectile.virtual.util.ProjectileRaycastHelper;
 
@@ -32,6 +33,8 @@ public abstract class VirtualProjectile implements IVirtualProjectile {
     protected int maxAgeTicks;
     protected boolean isDead = false;
 
+    protected TargetAffiliation affiliation = TargetAffiliation.FRIENDLY;
+
     public VirtualProjectile(
             UUID projectileId,
             ResourceKey<Level> dimension,
@@ -40,6 +43,18 @@ public abstract class VirtualProjectile implements IVirtualProjectile {
             Vec3 initialVelocity,
             int maxAgeTicks
     ) {
+        this(projectileId, dimension, ownerUuid, initialPosition, initialVelocity, maxAgeTicks, TargetAffiliation.FRIENDLY);
+    }
+
+    public VirtualProjectile(
+            UUID projectileId,
+            ResourceKey<Level> dimension,
+            @Nullable UUID ownerUuid,
+            Vec3 initialPosition,
+            Vec3 initialVelocity,
+            int maxAgeTicks,
+            TargetAffiliation affiliation
+    ) {
         this.projectileId = projectileId != null ? projectileId : UUID.randomUUID();
         this.dimension = dimension;
         this.ownerUuid = ownerUuid;
@@ -47,6 +62,7 @@ public abstract class VirtualProjectile implements IVirtualProjectile {
         this.prevPosition = initialPosition;
         this.velocity = initialVelocity;
         this.maxAgeTicks = maxAgeTicks;
+        this.affiliation = affiliation != null ? affiliation : TargetAffiliation.UNKNOWN;
     }
 
     @Override
@@ -105,6 +121,26 @@ public abstract class VirtualProjectile implements IVirtualProjectile {
     @Override
     public void markDead() {
         this.isDead = true;
+    }
+
+    @Override
+    public TargetAffiliation getAffiliation() {
+        return this.affiliation != null ? this.affiliation : TargetAffiliation.UNKNOWN;
+    }
+
+    public void setAffiliation(TargetAffiliation affiliation) {
+        this.affiliation = affiliation != null ? affiliation : TargetAffiliation.UNKNOWN;
+    }
+
+    @Override
+    public Vec3 getOrientation() {
+        double lenSq = this.velocity.lengthSqr();
+        return lenSq > 1.0E-6 ? this.velocity.scale(1.0 / Math.sqrt(lenSq)) : new Vec3(0, 0, 1);
+    }
+
+    @Override
+    public boolean isRadarDetectable() {
+        return false;
     }
 
     @Override

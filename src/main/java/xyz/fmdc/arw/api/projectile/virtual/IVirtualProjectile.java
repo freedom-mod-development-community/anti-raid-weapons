@@ -5,6 +5,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import xyz.fmdc.arw.api.TargetAffiliation;
 
 import java.util.UUID;
 
@@ -56,4 +57,25 @@ public interface IVirtualProjectile {
 
     /** 弾薬種別の判別ID (パケット同期・描画種別の決定用) */
     byte getProjectileTypeId();
+
+    /**
+     * レーダー探知対象であるかどうかを返します。
+     * ミサイルや大型砲弾等は true、CIWS等の高レート機関砲弾は false を返します。
+     * @return レーダー探知可能であれば true
+     */
+    default boolean isRadarDetectable() {
+        return false;
+    }
+
+    /**
+     * 飛翔体の所属（IFF）を返します。
+     * @return 発射母体から継承した所属
+     */
+    TargetAffiliation getAffiliation();
+
+    /**
+     * 飛翔体の進行・姿勢単位ベクトルを返します。
+     * @return 方位単位ベクトル
+     */
+    Vec3 getOrientation();
 }
